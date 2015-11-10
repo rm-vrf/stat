@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>cn.batchfile.coraline</groupId>
-	<artifactId>coraline-agent</artifactId>
+	<groupId>cn.batchfile.stat</groupId>
+	<artifactId>stat-agent</artifactId>
 	<packaging>jar</packaging>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>coraline-agent</name>
-	<description>coraline-agent</description>
+	<name>stat-agent</name>
+	<description>stat-agent</description>
 	<properties>
 		<java-version>1.6</java-version>
 		<org.slf4j-version>1.6.1</org.slf4j-version>
@@ -97,7 +97,7 @@
 		
 	</dependencies>
 	<build>
-		<finalName>coraline-agent</finalName>
+		<finalName>stat-agent</finalName>
 		<resources>
 			<resource>
 				<filtering>true</filtering>
