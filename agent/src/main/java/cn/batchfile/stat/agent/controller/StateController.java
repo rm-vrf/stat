@@ -1,9 +1,12 @@
 package cn.batchfile.stat.agent.controller;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 import javax.annotation.Resource;
 
+import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.hyperic.sigar.SigarException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,5 +67,11 @@ public class StateController {
 	@ResponseBody
 	public List<Network> getNetworks() throws SigarException {
 		return stateService.getNetworks();
+	}
+	
+	@RequestMapping(value="/env", method=RequestMethod.GET)
+	@ResponseBody
+	public Properties getEnv() throws IOException {
+		return CommandLineUtils.getSystemEnvVars();
 	}
 }
