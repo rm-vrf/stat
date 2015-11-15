@@ -8,4 +8,6 @@
 	<bean id="stateService" name="stateService" class="cn.batchfile.stat.agent.service.impl.StateServiceImpl" init-method="init" />
 	
 	<bean id="fileService" name="fileService" class="cn.batchfile.stat.agent.service.impl.FileServiceImpl" />
+	
+	<bean id="commandService" name="commandService" class="cn.batchfile.stat.agent.service.impl.CommandServiceImpl" />
 </beans>
