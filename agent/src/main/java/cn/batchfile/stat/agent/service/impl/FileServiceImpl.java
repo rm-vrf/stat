@@ -37,6 +37,9 @@ public class FileServiceImpl implements FileService {
 	}
 	
 	private File compose_file(java.io.File file) throws IOException {
+		if (!file.exists()) {
+			return null;
+		}
 		File r = new File();
 		r.setDirectory(file.isDirectory());
 		r.setFile(file.isFile());
