@@ -7,6 +7,7 @@ import javax.annotation.Resource;
 import org.hyperic.sigar.SigarException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cn.batchfile.stat.agent.domain.Cpu;
@@ -23,43 +24,43 @@ public class StateController {
 	@Resource(name="stateService")
 	private StateService stateService;
 	
-	@RequestMapping("/")
+	@RequestMapping(value="/", method=RequestMethod.GET)
 	@ResponseBody
 	public Object index() {
 		return getState();
 	}
 	
-	@RequestMapping("/state")
+	@RequestMapping(value="/state", method=RequestMethod.GET)
 	@ResponseBody
 	public State getState() {
 		return stateService.getState();
 	}
 
-	@RequestMapping("/os")
+	@RequestMapping(value="/os", method=RequestMethod.GET)
 	@ResponseBody
 	public Os getOs() {
 		return stateService.getOs();
 	}
 	
-	@RequestMapping("/cpu")
+	@RequestMapping(value="/cpu", method=RequestMethod.GET)
 	@ResponseBody
 	public Cpu getCpu() throws SigarException {
 		return stateService.getCpu();
 	}
 	
-	@RequestMapping("/disk")
+	@RequestMapping(value="/disk", method=RequestMethod.GET)
 	@ResponseBody
 	public List<Disk> getDisks() throws SigarException {
 		return stateService.getDisks();
 	}
 	
-	@RequestMapping("/memory")
+	@RequestMapping(value="/memory", method=RequestMethod.GET)
 	@ResponseBody
 	public Memory getMemory() throws SigarException {
 		return stateService.getMemory();
 	}
 
-	@RequestMapping("/network")
+	@RequestMapping(value="/network", method=RequestMethod.GET)
 	@ResponseBody
 	public List<Network> getNetworks() throws SigarException {
 		return stateService.getNetworks();

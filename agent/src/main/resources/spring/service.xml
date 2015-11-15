@@ -6,4 +6,6 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
 	<bean id="stateService" name="stateService" class="cn.batchfile.stat.agent.service.impl.StateServiceImpl" init-method="init" />
+	
+	<bean id="fileService" name="fileService" class="cn.batchfile.stat.agent.service.impl.FileServiceImpl" />
 </beans>

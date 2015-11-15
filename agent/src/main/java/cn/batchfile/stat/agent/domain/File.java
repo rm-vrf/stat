@@ -2,38 +2,25 @@ package cn.batchfile.stat.agent.domain;
 
 import java.util.Date;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class File {
-	private String absolutePath;
-	private String canonicalPath;
+	@JSONField(name="free_space")
 	private long freeSpace;
 	private String name;
 	private String parent;
 	private String path;
+	@JSONField(name="total_space")
 	private long totalSpace;
+	@JSONField(name="usable_space")
 	private long usableSpace;
-	private boolean absolute;
 	private boolean directory;
 	private boolean file;
 	private boolean hidden;
+	@JSONField(name="last_modified")
 	private Date lastModified;
 	private long length;
 	private String uri;
-	
-	public String getAbsolutePath() {
-		return absolutePath;
-	}
-	
-	public void setAbsolutePath(String absolutePath) {
-		this.absolutePath = absolutePath;
-	}
-	
-	public String getCanonicalPath() {
-		return canonicalPath;
-	}
-	
-	public void setCanonicalPath(String canonicalPath) {
-		this.canonicalPath = canonicalPath;
-	}
 	
 	public long getFreeSpace() {
 		return freeSpace;
@@ -81,14 +68,6 @@ public class File {
 	
 	public void setUsableSpace(long usableSpace) {
 		this.usableSpace = usableSpace;
-	}
-	
-	public boolean isAbsolute() {
-		return absolute;
-	}
-	
-	public void setAbsolute(boolean absolute) {
-		this.absolute = absolute;
 	}
 	
 	public boolean isDirectory() {
