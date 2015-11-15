@@ -1,13 +1,19 @@
 package cn.batchfile.stat.agent.domain;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class Memory {
 	private long total;
 	private long ram;
 	private long used;
 	private long free;
+	@JSONField(name="actual_used")
 	private long actualUsed;
+	@JSONField(name="actual_free")
 	private long actualFree;
+	@JSONField(name="used_percent")
 	private double usedPercent;
+	@JSONField(name="free_percent")
 	private double freePercent;
 	
 	public long getTotal() {

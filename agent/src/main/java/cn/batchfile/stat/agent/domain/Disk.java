@@ -1,9 +1,15 @@
 package cn.batchfile.stat.agent.domain;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class Disk {
+	@JSONField(name="dir_name")
 	private String dirName;
+	@JSONField(name="dev_name")
 	private String devName;
+	@JSONField(name="type_name")
 	private String typeName;
+	@JSONField(name="sys_type_name")
 	private String sysTypeName;
 	private String options;
 	private int type;
@@ -13,13 +19,21 @@ public class Disk {
 	private long used;
 	private long avail;
 	private long files;
+	@JSONField(name="free_files")
 	private long freeFiles;
+	@JSONField(name="disk_reads")
 	private long diskReads;
+	@JSONField(name="disk_writes")
 	private long diskWrites;
+	@JSONField(name="disk_read_bytes")
 	private long diskReadBytes;
+	@JSONField(name="disk_write_bytes")
 	private long diskWriteBytes;
+	@JSONField(name="disk_queue")
 	private double diskQueue;
+	@JSONField(name="disk_service_time")
 	private double diskServiceTime;
+	@JSONField(name="use_percent")
 	private double usePercent;
 	
 	public String getDirName() {

@@ -1,5 +1,7 @@
 package cn.batchfile.stat.agent.domain;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class Cpu {
 	private double user;
 	private double sys;
@@ -7,6 +9,7 @@ public class Cpu {
 	private double idle;
 	private double wait;
 	private double irq;
+	@JSONField(name="soft_irq")
 	private double softIrq;
 	private double stolen;
 	private double combined;

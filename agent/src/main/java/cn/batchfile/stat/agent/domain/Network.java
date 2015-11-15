@@ -1,5 +1,7 @@
 package cn.batchfile.stat.agent.domain;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class Network {
 	private String name;
 	private String hwaddr;
@@ -12,18 +14,31 @@ public class Network {
 	private long flags;
 	private long mtu;
 	private long metric;
+	@JSONField(name="rx_bytes")
 	private long rxBytes;
+	@JSONField(name="rx_packets")
 	private long rxPackets;
+	@JSONField(name="rx_errors")
 	private long rxErrors;
+	@JSONField(name="rx_dropped")
 	private long rxDropped;
+	@JSONField(name="rx_overruns")
 	private long rxOverruns;
+	@JSONField(name="rx_frame")
 	private long rxFrame;
+	@JSONField(name="tx_bytes")
 	private long txBytes;
+	@JSONField(name="tx_packets")
 	private long txPackets;
+	@JSONField(name="tx_errors")
 	private long txErrors;
+	@JSONField(name="tx_dropped")
 	private long txDropped;
+	@JSONField(name="tx_overruns")
 	private long txOverruns;
+	@JSONField(name="tx_collisions")
 	private long txCollisions;
+	@JSONField(name="tx_carrier")
 	private long txCarrier;
 	private long speed;
 	
