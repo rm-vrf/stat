@@ -12,4 +12,6 @@
 	<bean id="commandService" name="commandService" class="cn.batchfile.stat.agent.service.impl.CommandServiceImpl" />
 	
 	<bean id="processService" name="processService" class="cn.batchfile.stat.agent.service.impl.ProcessServiceImpl" />
+	
+	<bean id="testService" name="testService" class="cn.batchfile.stat.agent.service.impl.TestServiceImpl" />
 </beans>
