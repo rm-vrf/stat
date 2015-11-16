@@ -1,7 +1,9 @@
 package cn.batchfile.stat.agent.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -20,17 +22,21 @@ public class ProcessServiceImpl implements ProcessService {
 	private CommandService commandService;
 
 	@Override
-	public List<Process> findProcesses(String name) {
-		// TODO Auto-generated method stub
-		return null;
+	public List<Process> findProcesses(String name, String type) {
+		return find_process("ps aux", name, type);
 	}
 
 	@Override
 	public Process getProcess(long pid) {
-		// TODO Auto-generated method stub
-		return null;
+		String cmd = String.format("ps ux -p %s", pid);
+		List<Process> ps = find_process(cmd, null, null);
+		if (ps == null || ps.size() == 0) {
+			return null;
+		} else {
+			return ps.get(0);
+		}
 	}
-
+	
 	@Override
 	public String getInfo(long pid) {
 		String cmd = String.format("jinfo %s", pid);
@@ -97,5 +103,84 @@ public class ProcessServiceImpl implements ProcessService {
 		stack.setStatus(status);
 		stack.setTid(tid);
 		return stack;
+	}
+
+	private List<Process> find_process(String cmd, String name, String type) {
+		Map<String, String> jps = jps();
+		String out = commandService.execute(cmd);
+		out = StringUtils.remove(out, '\r');
+		String[] lines = StringUtils.split(out, '\n');
+		List<Process> list = new ArrayList<Process>();
+		for (String line : lines) {
+			if (!StringUtils.startsWithIgnoreCase(line, "USER")) {
+				Process process = compose_process(line, jps);
+				if ((StringUtils.isBlank(name) 
+						|| StringUtils.contains(process.getNativeCommand(), name) 
+						|| StringUtils.contains(process.getJavaCommand(), name)) 
+						&& (StringUtils.isBlank(type) 
+								|| StringUtils.equals("all", type) 
+								|| StringUtils.equals(type, process.getType()))) {
+					list.add(process);
+				}
+			}
+		}
+		return list;
+	}
+
+	private Process compose_process(String line, Map<String, String> jps) {
+		String[] array = StringUtils.split(line, ' ');
+		String user = safe_get(array, 0);
+		String pid = safe_get(array, 1);
+		String cpu = safe_get(array, 2);
+		String mem = safe_get(array, 3);
+		String vsz = safe_get(array, 4);
+		String rss = safe_get(array, 5);
+		String tt = safe_get(array, 6);
+		String stat = safe_get(array, 7);
+		String started = safe_get(array, 8);
+		String time = safe_get(array, 9);
+		String cmd = StringUtils.EMPTY;
+		for (int i = 10; i < array.length; i ++) {
+			cmd += safe_get(array, i) + " ";
+		}
+		
+		Process process = new Process();
+		process.setCpuPercent(StringUtils.isEmpty(cpu) ? 0 : Double.valueOf(cpu));
+		process.setJavaCommand(jps.get(pid));
+		process.setMemoryPercent(StringUtils.isEmpty(mem) ? 0 : Double.valueOf(mem));
+		process.setNativeCommand(cmd);
+		process.setPid(StringUtils.isEmpty(pid) ? 0 : Long.valueOf(pid));
+		process.setRss(StringUtils.isEmpty(rss) ? 0 : Long.valueOf(rss));
+		process.setStarted(started);
+		process.setStat(stat);
+		process.setTime(time);
+		process.setTt(tt);
+		process.setType(jps.containsKey(pid) ? "java" : "native");
+		process.setUser(user);
+		process.setVsz(StringUtils.isEmpty(vsz) ? 0 : Long.valueOf(vsz));
+		return process;
+	}
+	
+	private String safe_get(String[] array, int index) {
+		if (array == null || index < 0 || array.length <= index) {
+			return null;
+		} else {
+			return array[index];
+		}
+	}
+
+	private Map<String, String> jps() {
+		String cmd = "jps -lvm";
+		String out = commandService.execute(cmd);
+		out = StringUtils.remove(out, '\r');
+		String[] lines = StringUtils.split(out, '\n');
+		Map<String, String> map = new HashMap<String, String>();
+		for (String line : lines) {
+			String[] arr = StringUtils.split(line, ' ');
+			String pid = arr == null || arr.length == 0 ? StringUtils.EMPTY : arr[0];
+			String cl = StringUtils.substring(line, StringUtils.length(pid) + 1);
+			map.put(pid, cl);
+		}
+		return map;
 	}
 }

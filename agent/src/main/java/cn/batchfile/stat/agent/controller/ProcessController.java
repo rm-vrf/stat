@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import cn.batchfile.stat.agent.domain.Process;
 import cn.batchfile.stat.agent.domain.Stack;
 import cn.batchfile.stat.agent.service.ProcessService;
 
@@ -19,6 +20,19 @@ public class ProcessController {
 
 	@Resource(name="processService")
 	private ProcessService processService;
+	
+	@RequestMapping(value="/process", method=RequestMethod.GET)
+	@ResponseBody
+	public List<Process> findProcesses(@RequestParam(value="name", required=false) String name, 
+			@RequestParam(value="type", defaultValue="all") String type) {
+		return processService.findProcesses(name, type);
+	}
+	
+	@RequestMapping(value="/process/{pid}", method=RequestMethod.GET)
+	@ResponseBody
+	public Process getProcess(@PathVariable("pid") long pid) {
+		return processService.getProcess(pid);
+	}
 	
 	@RequestMapping(value="/process/{pid}/info", method=RequestMethod.GET)
 	@ResponseBody
