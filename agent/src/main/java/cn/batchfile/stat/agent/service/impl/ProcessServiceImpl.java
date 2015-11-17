@@ -179,7 +179,7 @@ public class ProcessServiceImpl implements ProcessService {
 	}
 
 	private Map<String, String> jps() {
-		String cmd = "jps -lvm";
+		String cmd = "jps -lm";
 		String out = commandService.execute(cmd);
 		out = StringUtils.remove(out, '\r');
 		String[] lines = StringUtils.split(out, '\n');
