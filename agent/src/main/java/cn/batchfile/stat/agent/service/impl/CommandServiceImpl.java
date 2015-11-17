@@ -1,6 +1,7 @@
 package cn.batchfile.stat.agent.service.impl;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -122,7 +123,39 @@ public class CommandServiceImpl implements CommandService {
 		} else if (outs.containsKey(id)) {
 			return "running";
 		} else {
-			return "known";
+			return "unknown";
+		}
+	}
+	
+	class CommandLocale {
+		private String id;
+		private Thread thread;
+		private String status = "running";
+		private List<String> lines = new ArrayList<String>();
+		private long beginTime;
+		private long lastReadTime;
+		private long lastWriteTime;
+		
+		public CommandLocale(String id) {
+			this.id = id;
+			beginTime = new Date().getTime();
+			lastWriteTime = beginTime;
+			lastReadTime = beginTime;
+			status = "running";
+		}
+		
+		public void writeLine(String line) {
+			lines.add(line);
+			lastWriteTime = new Date().getTime();
+		}
+		
+		public List<String> readLines() {
+			//TODO
+			return null;
+		}
+		
+		public void terminate() {
+			
 		}
 	}
 }

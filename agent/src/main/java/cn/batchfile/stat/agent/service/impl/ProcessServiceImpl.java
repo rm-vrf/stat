@@ -52,7 +52,10 @@ public class ProcessServiceImpl implements ProcessService {
 		List<Stack> stacks = new ArrayList<Stack>();
 		for (String line : lines) {
 			if (StringUtils.startsWith(line, "\"")) {
-				stacks.add(parse_stack(line));
+				Stack s = parse_stack(line);
+				if (s != null) {
+					stacks.add(s);
+				}
 			}
 		}
 		return stacks;
@@ -66,6 +69,12 @@ public class ProcessServiceImpl implements ProcessService {
 	}
 
 	private Stack parse_stack(String line) {
+		if (!StringUtils.contains(line, "os_prio") 
+				|| !StringUtils.contains(line, "tid") 
+				|| !StringUtils.contains(line, "nid")) {
+			return null;
+		}
+		
 		//parse name
 		String name = StringUtils.substringBetween(line, "\"", "\"");
 		
