@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -19,10 +20,24 @@ import cn.batchfile.stat.agent.service.CommandService;
 
 public class CommandServiceImpl implements CommandService {
 	private static final Logger LOG = Logger.getLogger(CommandServiceImpl.class);
-	private Map<String, List<String>> outs = new ConcurrentHashMap<String, List<String>>();
-	private Map<String, String> dones = new ConcurrentHashMap<String, String>();
-	private Map<String, Thread> threads = new ConcurrentHashMap<String, Thread>();
+	private Map<String, CommandLocal> locals = new ConcurrentHashMap<String, CommandLocal>();
 	
+	public void init() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					long now = new Date().getTime();
+					for (CommandLocal cl : locals.values()) {
+						cl.timeout(now);
+					}
+					Thread.sleep(1000);
+				} catch (Exception e) {}
+				
+			}
+		}).start();
+	}
+
 	@Override
 	public String execute(String cmd) {
 		LOG.info(String.format("execute command: %s", cmd));
@@ -53,38 +68,36 @@ public class CommandServiceImpl implements CommandService {
 	public String start(final String cmd) {
 		LOG.info(String.format("start command: %s", cmd));
 		final String id = UUID.randomUUID().toString().replaceAll("-", "").toLowerCase();
-		final List<String> out = new ArrayList<String>();
-		outs.put(id, out);
-		final Commandline cl = new Commandline(cmd);
+		final CommandLocal cl = new CommandLocal();
+		locals.put(id, cl);
 		
 		Thread t = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					int result = CommandLineUtils.executeCommandLine(cl, new StreamConsumer() {
+					int result = CommandLineUtils.executeCommandLine(new Commandline(cmd), new StreamConsumer() {
 						@Override
 						public void consumeLine(String line) {
 							LOG.debug(String.format("std out: %s", line));
-							out.add(line);
+							cl.write(line);
 						}
 					}, new StreamConsumer() {
 						@Override
 						public void consumeLine(String line) {
 							LOG.debug(String.format("err out: %s", line));
-							out.add(line);
+							cl.write(line);
 						}
 					});
 					LOG.info(String.format("result: %s", result));
 				} catch (CommandLineException e) {
 					LOG.error(String.format("error when execute command: %s", cmd));
 				} finally {
-					if (!dones.containsKey(id)) {
-						dones.put(id, "done");
-					}
+					cl.finish();
 				}
 			}
 		});
-		threads.put(id, t);
+		
+		cl.thread(t);
 		t.start();
 		
 		return id;
@@ -92,70 +105,134 @@ public class CommandServiceImpl implements CommandService {
 
 	@Override
 	public String consume(String id) {
-		List<String> out = outs.get(id);
-		if (out == null || (out.size() == 0 && dones.containsKey(id))) {
+		CommandLocal cl = locals.get(id); 
+		if (cl == null) {
 			return null;
 		}
 		
-		List<String> tmp = new ArrayList<String>();
-		tmp.addAll(out);
-		
-		for (int i = 0; i < tmp.size(); i ++) {
-			out.remove(0);
+		List<String> lines = cl.read();
+		if (cl.status() != CommandStatus.running 
+				&& lines.size() == 0) {
+			return null;
 		}
-		return StringUtils.join(tmp, IOUtils.LINE_SEPARATOR);
+		
+		return StringUtils.join(lines, IOUtils.LINE_SEPARATOR);
 	}
 
 	@Override
 	public void terminate(String id) {
-		Thread t = threads.get(id);
-		if (t != null) {
-			try {t.interrupt();} catch (Exception e) {}
-			//try {t.join();} catch (Exception e) {}
+		CommandLocal cl = locals.get(id); 
+		if (cl != null) {
+			cl.terminate();
 		}
-		dones.put(id, "terminated");
 	}
 	
 	@Override
-	public String getState(String id) {
-		if (dones.containsKey(id)) {
-			return dones.get(id);
-		} else if (outs.containsKey(id)) {
-			return "running";
-		} else {
+	public String getStatus(String id) {
+		CommandLocal cl = locals.get(id); 
+		if (cl == null) {
 			return "unknown";
+		} else {
+			return cl.status().name();
 		}
 	}
 	
-	class CommandLocale {
-		private String id;
+	enum CommandStatus {
+		running,
+		error,
+		finish,
+		timeout,
+		terminate
+	}
+	
+	class CommandLocal {
+		private static final int TIMEOUT = 3600000;
+		private static final int BUFFER_LINES = 512;
+		
 		private Thread thread;
-		private String status = "running";
-		private List<String> lines = new ArrayList<String>();
-		private long beginTime;
-		private long lastReadTime;
-		private long lastWriteTime;
+		private CommandStatus status;
+		private ConcurrentLinkedQueue<String> buffer;
+		private long last_read_time;
+		private long last_write_time;
 		
-		public CommandLocale(String id) {
-			this.id = id;
-			beginTime = new Date().getTime();
-			lastWriteTime = beginTime;
-			lastReadTime = beginTime;
-			status = "running";
+		public CommandLocal() {
+			long now = new Date().getTime();
+			last_write_time = now;
+			last_read_time = now;
+			status = CommandStatus.running;
+			buffer = new ConcurrentLinkedQueue<String>();
 		}
 		
-		public void writeLine(String line) {
-			lines.add(line);
-			lastWriteTime = new Date().getTime();
+		public void thread(Thread thread) {
+			this.thread = thread;
 		}
 		
-		public List<String> readLines() {
-			//TODO
-			return null;
+		public void write(String line) {
+			if (buffer.size() > BUFFER_LINES) {
+				buffer.remove();
+			}
+			buffer.add(line);
+			last_write_time = new Date().getTime();
+		}
+		
+		public List<String> read() {
+			List<String> list = new ArrayList<String>();
+			while (buffer.size() > 0) {
+				list.add(buffer.poll());
+			}
+			last_read_time = new Date().getTime();
+			return list;
+		}
+		
+		public void finish() {
+			if (status == CommandStatus.running) {
+				status = CommandStatus.finish;
+			}
+		}
+		
+		public void error() {
+			if (status == CommandStatus.running) {
+				status = CommandStatus.error;
+			}
 		}
 		
 		public void terminate() {
-			
+			if (thread != null) {
+				try {
+					thread.interrupt();
+				} catch (Exception e) {}
+				thread = null;
+			}
+			if (status == CommandStatus.running) {
+				status = CommandStatus.terminate;
+			}
+		}
+		
+		public CommandStatus status() {
+			return status;
+		}
+		
+		public boolean timeout(long now) {
+			if (now - last_read_time > TIMEOUT 
+					&& now - last_write_time > TIMEOUT) {
+				
+				LOG.info(String.format("command timeout: %s", thread.getName()));
+				if (thread != null) {
+					try {
+						thread.interrupt();
+					} catch (Exception e) {}
+					thread = null;
+				}
+				
+				buffer.clear();
+				if (status == CommandStatus.running) {
+					status = CommandStatus.timeout;
+				}
+				
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 }

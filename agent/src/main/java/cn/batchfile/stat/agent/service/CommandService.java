@@ -10,5 +10,5 @@ public interface CommandService {
 	
 	void terminate(String id);
 
-	String getState(String id);
+	String getStatus(String id);
 }

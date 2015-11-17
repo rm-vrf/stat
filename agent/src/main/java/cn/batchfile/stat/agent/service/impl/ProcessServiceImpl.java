@@ -124,8 +124,8 @@ public class ProcessServiceImpl implements ProcessService {
 			if (!StringUtils.startsWithIgnoreCase(line, "USER")) {
 				Process process = compose_process(line, jps);
 				if ((StringUtils.isBlank(name) 
-						|| StringUtils.contains(process.getNativeCommand(), name) 
-						|| StringUtils.contains(process.getJavaCommand(), name)) 
+						|| StringUtils.contains(process.getCommand(), name) 
+						|| StringUtils.contains(process.getMainClass(), name)) 
 						&& (StringUtils.isBlank(type) 
 								|| StringUtils.equals("all", type) 
 								|| StringUtils.equals(type, process.getType()))) {
@@ -155,9 +155,9 @@ public class ProcessServiceImpl implements ProcessService {
 		
 		Process process = new Process();
 		process.setCpuPercent(StringUtils.isEmpty(cpu) ? 0 : Double.valueOf(cpu));
-		process.setJavaCommand(jps.get(pid));
+		process.setMainClass(jps.get(pid));
 		process.setMemoryPercent(StringUtils.isEmpty(mem) ? 0 : Double.valueOf(mem));
-		process.setNativeCommand(cmd);
+		process.setCommand(cmd);
 		process.setPid(StringUtils.isEmpty(pid) ? 0 : Long.valueOf(pid));
 		process.setRss(StringUtils.isEmpty(rss) ? 0 : Long.valueOf(rss));
 		process.setStarted(started);

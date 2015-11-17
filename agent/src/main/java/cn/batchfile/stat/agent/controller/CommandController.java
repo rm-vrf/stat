@@ -41,9 +41,9 @@ public class CommandController {
 		commandService.terminate(id);
 	}
 	
-	@RequestMapping(value="/command/{id}/state", method=RequestMethod.GET)
+	@RequestMapping(value="/command/{id}/status", method=RequestMethod.GET)
 	@ResponseBody
-	public String state(@PathVariable("id") String id) {
-		return commandService.getState(id);
+	public String getStatus(@PathVariable("id") String id) {
+		return commandService.getStatus(id);
 	}
 }

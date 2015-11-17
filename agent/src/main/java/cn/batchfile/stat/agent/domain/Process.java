@@ -16,10 +16,9 @@ public class Process {
 	private String stat;
 	private String started;
 	private String time;
-	@JSONField(name="native_command")
-	private String nativeCommand;
-	@JSONField(name="java_command")
-	private String javaCommand;
+	private String command;
+	@JSONField(name="main_class")
+	private String mainClass;
 	
 	public String getUser() {
 		return user;
@@ -108,20 +107,20 @@ public class Process {
 	public void setTime(String time) {
 		this.time = time;
 	}
-	
-	public String getNativeCommand() {
-		return nativeCommand;
+
+	public String getCommand() {
+		return command;
 	}
-	
-	public void setNativeCommand(String nativeCommand) {
-		this.nativeCommand = nativeCommand;
+
+	public void setCommand(String command) {
+		this.command = command;
 	}
-	
-	public String getJavaCommand() {
-		return javaCommand;
+
+	public String getMainClass() {
+		return mainClass;
 	}
-	
-	public void setJavaCommand(String javaCommand) {
-		this.javaCommand = javaCommand;
+
+	public void setMainClass(String mainClass) {
+		this.mainClass = mainClass;
 	}
 }
