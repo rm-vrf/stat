@@ -4,13 +4,13 @@ import java.util.Date;
 
 import com.alibaba.fastjson.annotation.JSONField;
 
-public class NodeData {
+import cn.batchfile.stat.agent.domain.Memory;
+
+public class MemoryData extends Memory {
 	@JSONField(name="agent_id")
 	private String agentId;
 	private Date time;
-	private double load;
-	private int available;
-	
+
 	public String getAgentId() {
 		return agentId;
 	}
@@ -25,21 +25,5 @@ public class NodeData {
 	
 	public void setTime(Date time) {
 		this.time = time;
-	}
-	
-	public double getLoad() {
-		return load;
-	}
-	
-	public void setLoad(double load) {
-		this.load = load;
-	}
-	
-	public int getAvailable() {
-		return available;
-	}
-	
-	public void setAvailable(int available) {
-		this.available = available;
 	}
 }
