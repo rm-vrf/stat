@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import cn.batchfile.stat.server.dao.NodeDao;
 import cn.batchfile.stat.server.domain.Node;
+import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.service.NodeService;
 
 @Service
@@ -25,4 +26,13 @@ public class NodeServiceImpl implements NodeService {
 		return nodeDao.getNode(agentId);
 	}
 
+	@Override
+	public void updateNode(Node node) {
+		nodeDao.updateNode(node);
+	}
+	
+	@Override
+	public void insertNodeData(NodeData nodeData) {
+		nodeDao.insertNodeData(nodeData);
+	}
 }

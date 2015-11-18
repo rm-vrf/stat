@@ -27,4 +27,21 @@
 		SELECT * FROM `node` WHERE `agent_id`=#{value}
 	</select>
 	
+	<update id="updateNode" parameterType="Node">
+		UPDATE `node` SET 
+			`architecture`=#{architecture}, 
+			`cpu`=#{cpu},
+			`hostname`=#{hostname},
+			`os_name`=#{osName},
+			`os_version`=#{osVersion} 
+		WHERE `agent_id`=#{agentId}
+	</update>
+	
+	<insert id="insertNodeData" parameterType="NodeData">
+		REPLACE INTO `node_data` 
+		(`agent_id`,`time`,`load`,`available`) 
+		VALUES 
+		(#{agentId},#{time},#{load},#{available})
+	</insert>
+	
 </mapper>
