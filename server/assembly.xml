@@ -29,32 +29,11 @@
 			</includes>
 		</fileSet>
 		<fileSet>
-			<outputDirectory>script</outputDirectory>
-			<directory>script</directory>
-			<includes>
-				<include>**/*</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<outputDirectory>doc</outputDirectory>
-			<directory>src/main/resources/conf</directory>
-			<includes>
-				<include>skynet-plugin-zk.txt</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<outputDirectory>sigar</outputDirectory>
-			<directory>sigar</directory>
-			<includes>
-				<include>**/*</include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<outputDirectory>conf</outputDirectory>
-			<directory>conf</directory>
-			<includes>
-				<include>**/*</include>
-			</includes>
+			<outputDirectory>/webapp</outputDirectory>
+			<directory>src/main/webapp</directory>
+			<excludes>
+				<exclude>.DS_Store</exclude>
+			</excludes>
 		</fileSet>
 	</fileSets>
 </assembly>

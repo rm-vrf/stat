@@ -1,8 +1,9 @@
 #!/bin/sh
 
 # env
+PORT=9090
+ADDRESS=
 JAVA_OPTS=
-MAIN_CLASS=com.iflytek.ispp.worker.install.Installer
 
 # resolve links - $0 may be a softlink
 PRG="$0"
@@ -23,16 +24,16 @@ if [ -r "$PRGDIR/setenv.sh" ]; then
 fi
 
 LIB_DIR=$PRGDIR/lib
-JAR_FILE=$PRGDIR/ispp-worker.jar
+JAR_FILE=$PRGDIR/stat-server.jar
+FILE_ENCODING=UTF-8
+WEB_ROOT=webapp
 
-CP=$JAR_FILE
-
-for i in `ls $LIB_DIR`
-do
-  CP=$CP:$LIB_DIR/$i
-done
-
-java $JAVA_OPTS -classpath $CP $JAVA_OPTS -Djava.ext.dirs=$LIB_DIR \
--Xbootclasspath/a:$SCRIPT_ROOT \
--Dfile.encoding=UTF-8 \
-$MAIN_CLASS
+java $JAVA_OPTS \
+-Djava.ext.dirs=$LIB_DIR \
+-Dfile.encoding=$FILE_ENCODING \
+-jar $JAR_FILE \
+$1 \
+--port=$PORT \
+--address=$ADDRESS \
+--webapp=$WEB_ROOT \
+--dir=$PRGDIR
