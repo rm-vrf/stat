@@ -6,6 +6,9 @@ import java.io.IOException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.plexus.util.cli.CommandLineException;
+import org.eclipse.jetty.security.HashLoginService;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.webapp.WebAppContext;
 
 import cn.batchfile.stat.util.ArgumentUtils;
 import cn.batchfile.stat.util.PathUtils;
@@ -45,7 +48,7 @@ public class Main {
 		// run start|stop|restart
 		String command = args.length > 0 ? args[0] : null;
 		if (StringUtils.equals(command, "start")) {
-			start();
+			start(Main.port, webapp);
 		} else if (StringUtils.equals(command, "stop")) {
 			stop();
 		} else if (StringUtils.equals(command, "install")) {
@@ -55,8 +58,23 @@ public class Main {
 		}
 	}
 	
-	private static void start() throws Exception {
+	private static void start(int port, String webapp) throws Exception {
 		LOG.info(String.format("---- start server, pid: %s ----", ""));
+		Server server = new Server(port);
+		cn.batchfile.stat.agent.Main.setThreadCount(server);
+		
+		WebAppContext webAppContext = new WebAppContext();
+		webAppContext.setMaxFormContentSize(Integer.MAX_VALUE);
+		webAppContext.setContextPath("/");
+		webAppContext.setWar(webapp);
+		webAppContext.setServer(server);
+		
+		HashLoginService loginService = new HashLoginService("STAT-SECURITY-REALM");
+		webAppContext.getSecurityHandler().setLoginService(loginService);
+		
+		server.setHandler(webAppContext);
+		server.start();
+		LOG.info("http server started, port: " + port);
 	}
 	
 	private static void stop() throws IOException, CommandLineException, InterruptedException {

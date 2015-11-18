@@ -17,7 +17,7 @@ public abstract class JsonUtil {
 		};
 		
 		static {
-			JSON.DEFFAULT_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+			JSON.DEFFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 		};
 		
 		public static String encode(Object object) {

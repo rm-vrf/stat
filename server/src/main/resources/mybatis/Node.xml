@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
+<mapper namespace="cn.batchfile.stat.server.dao.NodeDao" >
+
+	<resultMap id="nodeResult" type="Node">
+		<id property="agentId" column="agent_id"/>
+		<result property="schema" column="schema"/>
+		<result property="address" column="address"/>
+		<result property="port" column="port"/>
+		<result property="hostname" column="hostname"/>
+		<result property="description" column="description"/>
+		<result property="osName" column="os_name"/>
+		<result property="osVersion" column="os_version"/>
+		<result property="cpu" column="cpu"/>
+		<result property="architecture" column="architecture"/>
+		<result property="idRsa" column="id_rsa"/>
+		<result property="idRsaPub" column="id_rsa_pub"/>
+		<result property="createTime" column="create_time"/>
+	</resultMap>
+	
+	<select id="getNodes" resultMap="nodeResult">
+		SELECT *
+		FROM `node`
+	</select>
+	
+	<select id="getNode" parameterType="string" resultMap="nodeResult">
+		SELECT * FROM `node` WHERE `agent_id`=#{value}
+	</select>
+	
+</mapper>

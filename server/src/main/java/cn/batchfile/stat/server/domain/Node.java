@@ -18,9 +18,9 @@ public class Node {
 	private String osVersion;
 	private int cpu;
 	private String architecture;
-	@JSONField(name="id_rsa")
+	@JSONField(serialize=false, deserialize=false)
 	private String idRsa;
-	@JSONField(name="id_rsa_pub")
+	@JSONField(serialize=false, deserialize=false)
 	private String idRsaPub;
 	@JSONField(name="create_time")
 	private Date createTime;

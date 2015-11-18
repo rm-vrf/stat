@@ -105,7 +105,7 @@ public class Main {
 		LOG.info("Jetty was started on port: " + port);
 	}
 	
-	private static void setThreadCount(Server server) {
+	public static void setThreadCount(Server server) {
 		ThreadPool pool = server.getThreadPool();
 		if (pool instanceof QueuedThreadPool) {
 			QueuedThreadPool qtp = (QueuedThreadPool)pool;
