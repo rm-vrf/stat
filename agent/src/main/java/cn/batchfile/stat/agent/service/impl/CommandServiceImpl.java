@@ -33,7 +33,13 @@ public class CommandServiceImpl implements CommandService {
 					try {
 						long now = new Date().getTime();
 						for (CommandLocal cl : locals.values()) {
-							if (cl.timeout(now) && now - cl.stop_time > TIMEOUT) {
+							//stop timeout job
+							if (cl.timeout(now)) {
+								LOG.info(String.format("command timeout, id: %s", cl.id));
+							}
+							
+							//remove stop job after 1 hour
+							if (cl.status != CommandStatus.running && now - cl.stop_time > TIMEOUT) {
 								removes.add(cl.id);
 							}
 						}
