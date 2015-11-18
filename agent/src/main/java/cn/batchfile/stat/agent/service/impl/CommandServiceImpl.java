@@ -16,24 +16,35 @@ import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
+import cn.batchfile.stat.agent.domain.Command;
 import cn.batchfile.stat.agent.service.CommandService;
 
 public class CommandServiceImpl implements CommandService {
 	private static final Logger LOG = Logger.getLogger(CommandServiceImpl.class);
+	private static final int TIMEOUT = 3600000;
 	private Map<String, CommandLocal> locals = new ConcurrentHashMap<String, CommandLocal>();
 	
 	public void init() {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				try {
-					long now = new Date().getTime();
-					for (CommandLocal cl : locals.values()) {
-						cl.timeout(now);
-					}
-					Thread.sleep(1000);
-				} catch (Exception e) {}
-				
+				while (true) {
+					List<String> removes = new ArrayList<String>();
+					try {
+						long now = new Date().getTime();
+						for (CommandLocal cl : locals.values()) {
+							if (cl.timeout(now) && now - cl.stop_time > TIMEOUT) {
+								removes.add(cl.id);
+							}
+						}
+						
+						for (String id : removes) {
+							locals.remove(id);
+						}
+						
+						Thread.sleep(1000);
+					} catch (Exception e) {}
+				}
 			}
 		}).start();
 	}
@@ -65,10 +76,10 @@ public class CommandServiceImpl implements CommandService {
 	}
 
 	@Override
-	public String start(final String cmd) {
+	public String start(final String cmd, boolean background) {
 		LOG.info(String.format("start command: %s", cmd));
 		final String id = UUID.randomUUID().toString().replaceAll("-", "").toLowerCase();
-		final CommandLocal cl = new CommandLocal();
+		final CommandLocal cl = new CommandLocal(id, cmd, background);
 		locals.put(id, cl);
 		
 		Thread t = new Thread(new Runnable() {
@@ -97,7 +108,7 @@ public class CommandServiceImpl implements CommandService {
 			}
 		});
 		
-		cl.thread(t);
+		cl.thread = t;
 		t.start();
 		
 		return id;
@@ -111,7 +122,7 @@ public class CommandServiceImpl implements CommandService {
 		}
 		
 		List<String> lines = cl.read();
-		if (cl.status() != CommandStatus.running 
+		if (cl.status != CommandStatus.running 
 				&& lines.size() == 0) {
 			return null;
 		}
@@ -133,10 +144,41 @@ public class CommandServiceImpl implements CommandService {
 		if (cl == null) {
 			return "unknown";
 		} else {
-			return cl.status().name();
+			return cl.status.name();
 		}
 	}
 	
+	@Override
+	public List<Command> getCommands() {
+		List<Command> list = new ArrayList<Command>();
+		for (CommandLocal cl : locals.values()) {
+			list.add(compose_command(cl));
+		}
+		return list;
+	}
+	
+	@Override
+	public Command getCommand(String id) {
+		CommandLocal cl = locals.get(id);
+		if (cl == null) {
+			return null;
+		} else {
+			return compose_command(cl);
+		}
+	}
+	
+	private Command compose_command(CommandLocal cl) {
+		Command c = new Command();
+		c.setBackground(cl.background);
+		c.setCommand(cl.command);
+		c.setId(cl.id);
+		c.setReadTime(cl.read_time > 0 ? new Date(cl.read_time) : null);
+		c.setStartTime(cl.start_time > 0 ? new Date(cl.start_time) : null);
+		c.setStatus(cl.status.name());
+		c.setStopTime(cl.stop_time > 0 ? new Date(cl.stop_time) : null);
+		return c;
+	}
+
 	enum CommandStatus {
 		running,
 		error,
@@ -146,25 +188,28 @@ public class CommandServiceImpl implements CommandService {
 	}
 	
 	class CommandLocal {
-		private static final int TIMEOUT = 3600000;
 		private static final int BUFFER_LINES = 512;
-		
+
+		private String id;
+		private String command;
 		private Thread thread;
+		private long start_time;
+		private long stop_time;
+		private boolean background;
 		private CommandStatus status;
 		private ConcurrentLinkedQueue<String> buffer;
-		private long last_read_time;
-		private long last_write_time;
+		private long read_time;
 		
-		public CommandLocal() {
+		public CommandLocal(String id, String command, boolean background) {
+			this.id = id;
+			this.command = command;
+			this.background = background;
 			long now = new Date().getTime();
-			last_write_time = now;
-			last_read_time = now;
+			start_time = now;
+			stop_time = 0;
+			read_time = now;
 			status = CommandStatus.running;
 			buffer = new ConcurrentLinkedQueue<String>();
-		}
-		
-		public void thread(Thread thread) {
-			this.thread = thread;
 		}
 		
 		public void write(String line) {
@@ -172,7 +217,7 @@ public class CommandServiceImpl implements CommandService {
 				buffer.remove();
 			}
 			buffer.add(line);
-			last_write_time = new Date().getTime();
+			//last_write_time = new Date().getTime();
 		}
 		
 		public List<String> read() {
@@ -180,7 +225,7 @@ public class CommandServiceImpl implements CommandService {
 			while (buffer.size() > 0) {
 				list.add(buffer.poll());
 			}
-			last_read_time = new Date().getTime();
+			read_time = new Date().getTime();
 			return list;
 		}
 		
@@ -188,12 +233,14 @@ public class CommandServiceImpl implements CommandService {
 			if (status == CommandStatus.running) {
 				status = CommandStatus.finish;
 			}
+			stop_time = new Date().getTime();
 		}
 		
 		public void error() {
 			if (status == CommandStatus.running) {
 				status = CommandStatus.error;
 			}
+			stop_time = new Date().getTime();
 		}
 		
 		public void terminate() {
@@ -206,18 +253,15 @@ public class CommandServiceImpl implements CommandService {
 			if (status == CommandStatus.running) {
 				status = CommandStatus.terminate;
 			}
-		}
-		
-		public CommandStatus status() {
-			return status;
+			stop_time = new Date().getTime();
 		}
 		
 		public boolean timeout(long now) {
-			if (now - last_read_time > TIMEOUT 
-					&& now - last_write_time > TIMEOUT) {
-				
-				LOG.info(String.format("command timeout: %s", thread.getName()));
+			if (background || now - read_time < TIMEOUT) {
+				return false;
+			} else {
 				if (thread != null) {
+					LOG.info(String.format("command timeout: %s", thread.getName()));
 					try {
 						thread.interrupt();
 					} catch (Exception e) {}
@@ -225,13 +269,12 @@ public class CommandServiceImpl implements CommandService {
 				}
 				
 				buffer.clear();
+				
 				if (status == CommandStatus.running) {
 					status = CommandStatus.timeout;
+					stop_time = new Date().getTime();
 				}
-				
 				return true;
-			} else {
-				return false;
 			}
 		}
 	}

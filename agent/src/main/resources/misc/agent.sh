@@ -35,4 +35,5 @@ java $JAVA_OPTS \
 -jar $JAR_FILE \
 $1 \
 --port=$PORT \
---address=$ADDRESS
+--address=$ADDRESS \
+--dir=$PRGDIR

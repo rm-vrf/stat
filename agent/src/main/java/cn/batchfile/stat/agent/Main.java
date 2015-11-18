@@ -88,14 +88,14 @@ public class Main {
 		
 		// init spring
 		handler.setMaxFormContentSize(Integer.MAX_VALUE);
-		handler.setInitParameter("contextConfigLocation", "classpath*:spring/*.xml");
+		handler.setInitParameter("contextConfigLocation", "classpath*:spring/agent/*.xml");
 		ContextLoaderListener listener = new ContextLoaderListener();
 		handler.addEventListener(listener);
 		
 		// spring mvc
 		ServletHolder sh = new ServletHolder("appServlet", DispatcherServlet.class);
 		sh.setAsyncSupported(true);
-		sh.setInitParameter("contextConfigLocation", "classpath:spring/appServlet/servlet-context.xml");
+		sh.setInitParameter("contextConfigLocation", "classpath:spring/agent/appServlet/servlet-context.xml");
 		handler.addServlet(sh, "/");
 		
 		server.setStopTimeout(1000 * 20);

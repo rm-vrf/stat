@@ -1,5 +1,7 @@
 package cn.batchfile.stat.agent.controller;
 
+import java.util.List;
+
 import javax.annotation.Resource;
 
 import org.springframework.stereotype.Controller;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import cn.batchfile.stat.agent.domain.Command;
 import cn.batchfile.stat.agent.service.CommandService;
 
 @Controller
@@ -25,8 +28,9 @@ public class CommandController {
 	
 	@RequestMapping(value="/command/_start", method=RequestMethod.POST)
 	@ResponseBody
-	public String start(@RequestParam("cmd") String cmd) {
-		return commandService.start(cmd);
+	public String start(@RequestParam("cmd") String cmd,
+			@RequestParam(value="background", defaultValue="false") boolean background) {
+		return commandService.start(cmd, background);
 	}
 	
 	@RequestMapping(value="/command/{id}/_consume", method=RequestMethod.GET)
@@ -40,6 +44,18 @@ public class CommandController {
 	public void terminate(@PathVariable("id") String id) {
 		commandService.terminate(id);
 	}
+	
+	@RequestMapping(value="/command", method=RequestMethod.GET)
+	@ResponseBody
+	public List<Command> getCommands() {
+		return commandService.getCommands();
+	}
+	
+	@RequestMapping(value="/command/{id}", method=RequestMethod.GET)
+	@ResponseBody
+	public Command getCommand(@PathVariable("id") String id) {
+		return commandService.getCommand(id);
+	} 
 	
 	@RequestMapping(value="/command/{id}/status", method=RequestMethod.GET)
 	@ResponseBody
