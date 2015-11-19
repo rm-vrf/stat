@@ -62,9 +62,4 @@ public class Stack {
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public void insertStackData() {
-		// TODO Auto-generated method stub
-		
-	}
 }

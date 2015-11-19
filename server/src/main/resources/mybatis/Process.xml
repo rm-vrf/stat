@@ -43,6 +43,11 @@
 		SELECT * FROM `process_instance` WHERE `agent_id`=#{value} AND `status`='running'
 	</select>
 	
+	<select id="getRunningProcessInstanceByAgentIdAndPid" parameterType="map" resultMap="processInstanceResult">
+		SELECT * FROM `process_instance` 
+		WHERE `agent_id`=#{param1} AND `pid`=#{param2} AND `status`='running'
+	</select>
+	
 	<update id="updateRunningInstance" parameterType="Process">
 		UPDATE `process` SET `running_instance`=#{runningInstance}
 		WHERE `agent_id`=#{agentId}

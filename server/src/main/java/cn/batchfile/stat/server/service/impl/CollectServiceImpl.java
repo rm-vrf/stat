@@ -92,7 +92,10 @@ public class CollectServiceImpl implements CollectService {
 			try {
 				String uri = String.format("/command/%s/_consume", gc.getCommandId());
 				Node node = nodeService.getNode(gc.getAgentId());
-				String out = get(node, uri, String.class);
+				String out = get(node, uri);
+				if (StringUtils.startsWith(out, "\"")) {
+					out = JsonUtil.decode(out, String.class);
+				}
 				if (StringUtils.isEmpty(out) 
 						&& new Date().getTime() - gc.getBeginTime().getTime() > 10000) {
 					gc.setStatus("stop");
@@ -126,8 +129,8 @@ public class CollectServiceImpl implements CollectService {
 					sd.setPid(stack.getPid());
 					sd.setAgentId(stack.getAgentId());
 					sd.setCount(count);
-					sd.setStacks(list);
-					stack.insertStackData();
+					sd.setStacks(JsonUtil.encode(list));
+					stackService.insertStackData(sd);
 				}
 			} catch (Exception e) {
 				//pass

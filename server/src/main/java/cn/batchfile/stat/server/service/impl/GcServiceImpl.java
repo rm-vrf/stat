@@ -49,8 +49,10 @@ public class GcServiceImpl implements GcService {
 		hc.setReadTimeout(20000);
 		hc.setContentType("application/json");
 		hc.setCharset("utf-8");
-		String json = hc.post(uri, null);
-		String command_id = JsonUtil.decode(json, String.class);
+		String command_id = hc.post(uri, null);
+		if (StringUtils.startsWith(command_id, "\"")) {
+			command_id = JsonUtil.decode(command_id, String.class);
+		}
 		
 		//save gc job
 		Gc gc = new Gc();
@@ -59,9 +61,11 @@ public class GcServiceImpl implements GcService {
 		gc.setCommandId(command_id);
 		gc.setName(name);
 		gc.setPid(pid);
-		gc.setStatus("runnint");
+		gc.setStatus("running");
 		
 		gcDao.insertGc(gc);
+		
+		return command_id;
 	}
 
 	@Override

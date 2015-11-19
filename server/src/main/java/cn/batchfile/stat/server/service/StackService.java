@@ -3,6 +3,7 @@ package cn.batchfile.stat.server.service;
 import java.util.List;
 
 import cn.batchfile.stat.server.domain.Stack;
+import cn.batchfile.stat.server.domain.StackData;
 
 public interface StackService {
 
@@ -11,5 +12,7 @@ public interface StackService {
 	List<Stack> getRunningStacks();
 
 	void updateStackStatus(Stack stack);
+
+	void insertStackData(StackData sd);
 
 }

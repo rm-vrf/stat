@@ -19,4 +19,6 @@ public interface ProcessDao {
 	void insertProcessInstance(ProcessInstance processInstance);
 
 	void insertProcessData(ProcessData processData);
+	
+	ProcessInstance getRunningProcessInstanceByAgentIdAndPid(String agentId, long pid);
 }

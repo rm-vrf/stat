@@ -1,11 +1,8 @@
 package cn.batchfile.stat.server.domain;
 
 import java.util.Date;
-import java.util.List;
 
 import com.alibaba.fastjson.annotation.JSONField;
-
-import cn.batchfile.stat.agent.domain.Stack;
 
 public class StackData {
 	@JSONField(name="command_id")
@@ -15,7 +12,7 @@ public class StackData {
 	private Date time;
 	private long pid;
 	private int count;
-	private List<Stack> stacks;
+	private String stacks;
 
 	public String getCommandId() {
 		return commandId;
@@ -57,11 +54,11 @@ public class StackData {
 		this.count = count;
 	}
 
-	public List<Stack> getStacks() {
+	public String getStacks() {
 		return stacks;
 	}
 
-	public void setStacks(List<Stack> stacks) {
+	public void setStacks(String stacks) {
 		this.stacks = stacks;
 	}
 }

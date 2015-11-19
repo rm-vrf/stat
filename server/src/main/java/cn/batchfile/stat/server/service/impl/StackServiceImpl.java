@@ -12,6 +12,7 @@ import cn.batchfile.stat.server.dao.ProcessDao;
 import cn.batchfile.stat.server.dao.StackDao;
 import cn.batchfile.stat.server.domain.ProcessInstance;
 import cn.batchfile.stat.server.domain.Stack;
+import cn.batchfile.stat.server.domain.StackData;
 import cn.batchfile.stat.server.service.StackService;
 
 @Service
@@ -39,6 +40,7 @@ public class StackServiceImpl implements StackService {
 		stack.setStatus("running");
 		
 		stackDao.insertStack(stack);
+		return stack.getCommandId();
 	}
 
 	@Override
@@ -49,5 +51,10 @@ public class StackServiceImpl implements StackService {
 	@Override
 	public void updateStackStatus(Stack stack) {
 		stackDao.updateStackStatus(stack);
+	}
+
+	@Override
+	public void insertStackData(StackData stackData) {
+		stackDao.insertStackData(stackData);
 	}
 }
