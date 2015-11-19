@@ -10,18 +10,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.fastjson.TypeReference;
 
 import cn.batchfile.stat.agent.domain.Cpu;
+import cn.batchfile.stat.agent.domain.Memory;
 import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
 import cn.batchfile.stat.agent.domain.State;
 import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.Disk;
 import cn.batchfile.stat.server.domain.DiskData;
+import cn.batchfile.stat.server.domain.MemoryData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.service.CollectService;
 import cn.batchfile.stat.server.service.CpuService;
 import cn.batchfile.stat.server.service.DiskService;
+import cn.batchfile.stat.server.service.MemoryService;
 import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
 import cn.batchfile.stat.util.HttpClient;
@@ -41,6 +44,9 @@ public class CollectServiceImpl implements CollectService {
 	
 	@Autowired
 	private DiskService diskService;
+
+	@Autowired
+	private MemoryService memoryService;
 
 	@Override
 	public void collectCpuData() {
@@ -152,6 +158,27 @@ public class CollectServiceImpl implements CollectService {
 	@Override
 	public void collectMemoryData() {
 		LOG.debug("start collect memory data");
+		List<Node> nodes = nodeService.getNodes();
+		for (Node node : nodes) {
+			try {
+				MemoryData md = new MemoryData();
+				Memory m = get(node, "/memory", Memory.class);
+				md.setAgentId(node.getAgentId());
+				md.setTime(new Date());
+				md.setActualFree(m.getActualFree());
+				md.setActualUsed(m.getActualUsed());
+				md.setFree(m.getFree());
+				md.setFreePercent(m.getFreePercent());
+				md.setRam(m.getRam());
+				md.setTotal(m.getTotal());
+				md.setUsed(m.getUsed());
+				md.setUsedPercent(m.getUsedPercent());
+				
+				memoryService.insertMemoryData(md);
+			} catch (Exception e) {
+				//pass
+			}
+		}
 	}
 
 	@Override
