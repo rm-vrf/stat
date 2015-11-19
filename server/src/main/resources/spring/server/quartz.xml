@@ -10,14 +10,14 @@
 	<bean id="startQuertz" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-<!-- 				<ref bean="collectCpuDataTrigger" /> -->
-<!-- 				<ref bean="collectDiskDataTrigger" /> -->
-<!-- 				<ref bean="collectGcDataTrigger" /> -->
-<!-- 				<ref bean="collectMemoryDataTrigger" /> -->
-<!-- 				<ref bean="collectNetworkDataTrigger" /> -->
-<!-- 				<ref bean="collectNodeDataTrigger" /> -->
+				<ref bean="collectCpuDataTrigger" />
+				<ref bean="collectDiskDataTrigger" />
+				<ref bean="collectGcDataTrigger" />
+				<ref bean="collectMemoryDataTrigger" />
+				<ref bean="collectNetworkDataTrigger" />
+				<ref bean="collectNodeDataTrigger" />
 				<ref bean="collectProcessDataTrigger" />
-<!-- 				<ref bean="collectStackDataTrigger" /> -->
+				<ref bean="collectStackDataTrigger" />
 			</list>
 		</property>
 		<property name="quartzProperties">
@@ -32,7 +32,7 @@
 			<ref bean="collectCpuData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -41,7 +41,7 @@
 			<ref bean="collectDiskData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -59,7 +59,7 @@
 			<ref bean="collectMemoryData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -68,7 +68,7 @@
 			<ref bean="collectNetworkData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -77,7 +77,7 @@
 			<ref bean="collectNodeData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -86,7 +86,7 @@
 			<ref bean="collectProcessData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	
@@ -95,7 +95,7 @@
 			<ref bean="collectStackData" />
 		</property>
 		<property name="cronExpression">
-			<value>0,20,40 * * * * ?</value>
+			<value>0 * * * * ?</value>
 		</property>
 	</bean>
 	

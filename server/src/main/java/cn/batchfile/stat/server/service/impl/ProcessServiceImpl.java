@@ -26,23 +26,10 @@ public class ProcessServiceImpl implements ProcessService {
 	}
 
 	@Override
-	public List<ProcessInstance> syncInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process) {
+	public List<ProcessInstance> getRunningInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process) {
 		List<ProcessInstance> instances = new ArrayList<ProcessInstance>();
 		
-		//search process instance from remote host
-		sync(instances, ps, process);
-		
-		return instances;
-	}
-
-	@Override
-	public void updateRunningInstance(Process process) {
-		processDao.updateRunningInstance(process);
-	}
-	
-	private void sync(List<ProcessInstance> instances, List<cn.batchfile.stat.agent.domain.Process> ps, Process process) {
-		
-		//remove instance data in db
+		//remove instance in db
 		List<ProcessInstance> is = processDao.getRunningProcessInstanceByAgentId(process.getAgentId());
 		for (ProcessInstance i : is) {
 			if (!exists(i.getPid(), ps)) {
@@ -51,7 +38,7 @@ public class ProcessServiceImpl implements ProcessService {
 			}
 		}
 		
-		//add instance data into db
+		//add instance into db
 		for (cn.batchfile.stat.agent.domain.Process p : ps) {
 			if (contains(p.getCommand(), process.getContainsEvery(), process.getContainsAny(), process.getContainsNo())) {
 				
@@ -85,8 +72,15 @@ public class ProcessServiceImpl implements ProcessService {
 				instances.add(instance);
 			}
 		}
+		
+		return instances;
 	}
 
+	@Override
+	public void updateRunningInstance(Process process) {
+		processDao.updateRunningInstance(process);
+	}
+	
 	private boolean contains(String command, String containsEvery, String containsAny, String containsNo) {
 		if (StringUtils.isNotBlank(containsEvery) && !containsEvery(command, containsEvery)) {
 			return false;

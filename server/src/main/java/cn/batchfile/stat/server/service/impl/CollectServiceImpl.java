@@ -18,18 +18,23 @@ import cn.batchfile.stat.agent.domain.State;
 import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.Disk;
 import cn.batchfile.stat.server.domain.DiskData;
+import cn.batchfile.stat.server.domain.Gc;
 import cn.batchfile.stat.server.domain.MemoryData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.domain.ProcessInstance;
+import cn.batchfile.stat.server.domain.Stack;
+import cn.batchfile.stat.server.domain.StackData;
 import cn.batchfile.stat.server.service.CollectService;
 import cn.batchfile.stat.server.service.CpuService;
 import cn.batchfile.stat.server.service.DiskService;
+import cn.batchfile.stat.server.service.GcService;
 import cn.batchfile.stat.server.service.MemoryService;
 import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
 import cn.batchfile.stat.server.service.ProcessService;
+import cn.batchfile.stat.server.service.StackService;
 import cn.batchfile.stat.util.HttpClient;
 import cn.batchfile.stat.util.JsonUtil;
 
@@ -53,7 +58,13 @@ public class CollectServiceImpl implements CollectService {
 	
 	@Autowired
 	private ProcessService processService;
+	
+	@Autowired
+	private StackService stackService;
 
+	@Autowired
+	private GcService gcService;
+	
 	@Override
 	public void collectProcessData() {
 		LOG.debug("start collect process data");
@@ -63,7 +74,7 @@ public class CollectServiceImpl implements CollectService {
 				List<Process> ps = get(node, "/process", new TypeReference<List<Process>>() {});
 				List<cn.batchfile.stat.server.domain.Process> process_list = processService.getProcessByAgentId(node.getAgentId());
 				for (cn.batchfile.stat.server.domain.Process process : process_list) {
-					List<ProcessInstance> instances = processService.syncInstance(ps, process);
+					List<ProcessInstance> instances = processService.getRunningInstance(ps, process);
 					process.setRunningInstance(instances.size());
 					processService.updateRunningInstance(process);
 				}
@@ -76,11 +87,52 @@ public class CollectServiceImpl implements CollectService {
 	@Override
 	public void collectGcData() {
 		LOG.debug("start collect gc data");
+		List<Gc> gcs = gcService.getRunningGcs();
+		for (Gc gc : gcs) {
+			try {
+				String uri = String.format("/command/%s/_consume", gc.getCommandId());
+				Node node = nodeService.getNode(gc.getAgentId());
+				String out = get(node, uri, String.class);
+				if (StringUtils.isEmpty(out) 
+						&& new Date().getTime() - gc.getBeginTime().getTime() > 10000) {
+					gc.setStatus("stop");
+					gcService.updateGcStatus(gc);
+				} else {
+					gcService.insertGcData(out);
+				}
+			} catch (Exception e) {
+				//pass
+			}
+		}
 	}
 
 	@Override
 	public void collectStackData() {
 		LOG.debug("start collect stack data");
+		List<Stack> stacks = stackService.getRunningStacks();
+		for (Stack stack : stacks) {
+			try {
+				String uri = String.format("/process/%s/stack", stack.getPid());
+				Node node = nodeService.getNode(stack.getAgentId());
+				List<cn.batchfile.stat.agent.domain.Stack> list = get(node, uri, new TypeReference<List<cn.batchfile.stat.agent.domain.Stack>>(){});
+				int count = list == null ? 0 : list.size();
+				if (count == 0) {
+					stack.setStatus("stop");
+					stackService.updateStackStatus(stack);
+				} else {
+					StackData sd = new StackData();
+					sd.setCommandId(stack.getCommandId());
+					sd.setTime(new Date());
+					sd.setPid(stack.getPid());
+					sd.setAgentId(stack.getAgentId());
+					sd.setCount(count);
+					sd.setStacks(list);
+					stack.insertStackData();
+				}
+			} catch (Exception e) {
+				//pass
+			}
+		}
 	}
 	
 	@Override

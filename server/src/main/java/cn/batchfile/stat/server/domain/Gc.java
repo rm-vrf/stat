@@ -12,6 +12,7 @@ public class Gc {
 	private long pid;
 	@JSONField(name="begin_time")
 	private Date beginTime;
+	private String status;
 	private String name;
 	
 	public String getCommandId() {
@@ -46,6 +47,14 @@ public class Gc {
 		this.beginTime = beginTime;
 	}
 	
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
 	public String getName() {
 		return name;
 	}

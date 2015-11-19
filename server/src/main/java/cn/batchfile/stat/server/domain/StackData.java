@@ -10,6 +10,8 @@ import cn.batchfile.stat.agent.domain.Stack;
 public class StackData {
 	@JSONField(name="command_id")
 	private String commandId;
+	@JSONField(name="agent_id")
+	private String agentId;
 	private Date time;
 	private long pid;
 	private int count;
@@ -21,6 +23,14 @@ public class StackData {
 
 	public void setCommandId(String commandId) {
 		this.commandId = commandId;
+	}
+
+	public String getAgentId() {
+		return agentId;
+	}
+
+	public void setAgentId(String agentId) {
+		this.agentId = agentId;
 	}
 
 	public Date getTime() {

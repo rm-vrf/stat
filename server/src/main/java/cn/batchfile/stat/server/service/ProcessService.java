@@ -9,7 +9,7 @@ public interface ProcessService {
 
 	List<Process> getProcessByAgentId(String agentId);
 	
-	List<ProcessInstance> syncInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process);
+	List<ProcessInstance> getRunningInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process);
 	
 	void updateRunningInstance(Process process);
 }
