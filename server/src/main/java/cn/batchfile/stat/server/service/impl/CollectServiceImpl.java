@@ -1,9 +1,7 @@
 package cn.batchfile.stat.server.service.impl;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -14,22 +12,23 @@ import com.alibaba.fastjson.TypeReference;
 import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
 import cn.batchfile.stat.agent.domain.State;
-import cn.batchfile.stat.server.domain.DiskData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.service.CollectService;
+import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
 import cn.batchfile.stat.util.HttpClient;
 import cn.batchfile.stat.util.JsonUtil;
 
 public class CollectServiceImpl implements CollectService {
 	private static final Logger LOG = Logger.getLogger(CollectServiceImpl.class);
-	private Map<String, NetworkData> network_data_map = new HashMap<String, NetworkData>();
-	private Map<String, DiskData> disk_data_map = new HashMap<String, DiskData>();
 	
 	@Autowired
 	private NodeService nodeService;
+
+	@Autowired
+	private NetworkService networkService;
 
 	@Override
 	public void collectCpuData() {
@@ -108,11 +107,8 @@ public class CollectServiceImpl implements CollectService {
 					networkData.setTxOverruns(n.getTxOverruns());
 					networkData.setTxPackets(n.getTxPackets());
 					
-					calc_offset(networkData);
-					
-					//TODO
-					//networkService.insertNetwork(network);
-					//networkService.insertNetworkData(networkData);
+					networkService.insertNetwork(network);
+					networkService.insertNetworkData(networkData);
 				}
 			} catch (Exception e) {
 				//pass
@@ -173,26 +169,4 @@ public class CollectServiceImpl implements CollectService {
 		return hc.get(url);
 	}
 
-	private void calc_offset(NetworkData networkData) {
-		String key = String.format("%s#%s", networkData.getAgentId(), networkData.getAddress());
-		NetworkData nd = network_data_map.get(key);
-		if (nd != null) {
-			long time_span = (networkData.getTime().getTime() - nd.getTime().getTime()) / 1000;
-			if (time_span > 0) {
-				networkData.setRxBytesPerSecond(networkData.getRxBytes() >= nd.getRxBytes() ? (networkData.getRxBytes() - nd.getRxBytes()) / time_span : 0);
-				networkData.setRxDroppedPerSecond(networkData.getRxDropped() >= nd.getRxDropped() ? (networkData.getRxDropped() - nd.getRxDropped()) / time_span : 0);
-				networkData.setRxErrorsPerSecond(networkData.getRxErrors() >= nd.getRxErrors() ? (networkData.getRxErrors() - nd.getRxErrors()) / time_span : 0);
-				networkData.setRxFramePerSecond(networkData.getRxFrame() >= nd.getRxFrame() ? (networkData.getRxFrame() - nd.getRxFrame()) / time_span : 0);
-				networkData.setRxOverrunsPerSecond(networkData.getRxOverruns() >= nd.getRxOverruns() ? (networkData.getRxOverruns() - nd.getRxOverruns()) / time_span : 0);
-				networkData.setRxPacketsPerSecond(networkData.getRxPackets() >= nd.getRxPackets() ? (networkData.getRxPackets() - nd.getRxPackets()) / time_span : 0);
-				networkData.setTxBytesPerSecond(networkData.getTxBytes() >= nd.getTxBytes() ? (networkData.getTxBytes() - nd.getTxBytes()) / time_span : 0);
-				networkData.setTxCarrierPerSecond(networkData.getTxCarrier() >= nd.getTxCarrier() ? (networkData.getTxCarrier() - nd.getTxCarrier()) / time_span : 0);
-				networkData.setTxDroppedPerSecond(networkData.getTxDropped() >= nd.getTxDropped() ? (networkData.getTxDropped() - nd.getTxDropped()) / time_span : 0);
-				networkData.setTxErrorsPerSecond(networkData.getTxErrors() >= nd.getTxErrors() ? (networkData.getTxErrors() - nd.getTxErrors()) / time_span : 0);
-				networkData.setTxOverrunsPerSecond(networkData.getTxOverruns() >= nd.getTxOverruns() ? (networkData.getTxOverruns() - nd.getTxOverruns()) / time_span : 0);
-				networkData.setTxPacketsPerSecond(networkData.getTxPackets() >= nd.getTxPackets() ? (networkData.getTxPackets() - nd.getTxPackets()) / time_span : 0);
-			}
-		}
-		network_data_map.put(key, networkData);
-	}
 }
