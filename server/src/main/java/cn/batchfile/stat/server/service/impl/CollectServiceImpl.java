@@ -9,13 +9,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.alibaba.fastjson.TypeReference;
 
+import cn.batchfile.stat.agent.domain.Cpu;
 import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
 import cn.batchfile.stat.agent.domain.State;
+import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.service.CollectService;
+import cn.batchfile.stat.server.service.CpuService;
 import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
 import cn.batchfile.stat.util.HttpClient;
@@ -29,10 +32,35 @@ public class CollectServiceImpl implements CollectService {
 
 	@Autowired
 	private NetworkService networkService;
+	
+	@Autowired
+	private CpuService cpuService;
 
 	@Override
 	public void collectCpuData() {
 		LOG.debug("start collect cpu data");
+		List<Node> nodes = nodeService.getNodes();
+		for (Node node : nodes) {
+			try {
+				Cpu cpu = get(node, "/cpu", Cpu.class);
+				CpuData cd = new CpuData();
+				cd.setAgentId(node.getAgentId());
+				cd.setTime(new Date());
+				cd.setCombined(cpu.getCombined());
+				cd.setIdle(cpu.getIdle());
+				cd.setIrq(cpu.getIrq());
+				cd.setNice(cpu.getNice());
+				cd.setSoftIrq(cpu.getSoftIrq());
+				cd.setStolen(cpu.getStolen());
+				cd.setSys(cpu.getSys());
+				cd.setUser(cpu.getUser());
+				cd.setWait(cpu.getWait());
+				
+				cpuService.insertCpuData(cd);
+			} catch (Exception e) {
+				//pass
+			}
+		}
 	}
 
 	@Override
