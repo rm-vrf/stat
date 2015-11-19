@@ -21,13 +21,20 @@ public class JavaController {
 
 	@RequestMapping(value="/a/gc", method=RequestMethod.POST)
 	@ResponseBody
-	public String startGc(@RequestParam("agent_id") String agentId, @RequestParam("pid") long pid) {
-		return gcService.startGc(agentId, pid);
+	public String startGc(@RequestParam("agent_id") String agentId, 
+			@RequestParam("pid") long pid,
+			@RequestParam(value="name",required=false) String name) {
+		
+		return gcService.startGc(agentId, pid, name);
 	}
 	
 	@RequestMapping(value="/a/stack", method=RequestMethod.POST)
 	@ResponseBody
-	public String startStack(@RequestParam("agent_id") String agentId, @RequestParam("pid") long pid) {
-		return stackService.startStack(agentId, pid);
+	public String startStack(@RequestParam("agent_id") String agentId, 
+			@RequestParam("pid") long pid,
+			@RequestParam(value="name",required=false) String name) {
+		
+		return stackService.startStack(agentId, pid, name);
 	}
+
 }

@@ -98,7 +98,7 @@ public class CollectServiceImpl implements CollectService {
 					gc.setStatus("stop");
 					gcService.updateGcStatus(gc);
 				} else {
-					gcService.insertGcData(out);
+					gcService.insertGcData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), out);
 				}
 			} catch (Exception e) {
 				//pass

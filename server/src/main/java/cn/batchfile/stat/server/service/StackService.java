@@ -6,7 +6,7 @@ import cn.batchfile.stat.server.domain.Stack;
 
 public interface StackService {
 
-	String startStack(String agentId, long pid);
+	String startStack(String agentId, long pid, String name);
 
 	List<Stack> getRunningStacks();
 

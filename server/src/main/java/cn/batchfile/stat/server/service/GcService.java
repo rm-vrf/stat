@@ -6,12 +6,12 @@ import cn.batchfile.stat.server.domain.Gc;
 
 public interface GcService {
 
-	String startGc(String agentId, long pid);
+	String startGc(String agentId, long pid, String name);
 
 	List<Gc> getRunningGcs();
 
 	void updateGcStatus(Gc gc);
 
-	void insertGcData(String out);
+	void insertGcData(String commandId, String agentId, long pid, String out);
 
 }
