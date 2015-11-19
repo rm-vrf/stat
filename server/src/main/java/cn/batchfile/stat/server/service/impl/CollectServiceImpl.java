@@ -104,8 +104,10 @@ public class CollectServiceImpl implements CollectService {
 					gcService.insertGcData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), out);
 				}
 			} catch (Exception e) {
-				//pass
+				gc.setStatus("stop");
+				gcService.updateGcStatus(gc);
 			}
+			
 		}
 	}
 
@@ -133,7 +135,8 @@ public class CollectServiceImpl implements CollectService {
 					stackService.insertStackData(sd);
 				}
 			} catch (Exception e) {
-				//pass
+				stack.setStatus("stop");
+				stackService.updateStackStatus(stack);
 			}
 		}
 	}

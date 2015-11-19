@@ -126,11 +126,7 @@ public class HttpClient {
 			contentType = getContentTypeFromHeader(headers); 
 			
 			List<String> lines = IOUtils.readLines(inputStream, charset);
-			StringBuilder s = new StringBuilder("");
-			for (String line : lines) {
-				s.append(line).append(LINE_SEPERATOR);
-			}
-			return s.toString();
+			return StringUtils.join(lines, LINE_SEPERATOR);
 		} catch (MalformedURLException e) {
 			throw new RuntimeException("error when post http request", e);
 		} catch (IOException e) {
