@@ -14,11 +14,14 @@ import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
 import cn.batchfile.stat.agent.domain.State;
 import cn.batchfile.stat.server.domain.CpuData;
+import cn.batchfile.stat.server.domain.Disk;
+import cn.batchfile.stat.server.domain.DiskData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
 import cn.batchfile.stat.server.service.CollectService;
 import cn.batchfile.stat.server.service.CpuService;
+import cn.batchfile.stat.server.service.DiskService;
 import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
 import cn.batchfile.stat.util.HttpClient;
@@ -35,6 +38,9 @@ public class CollectServiceImpl implements CollectService {
 	
 	@Autowired
 	private CpuService cpuService;
+	
+	@Autowired
+	private DiskService diskService;
 
 	@Override
 	public void collectCpuData() {
@@ -99,6 +105,61 @@ public class CollectServiceImpl implements CollectService {
 		List<Node> nodes = nodeService.getNodes();
 		for (Node node : nodes) {
 			try {
+				Disk disk = new Disk();
+				DiskData diskData = new DiskData();
+				List<cn.batchfile.stat.agent.domain.Disk> ds = get(node, "/disk", new TypeReference<List<cn.batchfile.stat.agent.domain.Disk>>() {});
+				for (cn.batchfile.stat.agent.domain.Disk d : ds) {
+					disk.setAgentId(node.getAgentId());
+					disk.setDirName(d.getDirName());
+					disk.setDevName(d.getDevName());
+					disk.setType(d.getType());
+					disk.setTypeName(d.getTypeName());
+					disk.setSysTypeName(d.getSysTypeName());
+					disk.setOptions(d.getOptions());
+					disk.setFlags(d.getFlags());
+					
+					diskData.setAgentId(node.getAgentId());
+					diskData.setDirName(d.getDirName());
+					diskData.setTime(new Date());
+					diskData.setTotal(d.getTotal());
+					diskData.setFree(d.getFree());
+					diskData.setUsed(d.getUsed());
+					diskData.setAvail(d.getAvail());
+					diskData.setFiles(d.getFiles());
+					diskData.setFreeFiles(d.getFreeFiles());
+					diskData.setDiskReads(d.getDiskReads());
+					diskData.setDiskWrites(d.getDiskWrites());
+					diskData.setDiskReadBytes(d.getDiskReadBytes());
+					diskData.setDiskWriteBytes(d.getDiskWriteBytes());
+					diskData.setDiskQueue(d.getDiskQueue());
+					diskData.setDiskServiceTime(d.getDiskServiceTime());
+					diskData.setUsePercent(d.getUsePercent());
+					
+					diskService.insertDisk(disk);
+					diskService.insertDiskData(diskData);
+				}
+			} catch (Exception e) {
+				//pass
+			}
+		}
+	}
+
+	@Override
+	public void collectGcData() {
+		LOG.debug("start collect gc data");
+	}
+
+	@Override
+	public void collectMemoryData() {
+		LOG.debug("start collect memory data");
+	}
+
+	@Override
+	public void collectNetworkData() {
+		LOG.debug("start collect network data");
+		List<Node> nodes = nodeService.getNodes();
+		for (Node node : nodes) {
+			try {
 				cn.batchfile.stat.server.domain.Network network = new cn.batchfile.stat.server.domain.Network();
 				NetworkData networkData = new NetworkData();
 				
@@ -142,21 +203,6 @@ public class CollectServiceImpl implements CollectService {
 				//pass
 			}
 		}
-	}
-
-	@Override
-	public void collectGcData() {
-		LOG.debug("start collect gc data");
-	}
-
-	@Override
-	public void collectMemoryData() {
-		LOG.debug("start collect memory data");
-	}
-
-	@Override
-	public void collectNetworkData() {
-		LOG.debug("start collect network data");
 	}
 
 	@Override
