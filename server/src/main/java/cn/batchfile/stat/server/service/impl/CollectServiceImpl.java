@@ -13,6 +13,7 @@ import cn.batchfile.stat.agent.domain.Cpu;
 import cn.batchfile.stat.agent.domain.Memory;
 import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
+import cn.batchfile.stat.agent.domain.Process;
 import cn.batchfile.stat.agent.domain.State;
 import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.Disk;
@@ -21,12 +22,14 @@ import cn.batchfile.stat.server.domain.MemoryData;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
+import cn.batchfile.stat.server.domain.ProcessInstance;
 import cn.batchfile.stat.server.service.CollectService;
 import cn.batchfile.stat.server.service.CpuService;
 import cn.batchfile.stat.server.service.DiskService;
 import cn.batchfile.stat.server.service.MemoryService;
 import cn.batchfile.stat.server.service.NetworkService;
 import cn.batchfile.stat.server.service.NodeService;
+import cn.batchfile.stat.server.service.ProcessService;
 import cn.batchfile.stat.util.HttpClient;
 import cn.batchfile.stat.util.JsonUtil;
 
@@ -47,7 +50,39 @@ public class CollectServiceImpl implements CollectService {
 
 	@Autowired
 	private MemoryService memoryService;
+	
+	@Autowired
+	private ProcessService processService;
 
+	@Override
+	public void collectProcessData() {
+		LOG.debug("start collect process data");
+		List<Node> nodes = nodeService.getNodes();
+		for (Node node : nodes) {
+			try {
+				List<Process> ps = get(node, "/process", new TypeReference<List<Process>>() {});
+				List<cn.batchfile.stat.server.domain.Process> process_list = processService.getProcessByAgentId(node.getAgentId());
+				for (cn.batchfile.stat.server.domain.Process process : process_list) {
+					List<ProcessInstance> instances = processService.syncInstance(ps, process);
+					process.setRunningInstance(instances.size());
+					processService.updateRunningInstance(process);
+				}
+			} catch (Exception e) {
+				//pass
+			}
+		}
+	}
+
+	@Override
+	public void collectGcData() {
+		LOG.debug("start collect gc data");
+	}
+
+	@Override
+	public void collectStackData() {
+		LOG.debug("start collect stack data");
+	}
+	
 	@Override
 	public void collectCpuData() {
 		LOG.debug("start collect cpu data");
@@ -151,11 +186,6 @@ public class CollectServiceImpl implements CollectService {
 	}
 
 	@Override
-	public void collectGcData() {
-		LOG.debug("start collect gc data");
-	}
-
-	@Override
 	public void collectMemoryData() {
 		LOG.debug("start collect memory data");
 		List<Node> nodes = nodeService.getNodes();
@@ -232,16 +262,6 @@ public class CollectServiceImpl implements CollectService {
 		}
 	}
 
-	@Override
-	public void collectProcessData() {
-		LOG.debug("start collect process data");
-	}
-
-	@Override
-	public void collectStackData() {
-		LOG.debug("start collect stack data");
-	}
-	
 	private <T> T get(Node node, String uri, Class<T> clazz) {
 		String json = get(node, uri);
 		if (StringUtils.isEmpty(json)) {

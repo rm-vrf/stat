@@ -10,14 +10,14 @@
 	<bean id="startQuertz" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="triggers">
 			<list>
-				<ref bean="collectCpuDataTrigger" />
-				<ref bean="collectDiskDataTrigger" />
-				<ref bean="collectGcDataTrigger" />
-				<ref bean="collectMemoryDataTrigger" />
-				<ref bean="collectNetworkDataTrigger" />
-				<ref bean="collectNodeDataTrigger" />
+<!-- 				<ref bean="collectCpuDataTrigger" /> -->
+<!-- 				<ref bean="collectDiskDataTrigger" /> -->
+<!-- 				<ref bean="collectGcDataTrigger" /> -->
+<!-- 				<ref bean="collectMemoryDataTrigger" /> -->
+<!-- 				<ref bean="collectNetworkDataTrigger" /> -->
+<!-- 				<ref bean="collectNodeDataTrigger" /> -->
 				<ref bean="collectProcessDataTrigger" />
-				<ref bean="collectStackDataTrigger" />
+<!-- 				<ref bean="collectStackDataTrigger" /> -->
 			</list>
 		</property>
 		<property name="quartzProperties">
