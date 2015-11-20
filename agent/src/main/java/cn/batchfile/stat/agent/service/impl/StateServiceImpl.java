@@ -38,7 +38,6 @@ public class StateServiceImpl implements StateService {
 	public void init() throws IOException {
 		state = new State();
 		state.setAddress(StringUtils.isEmpty(Main.address) ? get_address() : Main.address);
-		state.setAgentId(Main.read_config().getProperty("agent.id").toString());
 		state.setHostname(get_host());
 		state.setPort(Main.port);
 		state.setStartTime(new Date());

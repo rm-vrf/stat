@@ -2,12 +2,9 @@ package cn.batchfile.stat.agent;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Properties;
-import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -61,22 +58,12 @@ public class Main {
 			start();
 		} else if (StringUtils.equals(command, "stop")) {
 			stop();
-		} else if (StringUtils.equals(command, "install")) {
-			install();
 		} else {
 			print_helper();
 		}
 	}
 	
 	private static void start() throws Exception {
-		//check config file
-		Properties properties = read_config();
-		if (!properties.containsKey("agent.id")) {
-			LOG.error("Must run install before start.");
-			print_helper();
-			return;
-		}
-		
 		//write pid file
 		String pid = write_pid();
 		LOG.info(String.format("---- start agent, pid: %s ----", pid));
@@ -166,31 +153,6 @@ public class Main {
 		}
 	}
 	
-	private static void install() throws IOException {
-		Properties properties = read_config();
-		String agent_id = UUID.randomUUID().toString().replaceAll("-", "").toLowerCase();
-		
-		// exist agent id in properties file
-		if (properties.containsKey("agent.id")) {
-			String replace = null;
-			while (!StringUtils.equalsIgnoreCase(replace, "y") && !StringUtils.equalsIgnoreCase(replace, "n")) {
-				replace = input("Replace agent id? Y/n: ", "Y");
-			}
-			if (StringUtils.equalsIgnoreCase(replace, "y")) {
-				agent_id = UUID.randomUUID().toString().replaceAll("-", "").toLowerCase();
-			} else {
-				agent_id = properties.getProperty("agent.id").toString();
-			}
-		}
-		
-		// write agent id to config file
-		properties.put("agent.id", agent_id);
-		write_config(properties);
-		
-		// prompt message
-		output("Installation is completed.");
-	}
-	
 	private static String write_pid() throws IOException {
 		String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
 		String pid = processName.split("@")[0];
@@ -227,40 +189,11 @@ public class Main {
 		}
 	}
 	
-	private static void write_config(Properties properties) throws IOException {
-		String data_dir = data_dir();
-		FileUtils.forceMkdir(new File(data_dir));
-		File file = new File(PathUtils.concat(data_dir, "config.properties"));
-		if (!file.exists()) {
-			file.createNewFile();
-		}
-		OutputStream out = new FileOutputStream(file);
-		try {
-			properties.store(out, StringUtils.EMPTY);
-		} finally {
-			IOUtils.closeQuietly(out);
-		}
-	}
-	
 	private static String data_dir() {
 		return PathUtils.concat(FileUtils.getUserDirectoryPath(), ".stat/agent/");
 	}
 
 	private static void print_helper() {
-		LOG.error("Usage: ./agent.sh install|start|stop");
-	}
-	
-	private static String input(String message, String value) throws IOException {
-		System.out.print(message);
-		int read = System.in.read();
-		String s = "" + (char)read;
-		if (StringUtils.isBlank(s)) {
-			s = value;
-		}
-		return s;
-	}
-	
-	private static void output(String message) {
-		System.out.println(message);
+		LOG.error("Usage: ./agent.sh start|stop");
 	}
 }
