@@ -228,6 +228,10 @@ CREATE TABLE IF NOT EXISTS `process_template` (
   `stop_command` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('activemq', NULL, 'activemq.jar start', NULL, NULL, '/batchfile/server/activemq', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/activemq start', 'bin/activemq stop');
+INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('elasticsearch', NULL, 'org.elasticsearch.bootstrap.ElasticsearchF', NULL, NULL, '/batchfile/server/elasticsearch', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/service/elasticsearch start', 'bin/service/elasticsearch stop');
+INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('tomcat', NULL, 'org.apache.catalina.startup.Bootstrap', NULL, NULL, '/batchfile/server/tomcat', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/startup.sh', 'bin/shutdown.sh');
+
 CREATE TABLE IF NOT EXISTS `stack` (
   `command_id` varchar(32) NOT NULL,
   `agent_id` varchar(32) DEFAULT NULL,

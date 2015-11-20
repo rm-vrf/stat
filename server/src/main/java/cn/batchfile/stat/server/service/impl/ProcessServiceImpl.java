@@ -26,7 +26,7 @@ public class ProcessServiceImpl implements ProcessService {
 	}
 
 	@Override
-	public List<ProcessInstance> getRunningInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process) {
+	public List<ProcessInstance> getRunningInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process, Date time) {
 		List<ProcessInstance> instances = new ArrayList<ProcessInstance>();
 		
 		//remove instance in db
@@ -58,7 +58,7 @@ public class ProcessServiceImpl implements ProcessService {
 				data.setAgentId(process.getAgentId());
 				data.setName(process.getName());
 				data.setPid(p.getPid());
-				data.setTime(new Date());
+				data.setTime(time);
 				data.setCpuPercent(p.getCpuPercent());
 				data.setMemoryPercent(p.getMemoryPercent());
 				data.setVsz(p.getVsz());

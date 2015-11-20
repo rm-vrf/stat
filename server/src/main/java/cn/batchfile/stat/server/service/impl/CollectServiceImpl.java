@@ -10,16 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.alibaba.fastjson.TypeReference;
 
 import cn.batchfile.stat.agent.domain.Cpu;
+import cn.batchfile.stat.agent.domain.Everything;
 import cn.batchfile.stat.agent.domain.Memory;
-import cn.batchfile.stat.agent.domain.Network;
-import cn.batchfile.stat.agent.domain.Os;
-import cn.batchfile.stat.agent.domain.Process;
-import cn.batchfile.stat.agent.domain.State;
 import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.Disk;
 import cn.batchfile.stat.server.domain.DiskData;
 import cn.batchfile.stat.server.domain.Gc;
 import cn.batchfile.stat.server.domain.MemoryData;
+import cn.batchfile.stat.server.domain.Network;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
@@ -66,24 +64,45 @@ public class CollectServiceImpl implements CollectService {
 	private GcService gcService;
 	
 	@Override
-	public void collectProcessData() {
-		LOG.debug("start collect process data");
+	public void collectEverything() {
+		LOG.debug("collect everything");
 		List<Node> nodes = nodeService.getNodes();
 		for (Node node : nodes) {
+			NodeData nodeData = new NodeData();
+			nodeData.setAgentId(node.getAgentId());
+			nodeData.setTime(new Date());
+			
 			try {
-				List<Process> ps = get(node, "/process", new TypeReference<List<Process>>() {});
-				List<cn.batchfile.stat.server.domain.Process> process_list = processService.getProcessByAgentId(node.getAgentId());
-				for (cn.batchfile.stat.server.domain.Process process : process_list) {
-					List<ProcessInstance> instances = processService.getRunningInstance(ps, process);
-					process.setRunningInstance(instances.size());
-					processService.updateRunningInstance(process);
-				}
+				//fetch everything from node
+				Date now = new Date();
+				Everything e = get(node, "/everything", Everything.class);
+				
+				nodeData.setLoad(e.getOs().getLoad());
+				nodeData.setAvailable(1);
+				
+				//update node
+				node.setArchitecture(e.getOs().getArchitecture());
+				node.setCpu(e.getOs().getCpu());
+				node.setHostname(e.getState().getHostname());
+				node.setOsName(e.getOs().getName());
+				node.setOsVersion(e.getOs().getVersion());
+				nodeService.updateNode(node);
+				
+				//collect everything else
+				collect_process_data(node, e.getProcesses(), now);
+				collect_cpu_data(node, e.getCpu(), now);
+				collect_disk_data(node, e.getDisks(), now);
+				collect_memory_data(node, e.getMemory(), now);
+				collect_network_data(node, e.getNetworks(), now);
 			} catch (Exception e) {
-				//pass
+				//set unavail if cannot reach node
+				nodeData.setAvailable(0);
+			} finally {
+				nodeService.insertNodeData(nodeData);
 			}
 		}
 	}
-
+	
 	@Override
 	public void collectGcData() {
 		LOG.debug("start collect gc data");
@@ -141,182 +160,116 @@ public class CollectServiceImpl implements CollectService {
 		}
 	}
 	
-	@Override
-	public void collectCpuData() {
-		LOG.debug("start collect cpu data");
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			try {
-				Cpu cpu = get(node, "/cpu", Cpu.class);
-				CpuData cd = new CpuData();
-				cd.setAgentId(node.getAgentId());
-				cd.setTime(new Date());
-				cd.setCombined(cpu.getCombined());
-				cd.setIdle(cpu.getIdle());
-				cd.setIrq(cpu.getIrq());
-				cd.setNice(cpu.getNice());
-				cd.setSoftIrq(cpu.getSoftIrq());
-				cd.setStolen(cpu.getStolen());
-				cd.setSys(cpu.getSys());
-				cd.setUser(cpu.getUser());
-				cd.setWait(cpu.getWait());
-				
-				cpuService.insertCpuData(cd);
-			} catch (Exception e) {
-				//pass
-			}
+	public void collect_process_data(Node node, List<cn.batchfile.stat.agent.domain.Process> ps, Date time) {
+		List<cn.batchfile.stat.server.domain.Process> process_list = processService.getProcessByAgentId(node.getAgentId());
+		for (cn.batchfile.stat.server.domain.Process process : process_list) {
+			List<ProcessInstance> instances = processService.getRunningInstance(ps, process, time);
+			process.setRunningInstance(instances.size());
+			processService.updateRunningInstance(process);
 		}
 	}
 
-	@Override
-	public void collectNodeData() {
-		LOG.debug("collect node data");
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			NodeData nd = new NodeData();
-			nd.setAgentId(node.getAgentId());
-			nd.setTime(new Date());
-			try {
-				State state = get(node, "/state", State.class);
-				Os os = get(node, "/os", Os.class);
-				
-				node.setArchitecture(os.getArchitecture());
-				node.setCpu(os.getCpu());
-				node.setHostname(state.getHostname());
-				node.setOsName(os.getName());
-				node.setOsVersion(os.getVersion());
+	public void collect_cpu_data(Node node, Cpu cpu, Date time) {
+		CpuData cd = new CpuData();
+		cd.setAgentId(node.getAgentId());
+		cd.setTime(time);
+		cd.setCombined(cpu.getCombined());
+		cd.setIdle(cpu.getIdle());
+		cd.setIrq(cpu.getIrq());
+		cd.setNice(cpu.getNice());
+		cd.setSoftIrq(cpu.getSoftIrq());
+		cd.setStolen(cpu.getStolen());
+		cd.setSys(cpu.getSys());
+		cd.setUser(cpu.getUser());
+		cd.setWait(cpu.getWait());
+		cpuService.insertCpuData(cd);
+	}
 
-				nd.setLoad(os.getLoad());
-				nd.setAvailable(1);
-
-				nodeService.updateNode(node);
-			} catch (Exception e) {
-				nd.setAvailable(0);
-			} finally {
-				nodeService.insertNodeData(nd);
-			}
+	public void collect_disk_data(Node node, List<cn.batchfile.stat.agent.domain.Disk> ds, Date time) {
+		for (cn.batchfile.stat.agent.domain.Disk d : ds) {
+			Disk disk = new Disk();
+			disk.setAgentId(node.getAgentId());
+			disk.setDirName(d.getDirName());
+			disk.setDevName(d.getDevName());
+			disk.setType(d.getType());
+			disk.setTypeName(d.getTypeName());
+			disk.setSysTypeName(d.getSysTypeName());
+			disk.setOptions(d.getOptions());
+			disk.setFlags(d.getFlags());
+			diskService.insertDisk(disk);
+			
+			DiskData diskData = new DiskData();
+			diskData.setAgentId(node.getAgentId());
+			diskData.setDirName(d.getDirName());
+			diskData.setTime(time);
+			diskData.setTotal(d.getTotal());
+			diskData.setFree(d.getFree());
+			diskData.setUsed(d.getUsed());
+			diskData.setAvail(d.getAvail());
+			diskData.setFiles(d.getFiles());
+			diskData.setFreeFiles(d.getFreeFiles());
+			diskData.setDiskReads(d.getDiskReads());
+			diskData.setDiskWrites(d.getDiskWrites());
+			diskData.setDiskReadBytes(d.getDiskReadBytes());
+			diskData.setDiskWriteBytes(d.getDiskWriteBytes());
+			diskData.setDiskQueue(d.getDiskQueue());
+			diskData.setDiskServiceTime(d.getDiskServiceTime());
+			diskData.setUsePercent(d.getUsePercent());
+			diskService.insertDiskData(diskData);
 		}
 	}
 
-	@Override
-	public void collectDiskData() {
-		LOG.debug("collect disk data");
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			try {
-				Disk disk = new Disk();
-				DiskData diskData = new DiskData();
-				List<cn.batchfile.stat.agent.domain.Disk> ds = get(node, "/disk", new TypeReference<List<cn.batchfile.stat.agent.domain.Disk>>() {});
-				for (cn.batchfile.stat.agent.domain.Disk d : ds) {
-					disk.setAgentId(node.getAgentId());
-					disk.setDirName(d.getDirName());
-					disk.setDevName(d.getDevName());
-					disk.setType(d.getType());
-					disk.setTypeName(d.getTypeName());
-					disk.setSysTypeName(d.getSysTypeName());
-					disk.setOptions(d.getOptions());
-					disk.setFlags(d.getFlags());
-					
-					diskData.setAgentId(node.getAgentId());
-					diskData.setDirName(d.getDirName());
-					diskData.setTime(new Date());
-					diskData.setTotal(d.getTotal());
-					diskData.setFree(d.getFree());
-					diskData.setUsed(d.getUsed());
-					diskData.setAvail(d.getAvail());
-					diskData.setFiles(d.getFiles());
-					diskData.setFreeFiles(d.getFreeFiles());
-					diskData.setDiskReads(d.getDiskReads());
-					diskData.setDiskWrites(d.getDiskWrites());
-					diskData.setDiskReadBytes(d.getDiskReadBytes());
-					diskData.setDiskWriteBytes(d.getDiskWriteBytes());
-					diskData.setDiskQueue(d.getDiskQueue());
-					diskData.setDiskServiceTime(d.getDiskServiceTime());
-					diskData.setUsePercent(d.getUsePercent());
-					
-					diskService.insertDisk(disk);
-					diskService.insertDiskData(diskData);
-				}
-			} catch (Exception e) {
-				//pass
-			}
-		}
+	public void collect_memory_data(Node node, Memory memory, Date time) {
+		MemoryData md = new MemoryData();
+		md.setAgentId(node.getAgentId());
+		md.setTime(time);
+		md.setActualFree(memory.getActualFree());
+		md.setActualUsed(memory.getActualUsed());
+		md.setFree(memory.getFree());
+		md.setFreePercent(memory.getFreePercent());
+		md.setRam(memory.getRam());
+		md.setTotal(memory.getTotal());
+		md.setUsed(memory.getUsed());
+		md.setUsedPercent(memory.getUsedPercent());
+		memoryService.insertMemoryData(md);
 	}
 
-	@Override
-	public void collectMemoryData() {
-		LOG.debug("start collect memory data");
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			try {
-				MemoryData md = new MemoryData();
-				Memory m = get(node, "/memory", Memory.class);
-				md.setAgentId(node.getAgentId());
-				md.setTime(new Date());
-				md.setActualFree(m.getActualFree());
-				md.setActualUsed(m.getActualUsed());
-				md.setFree(m.getFree());
-				md.setFreePercent(m.getFreePercent());
-				md.setRam(m.getRam());
-				md.setTotal(m.getTotal());
-				md.setUsed(m.getUsed());
-				md.setUsedPercent(m.getUsedPercent());
-				
-				memoryService.insertMemoryData(md);
-			} catch (Exception e) {
-				//pass
-			}
-		}
-	}
-
-	@Override
-	public void collectNetworkData() {
-		LOG.debug("start collect network data");
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			try {
-				cn.batchfile.stat.server.domain.Network network = new cn.batchfile.stat.server.domain.Network();
-				NetworkData networkData = new NetworkData();
-				
-				List<Network> ns = get(node, "/network", new TypeReference<List<Network>>() {});
-				for (Network n : ns) {
-					network.setAgentId(node.getAgentId());
-					network.setAddress(n.getAddress());
-					network.setBroadcast(n.getBroadcast());
-					network.setDescription(n.getDescription());
-					network.setDestination(n.getDestination());
-					network.setFlags(n.getFlags());
-					network.setHwaddr(n.getHwaddr());
-					network.setMetric(n.getMetric());
-					network.setMtu(n.getMtu());
-					network.setName(n.getName());
-					network.setNetmask(n.getNetmask());
-					network.setType(n.getType());
-					
-					networkData.setAgentId(node.getAgentId());
-					networkData.setAddress(n.getAddress());
-					networkData.setTime(new Date());
-					networkData.setRxBytes(n.getRxBytes());
-					networkData.setRxDropped(n.getRxDropped());
-					networkData.setRxErrors(n.getRxErrors());
-					networkData.setRxFrame(n.getRxFrame());
-					networkData.setRxOverruns(n.getRxOverruns());
-					networkData.setRxPackets(n.getRxPackets());
-					networkData.setSpeed(n.getSpeed());
-					networkData.setTxBytes(n.getTxBytes());
-					networkData.setTxCarrier(n.getTxCarrier());
-					networkData.setTxCollisions(n.getTxCollisions());
-					networkData.setTxDropped(n.getTxDropped());
-					networkData.setTxErrors(n.getTxErrors());
-					networkData.setTxOverruns(n.getTxOverruns());
-					networkData.setTxPackets(n.getTxPackets());
-					
-					networkService.insertNetwork(network);
-					networkService.insertNetworkData(networkData);
-				}
-			} catch (Exception e) {
-				//pass
-			}
+	public void collect_network_data(Node node, List<cn.batchfile.stat.agent.domain.Network> ns, Date time) {
+		for (cn.batchfile.stat.agent.domain.Network n : ns) {
+			Network network = new Network();
+			network.setAgentId(node.getAgentId());
+			network.setAddress(n.getAddress());
+			network.setBroadcast(n.getBroadcast());
+			network.setDescription(n.getDescription());
+			network.setDestination(n.getDestination());
+			network.setFlags(n.getFlags());
+			network.setHwaddr(n.getHwaddr());
+			network.setMetric(n.getMetric());
+			network.setMtu(n.getMtu());
+			network.setName(n.getName());
+			network.setNetmask(n.getNetmask());
+			network.setType(n.getType());
+			networkService.insertNetwork(network);
+			
+			NetworkData networkData = new NetworkData();
+			networkData.setAgentId(node.getAgentId());
+			networkData.setAddress(n.getAddress());
+			networkData.setTime(time);
+			networkData.setRxBytes(n.getRxBytes());
+			networkData.setRxDropped(n.getRxDropped());
+			networkData.setRxErrors(n.getRxErrors());
+			networkData.setRxFrame(n.getRxFrame());
+			networkData.setRxOverruns(n.getRxOverruns());
+			networkData.setRxPackets(n.getRxPackets());
+			networkData.setSpeed(n.getSpeed());
+			networkData.setTxBytes(n.getTxBytes());
+			networkData.setTxCarrier(n.getTxCarrier());
+			networkData.setTxCollisions(n.getTxCollisions());
+			networkData.setTxDropped(n.getTxDropped());
+			networkData.setTxErrors(n.getTxErrors());
+			networkData.setTxOverruns(n.getTxOverruns());
+			networkData.setTxPackets(n.getTxPackets());
+			networkService.insertNetworkData(networkData);
 		}
 	}
 

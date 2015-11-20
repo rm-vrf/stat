@@ -2,7 +2,7 @@ package cn.batchfile.stat.agent.domain;
 
 import java.util.List;
 
-public class EveryThing {
+public class Everything {
 
 	private List<Process> processes;
 	private Cpu cpu;
