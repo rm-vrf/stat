@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS `cpu_data` (
   `agent_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
@@ -59,6 +58,8 @@ CREATE TABLE IF NOT EXISTS `gc` (
 CREATE TABLE IF NOT EXISTS `gc_data` (
   `command_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
+  `agent_id` varchar(32) DEFAULT NULL,
+  `pid` bigint(20) DEFAULT NULL,
   `s0c` double DEFAULT NULL,
   `s1c` double DEFAULT NULL,
   `s0u` double DEFAULT NULL,
@@ -204,8 +205,8 @@ CREATE TABLE IF NOT EXISTS `process_instance` (
   `type` varchar(16) DEFAULT NULL,
   `status` varchar(32) DEFAULT NULL,
   `started` varchar(32) DEFAULT NULL,
-  `command` varchar(128) DEFAULT NULL,
-  `main_class` varchar(128) DEFAULT NULL
+  `command` text,
+  `main_class` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `process_template` (
@@ -227,9 +228,6 @@ CREATE TABLE IF NOT EXISTS `process_template` (
   `stop_command` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('elasticsearch', NULL, 'org.elasticsearch.bootstrap.ElasticsearchF', NULL, NULL, '', '', NULL, '', '', '', '', '', '', 'bin/service/elasticsearch start', 'bin/service/elasticsearch stop');
-INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('tomcat', NULL, 'org.apache.catalina.startup.Bootstrap', NULL, NULL, '', '', NULL, '', '', '', '', '', '', 'bin/startup.sh', 'bin/shutdown.sh');
-
 CREATE TABLE IF NOT EXISTS `stack` (
   `command_id` varchar(32) NOT NULL,
   `agent_id` varchar(32) DEFAULT NULL,
@@ -242,13 +240,10 @@ CREATE TABLE IF NOT EXISTS `stack` (
 CREATE TABLE IF NOT EXISTS `stack_data` (
   `command_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
-  `id` varchar(128) NOT NULL,
-  `prio` int(11) DEFAULT NULL,
-  `os_prio` int(11) DEFAULT NULL,
-  `tid` varchar(64) DEFAULT NULL,
-  `nid` varchar(64) DEFAULT NULL,
-  `status` varchar(64) DEFAULT NULL,
-  `stack_trace` text
+  `agent_id` varchar(32) DEFAULT NULL,
+  `pid` bigint(128) DEFAULT NULL,
+  `count` int(11) DEFAULT NULL,
+  `stacks` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `cpu_data`
@@ -262,10 +257,11 @@ ALTER TABLE `disk_data`
 
 ALTER TABLE `gc`
   ADD PRIMARY KEY (`command_id`),
-  ADD KEY `state` (`status`);
+  ADD KEY `status` (`status`) USING BTREE;
 
 ALTER TABLE `gc_data`
-  ADD PRIMARY KEY (`command_id`,`time`);
+  ADD PRIMARY KEY (`command_id`,`time`),
+  ADD KEY `pid_time` (`pid`,`time`) USING BTREE;
 
 ALTER TABLE `memory_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
@@ -296,7 +292,8 @@ ALTER TABLE `process_template`
 
 ALTER TABLE `stack`
   ADD PRIMARY KEY (`command_id`),
-  ADD KEY `state` (`status`);
+  ADD KEY `status` (`status`) USING BTREE;
 
 ALTER TABLE `stack_data`
-  ADD PRIMARY KEY (`command_id`,`time`,`id`);
+  ADD PRIMARY KEY (`command_id`,`time`) USING BTREE,
+  ADD UNIQUE KEY `pid_time` (`pid`,`time`) USING BTREE;
