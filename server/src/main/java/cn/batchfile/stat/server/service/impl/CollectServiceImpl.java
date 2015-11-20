@@ -25,6 +25,7 @@ import cn.batchfile.stat.server.domain.ProcessInstance;
 import cn.batchfile.stat.server.domain.Stack;
 import cn.batchfile.stat.server.domain.StackData;
 import cn.batchfile.stat.server.service.CollectService;
+import cn.batchfile.stat.server.service.ConfigService;
 import cn.batchfile.stat.server.service.CpuService;
 import cn.batchfile.stat.server.service.DiskService;
 import cn.batchfile.stat.server.service.GcService;
@@ -63,18 +64,22 @@ public class CollectServiceImpl implements CollectService {
 	@Autowired
 	private GcService gcService;
 	
+	@Autowired
+	private ConfigService configService;
+	
 	@Override
 	public void collectEverything() {
 		LOG.debug("collect everything");
 		List<Node> nodes = nodeService.getNodes();
+		Date now = new Date();
+		
 		for (Node node : nodes) {
 			NodeData nodeData = new NodeData();
 			nodeData.setAgentId(node.getAgentId());
-			nodeData.setTime(new Date());
+			nodeData.setTime(now);
 			
 			try {
 				//fetch everything from node
-				Date now = new Date();
 				Everything e = get(node, "/everything", Everything.class);
 				
 				nodeData.setLoad(e.getOs().getLoad());
@@ -99,6 +104,7 @@ public class CollectServiceImpl implements CollectService {
 				nodeData.setAvailable(0);
 			} finally {
 				nodeService.insertNodeData(nodeData);
+				configService.setDate("collect.time", now);
 			}
 		}
 	}
