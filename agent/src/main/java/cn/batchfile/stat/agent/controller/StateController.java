@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import cn.batchfile.stat.agent.domain.Cpu;
 import cn.batchfile.stat.agent.domain.Disk;
+import cn.batchfile.stat.agent.domain.EveryThing;
 import cn.batchfile.stat.agent.domain.Memory;
 import cn.batchfile.stat.agent.domain.Network;
 import cn.batchfile.stat.agent.domain.Os;
 import cn.batchfile.stat.agent.domain.State;
+import cn.batchfile.stat.agent.service.ProcessService;
 import cn.batchfile.stat.agent.service.StateService;
 
 @Controller
@@ -26,6 +28,23 @@ public class StateController {
 	
 	@Resource(name="stateService")
 	private StateService stateService;
+	
+	@Resource(name="processService")
+	private ProcessService processService;
+	
+	@RequestMapping(value="/every_thing", method=RequestMethod.GET)
+	@ResponseBody
+	public EveryThing everyThing() throws SigarException {
+		EveryThing e = new EveryThing();
+		e.setCpu(stateService.getCpu());
+		e.setDisks(stateService.getDisks());
+		e.setMemory(stateService.getMemory());
+		e.setNetworks(stateService.getNetworks());
+		e.setOs(stateService.getOs());
+		e.setProcesses(processService.findProcesses(null, null));
+		e.setState(stateService.getState());
+		return e;
+	}
 	
 	@RequestMapping(value="/", method=RequestMethod.GET)
 	@ResponseBody
