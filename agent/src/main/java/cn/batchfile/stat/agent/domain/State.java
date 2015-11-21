@@ -6,7 +6,6 @@ import com.alibaba.fastjson.annotation.JSONField;
 
 public class State {
 	private String hostname;
-	private String address;
 	private int port;
 	@JSONField(name="start_time")
 	private Date startTime;
@@ -17,14 +16,6 @@ public class State {
 	
 	public void setHostname(String hostname) {
 		this.hostname = hostname;
-	}
-	
-	public String getAddress() {
-		return address;
-	}
-	
-	public void setAddress(String address) {
-		this.address = address;
 	}
 	
 	public int getPort() {

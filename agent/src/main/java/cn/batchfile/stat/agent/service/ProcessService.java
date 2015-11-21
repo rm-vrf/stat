@@ -7,7 +7,7 @@ import cn.batchfile.stat.agent.domain.Stack;
 
 public interface ProcessService {
 
-	List<Process> findProcesses(String name, String type);
+	List<Process> findProcesses(String[] query);
 	
 	Process getProcess(long pid);
 	

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Resource;
 
@@ -17,24 +18,59 @@ import cn.batchfile.stat.agent.service.ProcessService;
 
 public class ProcessServiceImpl implements ProcessService {
 	private static final Logger LOG = Logger.getLogger(ProcessServiceImpl.class);
+	private Map<Long, Process> ps = new ConcurrentHashMap<Long, Process>();
 	
 	@Resource(name="commandService")
 	private CommandService commandService;
-
+	
+	public void init() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						//get java process
+						Map<String, String> jps = jps();
+						
+						//get all process, java and native
+						String out = commandService.execute("ps aux");
+						out = StringUtils.remove(out, '\r');
+						String[] lines = StringUtils.split(out, '\n');
+						Map<Long, Process> tmp_ps = new ConcurrentHashMap<Long, Process>();
+						for (String line : lines) {
+							if (!StringUtils.startsWithIgnoreCase(line, "USER")) {
+								Process p = compose_process(line, jps);
+								tmp_ps.put(Long.valueOf(p.getPid()), p);
+							}
+						}
+						
+						//put new map
+						ps = tmp_ps;
+						
+						Thread.sleep(10000);
+					} catch (Exception e) {
+						//pass
+					}
+				}
+			}
+		}).start();
+	}
+	
 	@Override
-	public List<Process> findProcesses(String name, String type) {
-		return find_process("ps aux", name, type);
+	public List<Process> findProcesses(String[] query) {
+		List<Process> list = new ArrayList<Process>();
+		for (Process process : ps.values()) {
+			String cmd = String.format("%s %s", process.getCommand(), process.getMainClass());
+			if (match(cmd, query)) {
+				list.add(process);
+			}
+		}
+		return list;
 	}
 
 	@Override
 	public Process getProcess(long pid) {
-		String cmd = String.format("ps ux -p %s", pid);
-		List<Process> ps = find_process(cmd, null, null);
-		if (ps == null || ps.size() == 0) {
-			return null;
-		} else {
-			return ps.get(0);
-		}
+		return ps.get(pid);
 	}
 	
 	@Override
@@ -66,6 +102,19 @@ public class ProcessServiceImpl implements ProcessService {
 		LOG.info(String.format("kill process, pid: %s, signum: %s", pid, signum));
 		String cmd = String.format("kill -%s %s", signum, pid);
 		commandService.execute(cmd);
+	}
+
+	private boolean match(String cmd, String[] query) {
+		if (query == null || query.length == 0) {
+			return true;
+		} else {
+			for (String q : query) {
+				if (!StringUtils.contains(cmd, q)) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 
 	private Stack parse_stack(String line) {
@@ -112,28 +161,6 @@ public class ProcessServiceImpl implements ProcessService {
 		stack.setStatus(status);
 		stack.setTid(tid);
 		return stack;
-	}
-
-	private List<Process> find_process(String cmd, String name, String type) {
-		Map<String, String> jps = jps();
-		String out = commandService.execute(cmd);
-		out = StringUtils.remove(out, '\r');
-		String[] lines = StringUtils.split(out, '\n');
-		List<Process> list = new ArrayList<Process>();
-		for (String line : lines) {
-			if (!StringUtils.startsWithIgnoreCase(line, "USER")) {
-				Process process = compose_process(line, jps);
-				if ((StringUtils.isBlank(name) 
-						|| StringUtils.contains(process.getCommand(), name) 
-						|| StringUtils.contains(process.getMainClass(), name)) 
-						&& (StringUtils.isBlank(type) 
-								|| StringUtils.equals("all", type) 
-								|| StringUtils.equals(type, process.getType()))) {
-					list.add(process);
-				}
-			}
-		}
-		return list;
 	}
 
 	private Process compose_process(String line, Map<String, String> jps) {

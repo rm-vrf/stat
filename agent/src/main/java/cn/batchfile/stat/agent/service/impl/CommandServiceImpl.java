@@ -57,7 +57,7 @@ public class CommandServiceImpl implements CommandService {
 
 	@Override
 	public String execute(String cmd) {
-		LOG.info(String.format("execute command: %s", cmd));
+		LOG.debug(String.format("execute command: %s", cmd));
 		final List<String> out = new ArrayList<String>();
 		Commandline cl = new Commandline(cmd);
 		try {
@@ -74,7 +74,7 @@ public class CommandServiceImpl implements CommandService {
 					out.add(line);
 				}
 			});
-			LOG.info(String.format("result: %s", result));
+			LOG.debug(String.format("result: %s", result));
 		} catch (CommandLineException e) {
 			throw new RuntimeException(String.format("error when execute command: %s", cmd));
 		}

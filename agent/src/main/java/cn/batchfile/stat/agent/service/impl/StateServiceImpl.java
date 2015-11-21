@@ -5,12 +5,9 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -37,7 +34,6 @@ public class StateServiceImpl implements StateService {
 	
 	public void init() throws IOException {
 		state = new State();
-		state.setAddress(StringUtils.isEmpty(Main.address) ? get_address() : Main.address);
 		state.setHostname(get_host());
 		state.setPort(Main.port);
 		state.setStartTime(new Date());
@@ -189,24 +185,6 @@ public class StateServiceImpl implements StateService {
 		return host;
 	}
 	
-	private String get_address() throws SocketException {
-		Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-		while (networkInterfaces.hasMoreElements()) {
-			NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();
-			Enumeration<InetAddress> nias = ni.getInetAddresses();
-			while (nias.hasMoreElements()) {
-				InetAddress ia = (InetAddress) nias.nextElement();
-				if (!ia.isLinkLocalAddress() && !ia.isLoopbackAddress()) {
-					String address = ia.getHostAddress();
-					if (StringUtils.isNotEmpty(address)) {
-						return address;
-					}
-				}
-			}
-		}
-		return null;
-	}
-
 	private void add_library_path(String path) {
 		System.setProperty("java.library.path", path);
 		String vm = System.getProperty("java.vm.name");

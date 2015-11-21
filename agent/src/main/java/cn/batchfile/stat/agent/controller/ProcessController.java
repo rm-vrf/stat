@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,9 +24,8 @@ public class ProcessController {
 	
 	@RequestMapping(value="/process", method=RequestMethod.GET)
 	@ResponseBody
-	public List<Process> findProcesses(@RequestParam(value="name", required=false) String name, 
-			@RequestParam(value="type", defaultValue="all") String type) {
-		return processService.findProcesses(name, type);
+	public List<Process> findProcesses(@RequestParam(value="query", required=false) String query) {
+		return processService.findProcesses(StringUtils.split(query, ' '));
 	}
 	
 	@RequestMapping(value="/process/{pid}", method=RequestMethod.GET)

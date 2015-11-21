@@ -41,7 +41,7 @@ public class StateController {
 		e.setMemory(stateService.getMemory());
 		e.setNetworks(stateService.getNetworks());
 		e.setOs(stateService.getOs());
-		e.setProcesses(processService.findProcesses(null, null));
+		e.setProcesses(processService.findProcesses(null));
 		e.setState(stateService.getState());
 		return e;
 	}
