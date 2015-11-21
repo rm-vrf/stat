@@ -4,21 +4,12 @@ import java.util.List;
 
 public class Everything {
 
-	private List<Process> processes;
 	private Cpu cpu;
 	private State state;
 	private Os os;
 	private List<Disk> disks;
 	private Memory memory;
 	private List<Network> networks;
-
-	public List<Process> getProcesses() {
-		return processes;
-	}
-
-	public void setProcesses(List<Process> processes) {
-		this.processes = processes;
-	}
 
 	public Cpu getCpu() {
 		return cpu;
