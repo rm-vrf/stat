@@ -3,14 +3,12 @@ package cn.batchfile.stat.agent.service.impl;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.hyperic.sigar.CpuPerc;
 import org.hyperic.sigar.FileSystem;
 import org.hyperic.sigar.FileSystemUsage;
@@ -31,19 +29,21 @@ import cn.batchfile.stat.agent.service.StateService;
 
 public class StateServiceImpl implements StateService {
 	private State state;
+	private Sigar sigar;
 	
 	public void init() throws IOException {
 		state = new State();
 		state.setHostname(get_host());
 		state.setPort(Main.port);
 		state.setStartTime(new Date());
+		sigar = new Sigar();
 	}
 	
 	@Override
 	public State getState() {
 		return state;
 	}
-
+	
 	@Override
 	public Os getOs() {
 		OperatingSystemMXBean oper = ManagementFactory.getOperatingSystemMXBean();
@@ -58,10 +58,7 @@ public class StateServiceImpl implements StateService {
 	
 	@Override
 	public Cpu getCpu() throws SigarException {
-		add_library_path("./sigar");
-		Sigar sigar = new Sigar();
 		Cpu cpu = new Cpu();
-		
 		CpuPerc cpuP = sigar.getCpuPerc();
 		cpu.setCombined(cpuP.getCombined());
 		cpu.setIdle(cpuP.getCombined());
@@ -78,8 +75,6 @@ public class StateServiceImpl implements StateService {
 	
 	@Override
 	public List<Disk> getDisks() throws SigarException {
-		add_library_path("./sigar");
-		Sigar sigar = new Sigar();
 		FileSystem[] fss = sigar.getFileSystemList();
 		
 		List<Disk> list = new ArrayList<Disk>();
@@ -115,9 +110,6 @@ public class StateServiceImpl implements StateService {
 	
 	@Override
 	public Memory getMemory() throws SigarException {
-		add_library_path("./sigar");
-		Sigar sigar = new Sigar();
-
 		Memory memory = new Memory();
 		Mem mem = sigar.getMem();
 		memory.setActualFree(mem.getActualFree());
@@ -134,9 +126,6 @@ public class StateServiceImpl implements StateService {
 	
 	@Override
 	public List<Network> getNetworks() throws SigarException {
-		add_library_path("./sigar");
-		Sigar sigar = new Sigar();
-		
 		String[] netIfs = sigar.getNetInterfaceList();
 		List<Network> networks = new ArrayList<Network>();
 		
@@ -185,45 +174,4 @@ public class StateServiceImpl implements StateService {
 		return host;
 	}
 	
-	private void add_library_path(String path) {
-		System.setProperty("java.library.path", path);
-		String vm = System.getProperty("java.vm.name");
-		if (StringUtils.containsIgnoreCase(vm, "openjdk") 
-				|| StringUtils.containsIgnoreCase(vm, "hotspot")) {
-			try {
-				//检查usr_field变量
-				Field usr_field = ClassLoader.class.getDeclaredField("usr_paths");
-				usr_field.setAccessible(true);
-				String[] usr_paths = (String[]) usr_field.get(null);
-				for (int i = 0; i < usr_paths.length; i++) {
-					if (path.equals(usr_paths[i])) {
-						return;
-					}
-				}
-				
-				//检查sys_field变量
-				Field sys_field = ClassLoader.class.getDeclaredField("sys_paths");
-				sys_field.setAccessible(true);
-				String[] sys_paths = (String[]) sys_field.get(null);
-				for (int i = 0; i < sys_paths.length; i++) {
-					if (path.equals(sys_paths[i])) {
-						return;
-					}
-				}
-				
-				//设置usr_paths，加上新变量
-				String[] tmp = new String[usr_paths.length + 1];
-				System.arraycopy(usr_paths, 0, tmp, 0, usr_paths.length);
-				tmp[usr_paths.length] = path;
-				usr_field.set(null, tmp);
-				
-				//sys_fields设置为空，jdk会自动初始化这个变量
-				sys_field.set(null, null);
-			} catch (IllegalAccessException e) {
-				//do nothing
-			} catch (NoSuchFieldException e) {
-				//do nothing
-			}
-		}
-	}
 }
