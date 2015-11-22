@@ -1,5 +1,6 @@
 package cn.batchfile.stat.server.service.impl;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -94,7 +95,7 @@ public class CollectServiceImpl implements CollectService {
 	
 					//处理每一个采集进程
 					for (Process p : ps) {
-						ProcessInstance instance = compose_process_instance(p, node, monitor, runningInstances);
+						ProcessInstance instance = compose_process_instance(p, node, monitor, now, runningInstances);
 						if (StringUtils.isEmpty(instance.getInstanceId())) {
 							//没有进程ID，新进程
 							instance.setInstanceId(UUID.randomUUID().toString().replaceAll("-", ""));
@@ -239,7 +240,7 @@ public class CollectServiceImpl implements CollectService {
 		}
 	}
 	
-	private ProcessInstance compose_process_instance(Process p, Node node, ProcessMonitor monitor, List<ProcessInstance> instances) {
+	private ProcessInstance compose_process_instance(Process p, Node node, ProcessMonitor monitor, Date time, List<ProcessInstance> instances) {
 		ProcessInstance instance = new ProcessInstance();
 		instance.setInstanceId(find_instance_id(instances, node.getAgentId(), p.getPid(), "running"));
 		instance.setAgentId(node.getAgentId());
@@ -248,7 +249,7 @@ public class CollectServiceImpl implements CollectService {
 		instance.setStatus("running");
 		instance.setUser(p.getUser());
 		instance.setType(p.getType());
-		instance.setStarted(p.getStarted());
+		instance.setStarted(new SimpleDateFormat("MM-dd HH:mm").format(time));
 		instance.setCommand(p.getCommand());
 		instance.setMainClass(p.getMainClass());
 		return instance;

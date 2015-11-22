@@ -26,7 +26,7 @@ fi
 LIB_DIR=$PRGDIR/lib
 JAR_FILE=$PRGDIR/stat-server.jar
 FILE_ENCODING=UTF-8
-WEB_ROOT=webapp
+WEB_ROOT=$PRGDIR/webapp
 
 java $JAVA_OPTS \
 -Djava.ext.dirs=$LIB_DIR \
