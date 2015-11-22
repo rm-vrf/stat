@@ -26,7 +26,7 @@
 		UPDATE `stack` SET `status`=#{status} WHERE `command_id`=#{commandId}
 	</update>
 
-	<insert id="insertStackData" parameterType="StackData">
+	<insert id="insertData" parameterType="StackData">
 		REPLACE INTO `stack_data` 
 		(`command_id`,`time`,`agent_id`,`pid`,`count`,`stacks`)
 		VALUES 

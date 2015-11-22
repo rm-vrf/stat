@@ -13,5 +13,5 @@ public interface GcDao {
 
 	void updateGcStatus(Gc gc);
 	
-	void insertGcData(GcData gcData);
+	void insertData(GcData gcData);
 }

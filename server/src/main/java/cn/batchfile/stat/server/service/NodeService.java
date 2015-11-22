@@ -13,5 +13,5 @@ public interface NodeService {
 
 	void updateNode(Node node);
 
-	void insertNodeData(NodeData nodeData);
+	void insertData(NodeData nodeData);
 }

@@ -23,9 +23,9 @@ public class NetworkServiceImpl implements NetworkService {
 	}
 
 	@Override
-	public void insertNetworkData(NetworkData networkData) {
+	public void insertData(NetworkData networkData) {
 		calc_offset_value(networkData);
-		networkDao.insertNetworkData(networkData);
+		networkDao.insertData(networkData);
 	}
 
 	private void calc_offset_value(NetworkData networkData) {

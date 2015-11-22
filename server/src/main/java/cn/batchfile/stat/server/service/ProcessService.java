@@ -1,16 +1,22 @@
 package cn.batchfile.stat.server.service;
 
-import java.util.Date;
 import java.util.List;
 
-import cn.batchfile.stat.server.domain.Process;
+import cn.batchfile.stat.server.domain.ProcessData;
 import cn.batchfile.stat.server.domain.ProcessInstance;
+import cn.batchfile.stat.server.domain.ProcessMonitor;
 
 public interface ProcessService {
 
-	List<Process> getProcessByAgentId(String agentId);
-	
-	List<ProcessInstance> getRunningInstance(List<cn.batchfile.stat.agent.domain.Process> ps, Process process, Date time);
-	
-	void updateRunningInstance(Process process);
+	List<ProcessMonitor> getEnabledMonitors();
+
+	List<ProcessInstance> getInstancesByAgentNameStatus(String agentId, String name, String string);
+
+	void insertInstance(ProcessInstance instance);
+
+	void insertData(ProcessData data);
+
+	void updateInstanceStatus(String instanceId, String string);
+
+	void updateMonitorInstanceCount(String name, int instance_count);
 }

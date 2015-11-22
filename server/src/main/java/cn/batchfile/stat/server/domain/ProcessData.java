@@ -5,11 +5,13 @@ import java.util.Date;
 import com.alibaba.fastjson.annotation.JSONField;
 
 public class ProcessData {
+	@JSONField(name="instance_id")
+	private String instanceId;
+	private Date time;
 	@JSONField(name="agent_id")
 	private String agentId;
 	private String name;
 	private long pid;
-	private Date time;
 	@JSONField(name="cpu_percent")
 	private double cpuPercent;
 	@JSONField(name="memory_percent")
@@ -18,7 +20,16 @@ public class ProcessData {
 	private long rss;
 	private String tt;
 	private String stat;
-	private String uptime;
+	@JSONField(name="cpu_time")
+	private String cpuTime;
+
+	public String getInstanceId() {
+		return instanceId;
+	}
+
+	public void setInstanceId(String instanceId) {
+		this.instanceId = instanceId;
+	}
 
 	public String getAgentId() {
 		return agentId;
@@ -100,11 +111,11 @@ public class ProcessData {
 		this.stat = stat;
 	}
 
-	public String getUptime() {
-		return uptime;
+	public String getCpuTime() {
+		return cpuTime;
 	}
 
-	public void setUptime(String uptime) {
-		this.uptime = uptime;
+	public void setCpuTime(String cpuTime) {
+		this.cpuTime = cpuTime;
 	}
 }

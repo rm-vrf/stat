@@ -34,8 +34,11 @@ public class GcServiceImpl implements GcService {
 	@Override
 	public String startGc(String agentId, long pid, String name) {
 		if (StringUtils.isEmpty(name)) {
-			ProcessInstance pi = processDao.getRunningProcessInstanceByAgentIdAndPid(agentId, pid);
-			name = pi == null ? null : pi.getName();
+			List<ProcessInstance> pis = processDao.getInstancesByAgentPidStatus(agentId, pid, "running");
+			if (pis != null && pis.size() > 0) {
+				ProcessInstance pi = pis.get(0);
+				name = StringUtils.isEmpty(pi.getDeploymentName()) ? pi.getMonitorName() : pi.getDeploymentName();
+			}
 		}
 		
 		Node node = nodeService.getNode(agentId);
@@ -79,7 +82,7 @@ public class GcServiceImpl implements GcService {
 	}
 
 	@Override
-	public void insertGcData(String commandId, String agentId, long pid, String out) {
+	public void insertData(String commandId, String agentId, long pid, String out) {
 		out = StringUtils.remove(out, '\r');
 		String[] lines = StringUtils.split(out, '\n');
 		if (lines == null || lines.length == 0) {
@@ -114,7 +117,7 @@ public class GcServiceImpl implements GcService {
 					gd.setFgc(Integer.valueOf(ary[14]));
 					gd.setFgct(Double.valueOf(ary[15]));
 					gd.setGct(Double.valueOf(ary[16]));
-					gcDao.insertGcData(gd);
+					gcDao.insertData(gd);
 				}
 			}
 			time += INTETRVAL;

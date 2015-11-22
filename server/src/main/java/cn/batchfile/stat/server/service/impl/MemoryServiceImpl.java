@@ -14,8 +14,8 @@ public class MemoryServiceImpl implements MemoryService {
 	private MemoryDao memoryDao;
 	
 	@Override
-	public void insertMemoryData(MemoryData memoryData) {
-		memoryDao.insertMemoryData(memoryData);
+	public void insertData(MemoryData memoryData) {
+		memoryDao.insertData(memoryData);
 	}
 
 }

@@ -1,3 +1,10 @@
+CREATE TABLE IF NOT EXISTS `config` (
+  `name` varchar(64) NOT NULL,
+  `int_value` int(11) DEFAULT NULL,
+  `string_value` varchar(128) DEFAULT NULL,
+  `time_value` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `cpu_data` (
   `agent_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
@@ -10,6 +17,25 @@ CREATE TABLE IF NOT EXISTS `cpu_data` (
   `soft_irq` double DEFAULT NULL,
   `stolen` double DEFAULT NULL,
   `combined` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `deployment` (
+  `agent_id` varchar(32) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `description` text,
+  `instance_count` int(11) DEFAULT NULL,
+  `working_directory` varchar(255) DEFAULT NULL,
+  `environment` text,
+  `start_command` varchar(255) DEFAULT NULL,
+  `stop_command` varchar(255) DEFAULT NULL,
+  `pid_file` varchar(255) DEFAULT NULL,
+  `java_home` varchar(255) DEFAULT NULL,
+  `jre_home` varchar(255) DEFAULT NULL,
+  `main_class` varchar(255) DEFAULT NULL,
+  `jar` varchar(255) DEFAULT NULL,
+  `arguments` text,
+  `vm_arguments` text,
+  `classpath` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `disk` (
@@ -162,75 +188,49 @@ CREATE TABLE IF NOT EXISTS `node_data` (
   `available` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `process` (
-  `agent_id` varchar(32) NOT NULL,
-  `name` varchar(128) NOT NULL,
-  `description` text,
-  `contains_every` varchar(128) DEFAULT NULL,
-  `contains_any` varchar(128) DEFAULT NULL,
-  `contains_no` varchar(128) DEFAULT NULL,
-  `running_instance` int(11) DEFAULT NULL,
-  `working_directory` varchar(255) DEFAULT NULL,
-  `java_home` varchar(255) DEFAULT NULL,
-  `jre_home` varchar(255) DEFAULT NULL,
-  `main_class` varchar(255) DEFAULT NULL,
-  `jar` varchar(255) DEFAULT NULL,
-  `arguments` text,
-  `vm_arguments` text,
-  `classpath` text,
-  `environment` text,
-  `start_command` varchar(255) DEFAULT NULL,
-  `stop_command` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `process_data` (
-  `agent_id` varchar(32) NOT NULL,
-  `name` varchar(128) NOT NULL,
-  `pid` bigint(20) NOT NULL,
+  `instance_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
+  `agent_id` varchar(32) DEFAULT NULL,
+  `name` varchar(128) DEFAULT NULL,
+  `pid` bigint(20) DEFAULT NULL,
   `cpu_percent` double DEFAULT NULL,
   `memory_percent` double DEFAULT NULL,
   `vsz` bigint(20) DEFAULT NULL,
   `rss` bigint(20) DEFAULT NULL,
   `tt` varchar(64) DEFAULT NULL,
   `stat` varchar(64) DEFAULT NULL,
-  `uptime` varchar(64) DEFAULT NULL
+  `cpu_time` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `process_instance` (
-  `agent_id` varchar(32) NOT NULL,
-  `name` varchar(128) NOT NULL,
-  `pid` bigint(20) NOT NULL,
+  `instance_id` varchar(32) NOT NULL,
+  `agent_id` varchar(32) DEFAULT NULL,
+  `pid` bigint(20) DEFAULT NULL,
+  `deployment_name` varchar(128) DEFAULT NULL,
+  `monitor_name` varchar(128) DEFAULT NULL,
+  `status` varchar(32) DEFAULT NULL,
   `user` varchar(64) DEFAULT NULL,
   `type` varchar(16) DEFAULT NULL,
-  `status` varchar(32) DEFAULT NULL,
   `started` varchar(32) DEFAULT NULL,
   `command` text,
   `main_class` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `process_template` (
+CREATE TABLE IF NOT EXISTS `process_monitor` (
   `name` varchar(128) NOT NULL,
   `description` text,
-  `contains_every` varchar(128) DEFAULT NULL,
-  `contains_any` varchar(128) DEFAULT NULL,
-  `contains_no` varchar(128) DEFAULT NULL,
-  `working_directory` varchar(255) DEFAULT NULL,
-  `java_home` varchar(255) DEFAULT NULL,
-  `jre_home` varchar(255) DEFAULT NULL,
-  `main_class` varchar(255) DEFAULT NULL,
-  `jar` varchar(255) DEFAULT NULL,
-  `arguments` text,
-  `vm_arguments` text,
-  `classpath` text,
-  `environment` text,
-  `start_command` varchar(255) DEFAULT NULL,
-  `stop_command` varchar(255) DEFAULT NULL
+  `query` varchar(255) DEFAULT NULL,
+  `instance_count` int(11) DEFAULT NULL,
+  `enabled` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('activemq', NULL, 'activemq.jar start', NULL, NULL, '/batchfile/server/activemq', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/activemq start', 'bin/activemq stop');
-INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('elasticsearch', NULL, 'org.elasticsearch.bootstrap.ElasticsearchF', NULL, NULL, '/batchfile/server/elasticsearch', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/service/elasticsearch start', 'bin/service/elasticsearch stop');
-INSERT INTO `process_template` (`name`, `description`, `contains_every`, `contains_any`, `contains_no`, `working_directory`, `java_home`, `jre_home`, `main_class`, `jar`, `arguments`, `vm_arguments`, `classpath`, `environment`, `start_command`, `stop_command`) VALUES('tomcat', NULL, 'org.apache.catalina.startup.Bootstrap', NULL, NULL, '/batchfile/server/tomcat', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'bin/startup.sh', 'bin/shutdown.sh');
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('activemq', NULL, 'activemq.jar start', 0, 1);
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('apache', NULL, 'httpd', 11, 1);
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('elasticsearch', NULL, 'org.elasticsearch.bootstrap.ElasticsearchF', 1, 1);
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('getty', NULL, 'getty.jar --port=1025', 0, 1);
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('mysql', NULL, 'mysql', 3, 1);
+INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('tomcat', NULL, 'tomcat org.apache.catalina.startup.Bootstrap', 1, 1);
 
 CREATE TABLE IF NOT EXISTS `stack` (
   `command_id` varchar(32) NOT NULL,
@@ -250,8 +250,14 @@ CREATE TABLE IF NOT EXISTS `stack_data` (
   `stacks` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+ALTER TABLE `config`
+  ADD PRIMARY KEY (`name`);
+
 ALTER TABLE `cpu_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
+
+ALTER TABLE `deployment`
+  ADD PRIMARY KEY (`agent_id`,`name`);
 
 ALTER TABLE `disk`
   ADD PRIMARY KEY (`agent_id`,`dir_name`);
@@ -261,11 +267,11 @@ ALTER TABLE `disk_data`
 
 ALTER TABLE `gc`
   ADD PRIMARY KEY (`command_id`),
-  ADD KEY `status` (`status`) USING BTREE;
+  ADD KEY `status` (`status`);
 
 ALTER TABLE `gc_data`
   ADD PRIMARY KEY (`command_id`,`time`),
-  ADD KEY `pid_time` (`pid`,`time`) USING BTREE;
+  ADD KEY `pid_time` (`pid`,`time`);
 
 ALTER TABLE `memory_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
@@ -282,22 +288,21 @@ ALTER TABLE `node`
 ALTER TABLE `node_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
 
-ALTER TABLE `process`
-  ADD PRIMARY KEY (`agent_id`,`name`);
-
 ALTER TABLE `process_data`
-  ADD PRIMARY KEY (`agent_id`,`name`,`pid`,`time`);
+  ADD PRIMARY KEY (`instance_id`,`time`);
 
 ALTER TABLE `process_instance`
-  ADD PRIMARY KEY (`agent_id`,`name`,`pid`);
+  ADD PRIMARY KEY (`instance_id`),
+  ADD KEY `agent_id_status` (`agent_id`,`status`);
 
-ALTER TABLE `process_template`
-  ADD PRIMARY KEY (`name`);
+ALTER TABLE `process_monitor`
+  ADD PRIMARY KEY (`name`),
+  ADD KEY `enabled` (`enabled`);
 
 ALTER TABLE `stack`
   ADD PRIMARY KEY (`command_id`),
-  ADD KEY `status` (`status`) USING BTREE;
+  ADD KEY `status` (`status`);
 
 ALTER TABLE `stack_data`
-  ADD PRIMARY KEY (`command_id`,`time`) USING BTREE,
-  ADD UNIQUE KEY `pid_time` (`pid`,`time`) USING BTREE;
+  ADD PRIMARY KEY (`command_id`,`time`),
+  ADD KEY `pid_time` (`pid`,`time`);

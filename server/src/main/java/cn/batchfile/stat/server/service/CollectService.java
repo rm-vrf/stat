@@ -2,9 +2,11 @@ package cn.batchfile.stat.server.service;
 
 public interface CollectService {
 	
+	void collectProcess();
+	
 	void collectEverything();
 
-	void collectGcData();
+	void collectGc();
 	
-	void collectStackData();
+	void collectStack();
 }

@@ -12,6 +12,6 @@ public interface GcService {
 
 	void updateGcStatus(Gc gc);
 
-	void insertGcData(String commandId, String agentId, long pid, String out);
+	void insertData(String commandId, String agentId, long pid, String out);
 
 }

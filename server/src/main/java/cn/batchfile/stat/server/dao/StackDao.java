@@ -13,6 +13,6 @@ public interface StackDao {
 
 	void updateStackStatus(Stack stack);
 
-	void insertStackData(StackData stackData);
+	void insertData(StackData stackData);
 
 }

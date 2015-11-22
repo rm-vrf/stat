@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
 <mapper namespace="cn.batchfile.stat.server.dao.MemoryDao" >
 
-	<insert id="insertMemoryData" parameterType="MemoryData">
+	<insert id="insertData" parameterType="MemoryData">
 		REPLACE INTO `memory_data`
 		(`agent_id`,`time`,`total`,`ram`,`used`,`free`,`actual_used`,`actual_free`,`used_percent`,`free_percent`) 
 		VALUES 

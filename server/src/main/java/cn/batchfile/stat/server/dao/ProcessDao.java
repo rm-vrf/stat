@@ -2,23 +2,23 @@ package cn.batchfile.stat.server.dao;
 
 import java.util.List;
 
-import cn.batchfile.stat.server.domain.Process;
 import cn.batchfile.stat.server.domain.ProcessData;
 import cn.batchfile.stat.server.domain.ProcessInstance;
+import cn.batchfile.stat.server.domain.ProcessMonitor;
 
 public interface ProcessDao {
 
-	List<Process> getProcessByAgentId(String agentId);
+	List<ProcessMonitor> getEnabledMonitors();
 	
-	void updateRunningInstance(Process process);
+	List<ProcessInstance> getInstancesByAgentPidStatus(String agentId, long pid, String status);
 
-	void updateProcessInstanceStatus(ProcessInstance processInstance);
+	List<ProcessInstance> getInstancesByAgentNameStatus(String agentId, String name, String status);
 
-	List<ProcessInstance> getRunningProcessInstanceByAgentId(String agentId);
+	void insertInstance(ProcessInstance instance);
 
-	void insertProcessInstance(ProcessInstance processInstance);
+	void insertData(ProcessData data);
 
-	void insertProcessData(ProcessData processData);
-	
-	ProcessInstance getRunningProcessInstanceByAgentIdAndPid(String agentId, long pid);
+	void updateInstanceStatus(String instanceId, String status);
+
+	void updateMonitorInstanceCount(String name, int instanceCount);
 }

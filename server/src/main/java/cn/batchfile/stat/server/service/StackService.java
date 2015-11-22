@@ -13,6 +13,6 @@ public interface StackService {
 
 	void updateStackStatus(Stack stack);
 
-	void insertStackData(StackData sd);
+	void insertData(StackData sd);
 
 }

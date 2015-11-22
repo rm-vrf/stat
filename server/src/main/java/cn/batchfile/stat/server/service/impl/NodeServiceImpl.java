@@ -32,7 +32,7 @@ public class NodeServiceImpl implements NodeService {
 	}
 	
 	@Override
-	public void insertNodeData(NodeData nodeData) {
-		nodeDao.insertNodeData(nodeData);
+	public void insertData(NodeData nodeData) {
+		nodeDao.insertData(nodeData);
 	}
 }

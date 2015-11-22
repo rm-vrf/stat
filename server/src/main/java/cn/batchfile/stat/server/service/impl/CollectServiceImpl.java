@@ -2,6 +2,7 @@ package cn.batchfile.stat.server.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -12,6 +13,7 @@ import com.alibaba.fastjson.TypeReference;
 import cn.batchfile.stat.agent.domain.Cpu;
 import cn.batchfile.stat.agent.domain.Everything;
 import cn.batchfile.stat.agent.domain.Memory;
+import cn.batchfile.stat.agent.domain.Process;
 import cn.batchfile.stat.server.domain.CpuData;
 import cn.batchfile.stat.server.domain.Disk;
 import cn.batchfile.stat.server.domain.DiskData;
@@ -21,7 +23,9 @@ import cn.batchfile.stat.server.domain.Network;
 import cn.batchfile.stat.server.domain.NetworkData;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.server.domain.NodeData;
+import cn.batchfile.stat.server.domain.ProcessData;
 import cn.batchfile.stat.server.domain.ProcessInstance;
+import cn.batchfile.stat.server.domain.ProcessMonitor;
 import cn.batchfile.stat.server.domain.Stack;
 import cn.batchfile.stat.server.domain.StackData;
 import cn.batchfile.stat.server.service.CollectService;
@@ -36,6 +40,7 @@ import cn.batchfile.stat.server.service.ProcessService;
 import cn.batchfile.stat.server.service.StackService;
 import cn.batchfile.stat.util.HttpClient;
 import cn.batchfile.stat.util.JsonUtil;
+import cn.batchfile.stat.util.PathUtils;
 
 public class CollectServiceImpl implements CollectService {
 	private static final Logger LOG = Logger.getLogger(CollectServiceImpl.class);
@@ -68,8 +73,73 @@ public class CollectServiceImpl implements CollectService {
 	private ConfigService configService;
 	
 	@Override
+	public void collectProcess() {
+		LOG.info("collect process data, begin");
+		List<Node> nodes = nodeService.getNodes();
+		List<ProcessMonitor> monitors = processService.getEnabledMonitors();
+		for (ProcessMonitor monitor : monitors) {
+			int instance_count = 0;
+			for (Node node : nodes) {
+				LOG.info(String.format("collect process data, monitor: %s, ip: %s", monitor.getName(), node.getAddress()));
+				
+				//上一次采集的进程列表
+				List<ProcessInstance> runningInstances = processService.getInstancesByAgentNameStatus(node.getAgentId(), monitor.getName(), "running");
+				
+				try {
+					//获得运行中的进程
+					Date now = new Date();
+					String uri = String.format("/process?query=%s", PathUtils.encodeUrl(monitor.getQuery()));
+					List<Process> ps = get(node, uri, new TypeReference<List<Process>>() {});
+					instance_count += ps.size();
+	
+					//处理每一个采集进程
+					for (Process p : ps) {
+						ProcessInstance instance = compose_process_instance(p, node, monitor, runningInstances);
+						if (StringUtils.isEmpty(instance.getInstanceId())) {
+							//没有进程ID，新进程
+							instance.setInstanceId(UUID.randomUUID().toString().replaceAll("-", ""));
+							processService.insertInstance(instance);
+							LOG.info(String.format("new process of: %s, on: %s, pid: %s", monitor.getName(), node.getAddress(), p.getPid()));
+						}
+						
+						//进程的运行数据
+						ProcessData data = new ProcessData();
+						data.setInstanceId(instance.getInstanceId());
+						data.setTime(now);
+						data.setAgentId(node.getAgentId());
+						data.setName(monitor.getName());
+						data.setPid(p.getPid());
+						data.setCpuPercent(p.getCpuPercent());
+						data.setMemoryPercent(p.getMemoryPercent());
+						data.setVsz(p.getVsz());
+						data.setRss(p.getRss());
+						data.setTt(p.getTt());
+						data.setStat(p.getStat());
+						data.setCpuTime(p.getTime());
+						processService.insertData(data);
+					}
+					
+					//设置停止进程的状态, 两次采集的进程号，停止的进程设置stop状态
+					for (ProcessInstance runningInstance : runningInstances) {
+						if (!pid_exist(runningInstance.getPid(), ps)) {
+							processService.updateInstanceStatus(runningInstance.getInstanceId(), "stop");
+							LOG.info(String.format("process stop, name: %s, node: %s, pid: %s", monitor.getName(), node.getAddress(), runningInstance.getPid()));
+						}
+					}
+				} catch (Exception e) {
+					//pass
+				}
+			}
+			
+			//update instance count
+			processService.updateMonitorInstanceCount(monitor.getName(), instance_count);
+			LOG.info(String.format("instance on all nodes: %s", instance_count));
+		}
+	}
+	
+	@Override
 	public void collectEverything() {
-		LOG.debug("collect everything");
+		LOG.info("collect everything, begin");
 		List<Node> nodes = nodeService.getNodes();
 		Date now = new Date();
 		
@@ -80,6 +150,7 @@ public class CollectServiceImpl implements CollectService {
 			
 			try {
 				//fetch everything from node
+				LOG.info(String.format("collect everything, ip: %s", node.getAddress()));
 				Everything e = get(node, "/everything", Everything.class);
 				
 				nodeData.setLoad(e.getOs().getLoad());
@@ -94,7 +165,6 @@ public class CollectServiceImpl implements CollectService {
 				nodeService.updateNode(node);
 				
 				//collect everything else
-				collect_process_data(node, e.getProcesses(), now);
 				collect_cpu_data(node, e.getCpu(), now);
 				collect_disk_data(node, e.getDisks(), now);
 				collect_memory_data(node, e.getMemory(), now);
@@ -103,14 +173,15 @@ public class CollectServiceImpl implements CollectService {
 				//set unavail if cannot reach node
 				nodeData.setAvailable(0);
 			} finally {
-				nodeService.insertNodeData(nodeData);
+				nodeService.insertData(nodeData);
 				configService.setDate("collect.time", now);
+				LOG.info("collect everything, end");
 			}
 		}
 	}
 	
 	@Override
-	public void collectGcData() {
+	public void collectGc() {
 		LOG.debug("start collect gc data");
 		List<Gc> gcs = gcService.getRunningGcs();
 		for (Gc gc : gcs) {
@@ -126,7 +197,7 @@ public class CollectServiceImpl implements CollectService {
 					gc.setStatus("stop");
 					gcService.updateGcStatus(gc);
 				} else {
-					gcService.insertGcData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), out);
+					gcService.insertData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), out);
 				}
 			} catch (Exception e) {
 				gc.setStatus("stop");
@@ -137,7 +208,7 @@ public class CollectServiceImpl implements CollectService {
 	}
 
 	@Override
-	public void collectStackData() {
+	public void collectStack() {
 		LOG.debug("start collect stack data");
 		List<Stack> stacks = stackService.getRunningStacks();
 		for (Stack stack : stacks) {
@@ -157,7 +228,7 @@ public class CollectServiceImpl implements CollectService {
 					sd.setAgentId(stack.getAgentId());
 					sd.setCount(count);
 					sd.setStacks(JsonUtil.encode(list));
-					stackService.insertStackData(sd);
+					stackService.insertData(sd);
 				}
 			} catch (Exception e) {
 				stack.setStatus("stop");
@@ -166,16 +237,42 @@ public class CollectServiceImpl implements CollectService {
 		}
 	}
 	
-	public void collect_process_data(Node node, List<cn.batchfile.stat.agent.domain.Process> ps, Date time) {
-		List<cn.batchfile.stat.server.domain.Process> process_list = processService.getProcessByAgentId(node.getAgentId());
-		for (cn.batchfile.stat.server.domain.Process process : process_list) {
-			List<ProcessInstance> instances = processService.getRunningInstance(ps, process, time);
-			process.setRunningInstance(instances.size());
-			processService.updateRunningInstance(process);
-		}
+	private ProcessInstance compose_process_instance(Process p, Node node, ProcessMonitor monitor, List<ProcessInstance> instances) {
+		ProcessInstance instance = new ProcessInstance();
+		instance.setInstanceId(find_instance_id(instances, node.getAgentId(), p.getPid(), "running"));
+		instance.setAgentId(node.getAgentId());
+		instance.setPid(p.getPid());
+		instance.setMonitorName(monitor.getName());
+		instance.setStatus("running");
+		instance.setUser(p.getUser());
+		instance.setType(p.getType());
+		instance.setStarted(p.getStarted());
+		instance.setCommand(p.getCommand());
+		instance.setMainClass(p.getMainClass());
+		return instance;
 	}
 
-	public void collect_cpu_data(Node node, Cpu cpu, Date time) {
+	private String find_instance_id(List<ProcessInstance> instances, String agentId, long pid, String status) {
+		for (ProcessInstance instance : instances) {
+			if (StringUtils.equals(agentId, instance.getAgentId()) 
+					&& pid == instance.getPid() 
+					&& StringUtils.equals(status, instance.getStatus())) {
+				return instance.getInstanceId();
+			}
+		}
+		return null;
+	}
+
+	private boolean pid_exist(long pid, List<Process> ps) {
+		for (Process p : ps) {
+			if (pid == p.getPid()) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void collect_cpu_data(Node node, Cpu cpu, Date time) {
 		CpuData cd = new CpuData();
 		cd.setAgentId(node.getAgentId());
 		cd.setTime(time);
@@ -188,10 +285,10 @@ public class CollectServiceImpl implements CollectService {
 		cd.setSys(cpu.getSys());
 		cd.setUser(cpu.getUser());
 		cd.setWait(cpu.getWait());
-		cpuService.insertCpuData(cd);
+		cpuService.insertData(cd);
 	}
 
-	public void collect_disk_data(Node node, List<cn.batchfile.stat.agent.domain.Disk> ds, Date time) {
+	private void collect_disk_data(Node node, List<cn.batchfile.stat.agent.domain.Disk> ds, Date time) {
 		for (cn.batchfile.stat.agent.domain.Disk d : ds) {
 			Disk disk = new Disk();
 			disk.setAgentId(node.getAgentId());
@@ -221,11 +318,11 @@ public class CollectServiceImpl implements CollectService {
 			diskData.setDiskQueue(d.getDiskQueue());
 			diskData.setDiskServiceTime(d.getDiskServiceTime());
 			diskData.setUsePercent(d.getUsePercent());
-			diskService.insertDiskData(diskData);
+			diskService.insertData(diskData);
 		}
 	}
 
-	public void collect_memory_data(Node node, Memory memory, Date time) {
+	private void collect_memory_data(Node node, Memory memory, Date time) {
 		MemoryData md = new MemoryData();
 		md.setAgentId(node.getAgentId());
 		md.setTime(time);
@@ -237,10 +334,10 @@ public class CollectServiceImpl implements CollectService {
 		md.setTotal(memory.getTotal());
 		md.setUsed(memory.getUsed());
 		md.setUsedPercent(memory.getUsedPercent());
-		memoryService.insertMemoryData(md);
+		memoryService.insertData(md);
 	}
 
-	public void collect_network_data(Node node, List<cn.batchfile.stat.agent.domain.Network> ns, Date time) {
+	private void collect_network_data(Node node, List<cn.batchfile.stat.agent.domain.Network> ns, Date time) {
 		for (cn.batchfile.stat.agent.domain.Network n : ns) {
 			Network network = new Network();
 			network.setAgentId(node.getAgentId());
@@ -275,7 +372,7 @@ public class CollectServiceImpl implements CollectService {
 			networkData.setTxErrors(n.getTxErrors());
 			networkData.setTxOverruns(n.getTxOverruns());
 			networkData.setTxPackets(n.getTxPackets());
-			networkService.insertNetworkData(networkData);
+			networkService.insertData(networkData);
 		}
 	}
 

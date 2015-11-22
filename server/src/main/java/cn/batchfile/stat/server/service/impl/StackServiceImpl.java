@@ -27,8 +27,11 @@ public class StackServiceImpl implements StackService {
 	@Override
 	public String startStack(String agentId, long pid, String name) {
 		if (StringUtils.isEmpty(name)) {
-			ProcessInstance pi = processDao.getRunningProcessInstanceByAgentIdAndPid(agentId, pid);
-			name = pi == null ? null : pi.getName();
+			List<ProcessInstance> pis = processDao.getInstancesByAgentPidStatus(agentId, pid, "running");
+			if (pis != null && pis.size() > 0) {
+				ProcessInstance pi = pis.get(0);
+				name = StringUtils.isEmpty(pi.getDeploymentName()) ? pi.getMonitorName() : pi.getDeploymentName();
+			}
 		}
 		
 		Stack stack = new Stack();
@@ -54,7 +57,7 @@ public class StackServiceImpl implements StackService {
 	}
 
 	@Override
-	public void insertStackData(StackData stackData) {
-		stackDao.insertStackData(stackData);
+	public void insertData(StackData stackData) {
+		stackDao.insertData(stackData);
 	}
 }

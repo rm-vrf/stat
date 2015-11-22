@@ -9,7 +9,7 @@
 		(#{agentId},#{address},#{name},#{hwaddr},#{type},#{description},#{destination},#{broadcast},#{netmask},#{flags},#{mtu},#{metric})
 	</insert>
 	
-	<insert id="insertNetworkData" parameterType="NetworkData">
+	<insert id="insertData" parameterType="NetworkData">
 		REPLACE INTO `network_data`
 		(`agent_id`,`address`,`time`,`rx_bytes`,`rx_bytes_per_second`,`rx_packets`,`rx_packets_per_second`,
 		`rx_errors`,`rx_errors_per_second`,`rx_dropped`,`rx_dropped_per_second`,`rx_overruns`,`rx_overruns_per_second`,

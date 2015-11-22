@@ -2,77 +2,92 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "mybatis-3-mapper.dtd" >
 <mapper namespace="cn.batchfile.stat.server.dao.ProcessDao" >
 
-	<resultMap id="processResult" type="Process">
-		<result property="agentId" column="agent_id"/>
+	<resultMap id="processMonitorResult" type="ProcessMonitor">
 		<result property="name" column="name"/>
 		<result property="description" column="description"/>
-		<result property="containsEvery" column="contains_every"/>
-		<result property="containsAny" column="contains_any"/>
-		<result property="containsNo" column="contains_no"/>
-		<result property="runningInstance" column="running_instance"/>
-		<result property="workingDirectory" column="working_directory"/>
-		<result property="javaHome" column="java_home"/>
-		<result property="jreHome" column="jre_home"/>
-		<result property="mainClass" column="main_class"/>
-		<result property="jar" column="jar"/>
-		<result property="arguments" column="arguments"/>
-		<result property="vmArguments" column="vm_arguments"/>
-		<result property="classpath" column="classpath"/>
-		<result property="environment" column="environment"/>
-		<result property="startCommand" column="start_command"/>
-		<result property="stopCommand" column="stop_command"/>
+		<result property="query" column="query"/>
+		<result property="instanceCount" column="instance_count"/>
+		<result property="enabled" column="enabled"/>
 	</resultMap>
 	
 	<resultMap id="processInstanceResult" type="ProcessInstance">
+		<result property="instanceId" column="instance_id"/>
 		<result property="agentId" column="agent_id"/>
-		<result property="name" column="name"/>
 		<result property="pid" column="pid"/>
+		<result property="deploymentName" column="deployment_name"/>
+		<result property="monitorName" column="monitor_name"/>
+		<result property="status" column="status"/>
 		<result property="user" column="user"/>
 		<result property="type" column="type"/>
-		<result property="status" column="status"/>
 		<result property="started" column="started"/>
 		<result property="command" column="command"/>
 		<result property="mainClass" column="main_class"/>
 	</resultMap>
 	
-	<select id="getProcessByAgentId" parameterType="string" resultMap="processResult">
-		SELECT * FROM `process` WHERE `agent_id`=#{value}
-	</select>
+<!-- 	<resultMap id="processResult" type="Process"> -->
+<!-- 		<result property="agentId" column="agent_id"/> -->
+<!-- 		<result property="name" column="name"/> -->
+<!-- 		<result property="containsEvery" column="contains_every"/> -->
+<!-- 		<result property="containsAny" column="contains_any"/> -->
+<!-- 		<result property="containsNo" column="contains_no"/> -->
+<!-- 		<result property="runningInstance" column="running_instance"/> -->
+<!-- 		<result property="workingDirectory" column="working_directory"/> -->
+<!-- 		<result property="javaHome" column="java_home"/> -->
+<!-- 		<result property="jreHome" column="jre_home"/> -->
+<!-- 		<result property="mainClass" column="main_class"/> -->
+<!-- 		<result property="jar" column="jar"/> -->
+<!-- 		<result property="arguments" column="arguments"/> -->
+<!-- 		<result property="vmArguments" column="vm_arguments"/> -->
+<!-- 		<result property="classpath" column="classpath"/> -->
+<!-- 		<result property="environment" column="environment"/> -->
+<!-- 		<result property="startCommand" column="start_command"/> -->
+<!-- 		<result property="stopCommand" column="stop_command"/> -->
+<!-- 	</resultMap> -->
 	
-	<select id="getRunningProcessInstanceByAgentId" parameterType="string" resultMap="processInstanceResult">
-		SELECT * FROM `process_instance` WHERE `agent_id`=#{value} AND `status`='running'
+	<select id="getEnabledMonitors" resultMap="processMonitorResult">
+		SELECT * FROM `process_monitor` WHERE `enabled`=1
 	</select>
-	
-	<select id="getRunningProcessInstanceByAgentIdAndPid" parameterType="map" resultMap="processInstanceResult">
+
+	<select id="getInstancesByAgentPidStatus" parameterType="map" resultMap="processInstanceResult">
 		SELECT * FROM `process_instance` 
-		WHERE `agent_id`=#{param1} AND `pid`=#{param2} AND `status`='running'
+		WHERE `agent_id`=#{param1} 
+			AND `status`=#{param3}
+			AND `pid`=#{param2} 
+	</select>
+
+	<select id="getInstancesByAgentNameStatus" parameterType="map" resultMap="processInstanceResult">
+		SELECT * FROM `process_instance` 
+		WHERE `agent_id`=#{param1} 
+			AND `status`=#{param3}
+			AND (`deployment_name`=#{param2} OR `monitor_name`=#{param2}) 
 	</select>
 	
-	<update id="updateRunningInstance" parameterType="Process">
-		UPDATE `process` SET `running_instance`=#{runningInstance}
-		WHERE `agent_id`=#{agentId}
-			AND `name`=#{name}
-	</update>
-	
-	<update id="updateProcessInstanceStatus" parameterType="ProcessInstance">
-		UPDATE `process_instance` SET `status`=#{status}
-		WHERE `agent_id`=#{agentId}
-			AND `name`=#{name}
-			AND `pid`=#{pid}
-	</update>
-	
-	<insert id="insertProcessInstance" parameterType="ProcessInstance">
+	<insert id="insertInstance" parameterType="ProcessInstance">
 		REPLACE INTO `process_instance`
-		(`agent_id`,`name`,`pid`,`user`,`type`,`status`,`started`,`command`,`main_class`) 
+		(`instance_id`,`agent_id`,`pid`,`deployment_name`,`monitor_name`,
+		`status`,`user`,`type`,`started`,`command`,`main_class`) 
 		VALUES
-		(#{agentId},#{name},#{pid},#{user},#{type},#{status},#{started},#{command},#{mainClass}) 
+		(#{instanceId},#{agentId},#{pid},#{deploymentName},#{monitorName},
+		#{status},#{user},#{type},#{started},#{command},#{mainClass}) 
 	</insert>
 	
-	<insert id="insertProcessData" parameterType="ProcessData">
+	<insert id="insertData" parameterType="ProcessData">
 		REPLACE INTO `process_data`
-		(`agent_id`,`name`,`pid`,`time`,`cpu_percent`,`memory_percent`,`vsz`,`rss`,`tt`,`stat`,`uptime`) 
+		(`instance_id`,`time`,`agent_id`,`name`,
+		`pid`,`cpu_percent`,`memory_percent`,`vsz`,`rss`,`tt`,`stat`,`cpu_time`) 
 		VALUES
-		(#{agentId},#{name},#{pid},#{time},#{cpuPercent},#{memoryPercent},#{vsz},#{rss},#{tt},#{stat},#{uptime}) 
+		(#{instanceId},#{time},#{agentId},#{name},
+		#{pid},#{cpuPercent},#{memoryPercent},#{vsz},#{rss},#{tt},#{stat},#{cpuTime}) 
 	</insert>
+
+	<update id="updateInstanceStatus" parameterType="map">
+		UPDATE `process_instance` SET `status`=#{param2}
+		WHERE `instance_id`=#{param1}
+	</update>
+
+	<update id="updateMonitorInstanceCount" parameterType="map">
+		UPDATE `process_monitor` SET `instance_count`=#{param2}
+		WHERE `name`=#{param1}
+	</update>
 
 </mapper>

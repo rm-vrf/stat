@@ -9,7 +9,7 @@
 		(#{agentId},#{dirName},#{devName},#{typeName},#{sysTypeName},#{options},#{type},#{flags})
 	</insert>
 	
-	<insert id="insertDiskData" parameterType="DiskData">
+	<insert id="insertData" parameterType="DiskData">
 		REPLACE INTO `disk_data`
 		(`agent_id`,`dir_name`,`time`,`total`,`free`,`used`,`avail`,`files`,`free_files`,
 		`disk_reads`,`disk_reads_per_second`,`disk_writes`,`disk_writes_per_second`,

@@ -7,5 +7,5 @@ public interface DiskService {
 
 	void insertDisk(Disk disk);
 	
-	void insertDiskData(DiskData diskData);
+	void insertData(DiskData diskData);
 }

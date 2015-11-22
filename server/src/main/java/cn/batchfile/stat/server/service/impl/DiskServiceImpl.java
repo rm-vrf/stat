@@ -24,9 +24,9 @@ public class DiskServiceImpl implements DiskService {
 	}
 
 	@Override
-	public void insertDiskData(DiskData diskData) {
+	public void insertData(DiskData diskData) {
 		calc_offset_value(diskData);
-		diskDao.insertDiskData(diskData);
+		diskDao.insertData(diskData);
 	}
 	
 	private void calc_offset_value(DiskData diskData) {

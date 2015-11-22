@@ -14,7 +14,7 @@ public class CpuServiceImpl implements CpuService {
 	private CpuDao cpuDao;
 	
 	@Override
-	public void insertCpuData(CpuData cpuData) {
-		cpuDao.insertCpuData(cpuData);
+	public void insertData(CpuData cpuData) {
+		cpuDao.insertData(cpuData);
 	}
 }

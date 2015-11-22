@@ -26,7 +26,7 @@
 		UPDATE `gc` SET `status`=#{status} WHERE `command_id`=#{commandId}
 	</update>
 
-	<insert id="insertGcData" parameterType="GcData">
+	<insert id="insertData" parameterType="GcData">
 		REPLACE INTO `gc_data` 
 		(`command_id`,`time`,`agent_id`,`pid`,
 		`s0c`,`s1c`,`s0u`,`s1u`,`ec`,`eu`,`oc`,`ou`,`mc`,`mu`,

@@ -13,5 +13,5 @@ public interface NodeDao {
 
 	void updateNode(Node node);
 
-	void insertNodeData(NodeData nodeData);
+	void insertData(NodeData nodeData);
 }

@@ -4,5 +4,5 @@ import cn.batchfile.stat.server.domain.MemoryData;
 
 public interface MemoryService {
 
-	void insertMemoryData(MemoryData memoryData);
+	void insertData(MemoryData memoryData);
 }

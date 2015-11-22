@@ -7,5 +7,5 @@ public interface NetworkService {
 
 	void insertNetwork(Network network);
 	
-	void insertNetworkData(NetworkData networkData);
+	void insertData(NetworkData networkData);
 }

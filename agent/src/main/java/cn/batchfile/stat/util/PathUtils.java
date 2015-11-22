@@ -1,5 +1,8 @@
 package cn.batchfile.stat.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -27,5 +30,13 @@ public class PathUtils {
 		}
 		
 		return s;
+	}
+	
+	public static String encodeUrl(String s) {
+		try {
+			return URLEncoder.encode(s, "utf-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e.getMessage(), e);
+		}
 	}
 }

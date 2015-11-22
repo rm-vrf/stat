@@ -11,8 +11,9 @@
 		<property name="triggers">
 			<list>
 				<ref bean="collectEverythingTrigger" />
-				<ref bean="collectGcDataTrigger" />
-				<ref bean="collectStackDataTrigger" />
+				<ref bean="collectGcTrigger" />
+				<ref bean="collectProcessTrigger" />
+				<ref bean="collectStackTrigger" />
 			</list>
 		</property>
 		<property name="quartzProperties">
@@ -31,18 +32,27 @@
 		</property>
 	</bean>
 	
-	<bean id="collectGcDataTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+	<bean id="collectGcTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail">
-			<ref bean="collectGcData" />
+			<ref bean="collectGc" />
 		</property>
 		<property name="cronExpression">
 			<value>0,20,40 * * * * ?</value>
 		</property>
 	</bean>
 	
-	<bean id="collectStackDataTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+	<bean id="collectProcessTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail">
-			<ref bean="collectStackData" />
+			<ref bean="collectProcess" />
+		</property>
+		<property name="cronExpression">
+			<value>0,20,40 * * * * ?</value>
+		</property>
+	</bean>
+	
+	<bean id="collectStackTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail">
+			<ref bean="collectStack" />
 		</property>
 		<property name="cronExpression">
 			<value>0 * * * * ?</value>
@@ -61,24 +71,36 @@
 		</property>
 	</bean>
 
-	<bean id="collectGcData" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+	<bean id="collectGc" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
 			<ref bean="collectService" />
 		</property>
 		<property name="targetMethod">
-			<value>collectGcData</value>
+			<value>collectGc</value>
 		</property>
 		<property name="concurrent">
 			<value>false</value>
 		</property>
 	</bean>
 
-	<bean id="collectStackData" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+	<bean id="collectProcess" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
 		<property name="targetObject">
 			<ref bean="collectService" />
 		</property>
 		<property name="targetMethod">
-			<value>collectStackData</value>
+			<value>collectProcess</value>
+		</property>
+		<property name="concurrent">
+			<value>false</value>
+		</property>
+	</bean>
+	
+	<bean id="collectStack" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject">
+			<ref bean="collectService" />
+		</property>
+		<property name="targetMethod">
+			<value>collectStack</value>
 		</property>
 		<property name="concurrent">
 			<value>false</value>

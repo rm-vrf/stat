@@ -3,13 +3,18 @@ package cn.batchfile.stat.server.domain;
 import com.alibaba.fastjson.annotation.JSONField;
 
 public class ProcessInstance {
+	@JSONField(name="instance_id")
+	private String instanceId;
 	@JSONField(name="agent_id")
 	private String agentId;
-	private String name;
 	private long pid;
-	private String user;
-	private String type;
+	@JSONField(name="deployment_name")
+	private String deploymentName;
+	@JSONField(name="monitor_name")
+	private String monitorName;
 	private String status;
+	private String type;
+	private String user;
 	private String started;
 	private String command;
 	@JSONField(name="main_class")
@@ -23,12 +28,28 @@ public class ProcessInstance {
 		this.agentId = agentId;
 	}
 
-	public String getName() {
-		return name;
+	public String getInstanceId() {
+		return instanceId;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setInstanceId(String instanceId) {
+		this.instanceId = instanceId;
+	}
+
+	public String getDeploymentName() {
+		return deploymentName;
+	}
+
+	public void setDeploymentName(String deploymentName) {
+		this.deploymentName = deploymentName;
+	}
+
+	public String getMonitorName() {
+		return monitorName;
+	}
+
+	public void setMonitorName(String monitorName) {
+		this.monitorName = monitorName;
 	}
 
 	public long getPid() {
