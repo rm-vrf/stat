@@ -186,6 +186,7 @@ public class CollectServiceImpl implements CollectService {
 		List<Gc> gcs = gcService.getRunningGcs();
 		for (Gc gc : gcs) {
 			try {
+				Date now = new Date();
 				String uri = String.format("/command/%s/_consume", gc.getCommandId());
 				Node node = nodeService.getNode(gc.getAgentId());
 				String out = get(node, uri);
@@ -197,7 +198,7 @@ public class CollectServiceImpl implements CollectService {
 					gc.setStatus("stop");
 					gcService.updateGcStatus(gc);
 				} else {
-					gcService.insertData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), out);
+					gcService.insertData(gc.getCommandId(), gc.getAgentId(), gc.getPid(), now, out);
 				}
 			} catch (Exception e) {
 				gc.setStatus("stop");
@@ -213,6 +214,7 @@ public class CollectServiceImpl implements CollectService {
 		List<Stack> stacks = stackService.getRunningStacks();
 		for (Stack stack : stacks) {
 			try {
+				Date now = new Date();
 				String uri = String.format("/process/%s/stack", stack.getPid());
 				Node node = nodeService.getNode(stack.getAgentId());
 				List<cn.batchfile.stat.agent.domain.Stack> list = get(node, uri, new TypeReference<List<cn.batchfile.stat.agent.domain.Stack>>(){});
@@ -223,7 +225,7 @@ public class CollectServiceImpl implements CollectService {
 				} else {
 					StackData sd = new StackData();
 					sd.setCommandId(stack.getCommandId());
-					sd.setTime(new Date());
+					sd.setTime(now);
 					sd.setPid(stack.getPid());
 					sd.setAgentId(stack.getAgentId());
 					sd.setCount(count);

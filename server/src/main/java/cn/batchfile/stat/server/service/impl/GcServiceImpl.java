@@ -82,7 +82,7 @@ public class GcServiceImpl implements GcService {
 	}
 
 	@Override
-	public void insertData(String commandId, String agentId, long pid, String out) {
+	public void insertData(String commandId, String agentId, long pid, Date time, String out) {
 		out = StringUtils.remove(out, '\r');
 		String[] lines = StringUtils.split(out, '\n');
 		if (lines == null || lines.length == 0) {
@@ -90,7 +90,7 @@ public class GcServiceImpl implements GcService {
 		}
 		
 		int offset = lines.length - 1;
-		long time = new Date().getTime() - (offset * INTETRVAL);
+		long t = time.getTime() - (offset * INTETRVAL);
 		for (String line : lines) {
 			if (!StringUtils.contains(line, "FGCT")) {
 				String[] ary = StringUtils.split(line, ' ');
@@ -99,7 +99,7 @@ public class GcServiceImpl implements GcService {
 					gd.setAgentId(agentId);
 					gd.setCommandId(commandId);
 					gd.setPid(pid);
-					gd.setTime(new Date(time));
+					gd.setTime(new Date(t));
 					gd.setS0c(Double.valueOf(ary[0]));
 					gd.setS1c(Double.valueOf(ary[1]));
 					gd.setS0u(Double.valueOf(ary[2]));
@@ -120,7 +120,7 @@ public class GcServiceImpl implements GcService {
 					gcDao.insertData(gd);
 				}
 			}
-			time += INTETRVAL;
+			t += INTETRVAL;
 		}
 	}
 
