@@ -11,6 +11,7 @@ public class Deployment {
 	private int instanceCount;
 	@JSONField(name="pid_file")
 	private String pidFile;
+	private String user;
 	@JSONField(name="working_directory")
 	private String workingDirectory;
 	private String environment;
@@ -68,6 +69,14 @@ public class Deployment {
 
 	public void setPidFile(String pidFile) {
 		this.pidFile = pidFile;
+	}
+
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
 	}
 
 	public String getWorkingDirectory() {

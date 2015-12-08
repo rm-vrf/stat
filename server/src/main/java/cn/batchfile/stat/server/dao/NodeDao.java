@@ -14,4 +14,6 @@ public interface NodeDao {
 	void updateNode(Node node);
 
 	void insertData(NodeData nodeData);
+
+	List<Node> getEnableNodes();
 }

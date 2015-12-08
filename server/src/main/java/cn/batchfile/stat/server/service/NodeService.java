@@ -9,6 +9,8 @@ public interface NodeService {
 
 	List<Node> getNodes();
 	
+	List<Node> getEnableNodes();
+	
 	Node getNode(String agentId);
 
 	void updateNode(Node node);

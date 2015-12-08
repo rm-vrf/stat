@@ -22,6 +22,11 @@ public class NodeServiceImpl implements NodeService {
 	}
 
 	@Override
+	public List<Node> getEnableNodes() {
+		return nodeDao.getEnableNodes();
+	}
+	
+	@Override
 	public Node getNode(String agentId) {
 		return nodeDao.getNode(agentId);
 	}

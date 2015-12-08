@@ -9,6 +9,7 @@
 		<result property="port" column="port"/>
 		<result property="hostname" column="hostname"/>
 		<result property="description" column="description"/>
+		<result property="location" column="location"/>
 		<result property="osName" column="os_name"/>
 		<result property="osVersion" column="os_version"/>
 		<result property="cpu" column="cpu"/>
@@ -16,11 +17,17 @@
 		<result property="idRsa" column="id_rsa"/>
 		<result property="idRsaPub" column="id_rsa_pub"/>
 		<result property="createTime" column="create_time"/>
+		<result property="enabled" column="enabled"/>
 	</resultMap>
 	
 	<select id="getNodes" resultMap="nodeResult">
 		SELECT *
 		FROM `node`
+	</select>
+	
+	<select id="getEnableNodes" resultMap="nodeResult">
+		SELECT *
+		FROM `node` WHERE enabled=1
 	</select>
 	
 	<select id="getNode" parameterType="string" resultMap="nodeResult">

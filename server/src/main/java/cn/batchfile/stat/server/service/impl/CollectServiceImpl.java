@@ -76,7 +76,7 @@ public class CollectServiceImpl implements CollectService {
 	@Override
 	public void collectProcess() {
 		LOG.info("collect process data, begin");
-		List<Node> nodes = nodeService.getNodes();
+		List<Node> nodes = nodeService.getEnableNodes();
 		List<ProcessMonitor> monitors = processService.getEnabledMonitors();
 		for (ProcessMonitor monitor : monitors) {
 			int instance_count = 0;
@@ -141,7 +141,7 @@ public class CollectServiceImpl implements CollectService {
 	@Override
 	public void collectEverything() {
 		LOG.info("collect everything, begin");
-		List<Node> nodes = nodeService.getNodes();
+		List<Node> nodes = nodeService.getEnableNodes();
 		Date now = new Date();
 		
 		for (Node node : nodes) {

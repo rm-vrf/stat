@@ -12,6 +12,7 @@ public class Node {
 	private int port;
 	private String hostname;
 	private String description;
+	private String location;
 	@JSONField(name="os_name")
 	private String osName;
 	@JSONField(name="os_version")
@@ -24,6 +25,7 @@ public class Node {
 	private String idRsaPub;
 	@JSONField(name="create_time")
 	private Date createTime;
+	private boolean enabled;
 	
 	public String getAgentId() {
 		return agentId;
@@ -73,6 +75,14 @@ public class Node {
 		this.description = description;
 	}
 	
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
 	public String getOsName() {
 		return osName;
 	}
@@ -127,5 +137,13 @@ public class Node {
 	
 	public void setCreateTime(Date createTime) {
 		this.createTime = createTime;
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
 	}
 }
