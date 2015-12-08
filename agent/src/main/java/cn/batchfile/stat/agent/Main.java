@@ -1,19 +1,11 @@
 package cn.batchfile.stat.agent;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -27,18 +19,18 @@ import cn.batchfile.stat.util.PathUtils;
 
 public class Main {
 	private static final Logger LOG = Logger.getLogger(Main.class);
-	
-	public static String address = null;
 	public static int port = 9091;
 	
 	public static void main(String[] args) throws Exception {
 		// parse args
+		String pid_file = ArgumentUtils.getArgument(args, "pid-file", "f");
 		String dir = ArgumentUtils.getArgument(args, "dir", "d");
-		String address = ArgumentUtils.getArgument(args, "address", "a");
 		String port = ArgumentUtils.getArgument(args, "port", "p");
 
-		if (StringUtils.isNotEmpty(address) && !StringUtils.equals(address, "null")) {
-			Main.address = address;
+		//写pid文件
+		String pid = StringUtils.EMPTY;
+		if (StringUtils.isNotBlank(pid_file) && !StringUtils.equals(pid_file, "null")) {
+			pid = write_pid(pid_file);
 		}
 		
 		if (StringUtils.isNotEmpty(port) && !StringUtils.equals(port, "null")) {
@@ -52,22 +44,11 @@ public class Main {
 			org.apache.log4j.PropertyConfigurator.configureAndWatch(log4j, 20000);
 		}
 		
-		// run start|stop|restart
-		String command = args.length > 0 ? args[0] : null;
-		if (StringUtils.equals(command, "start")) {
-			start();
-		} else if (StringUtils.equals(command, "stop")) {
-			stop();
-		} else {
-			print_helper();
-		}
+		LOG.info(String.format("---- start agent, pid: %s ----", pid));
+		start();
 	}
 	
 	private static void start() throws Exception {
-		//write pid file
-		String pid = write_pid();
-		LOG.info(String.format("---- start agent, pid: %s ----", pid));
-
 		//start jetty server
 		Server server = new Server(port);
 		setThreadCount(server);
@@ -110,90 +91,18 @@ public class Main {
 		}
 	}
 	
-	private static void stop() throws IOException, CommandLineException, InterruptedException {
-		//get pid
-		final String pid = read_pid();
-		
-		//send ps command
-		Commandline cl = new Commandline(String.format("ps -p %s", pid));
-		CommandLineUtils.executeCommandLine(cl, new StreamConsumer() {
-			@Override
-			public void consumeLine(String line) {
-				line = StringUtils.trim(line);
-				if (StringUtils.startsWith(line, pid) && StringUtils.contains(line, "java")) {
-					LOG.info(String.format("stop agent, id: %s", pid));
-					try {
-						CommandLineUtils.executeCommandLine(new Commandline(String.format("kill -15 %s", pid)), null, null);
-						int i = 0;
-						while (CommandLineUtils.isAlive(Long.valueOf(pid)) && i ++ < 20) {
-							Thread.sleep(500);
-						}
-						if (CommandLineUtils.isAlive(Long.valueOf(pid))) {
-							CommandLineUtils.executeCommandLine(new Commandline(String.format("kill -9 %s", pid)), null, null);
-						}
-					} catch (Exception e) {
-						//pass
-					}
-				}
-			}
-		}, new StreamConsumer() {
-			@Override
-			public void consumeLine(String line) {
-				LOG.error(line);
-			}
-		});
-
-		int i = 0;
-		while (CommandLineUtils.isAlive(Long.valueOf(pid)) && i ++ < 40) {
-			Thread.sleep(500);
-		}
-		
-		if (CommandLineUtils.isAlive(Long.valueOf(pid))) {
-			throw new RuntimeException("cannot stop agent, pid: " + pid);
-		}
-	}
-	
-	private static String write_pid() throws IOException {
+	private static String write_pid(String file) throws IOException {
 		String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
 		String pid = processName.split("@")[0];
-		String data_dir = data_dir();
-		FileUtils.forceMkdir(new File(data_dir));
-		File pid_file = new File(PathUtils.concat(data_dir, "pid"));
+		File pid_file = new File(file);
+		if (!pid_file.exists()) {
+			File dir = new File(pid_file.getParent());
+			if (!dir.exists()) {
+				FileUtils.forceMkdir(dir);
+			}
+			pid_file.createNewFile();
+		}
 		FileUtils.writeStringToFile(pid_file, pid);
 		return pid;
-	}
-	
-	private static String read_pid() throws IOException {
-		String data_dir = data_dir();
-		File pid_file = new File(PathUtils.concat(data_dir, "pid"));
-		if (pid_file.exists()) {
-			return FileUtils.readFileToString(pid_file);
-		} else {
-			return null;
-		}
-	}
-	
-	public static Properties read_config() throws IOException {
-		String data_dir = data_dir();
-		Properties props = new Properties();
-		InputStream inputStream = null;
-		try {
-			File file = new File(PathUtils.concat(data_dir, "config.properties"));
-			if (file.exists()) {
-				inputStream = new FileInputStream(file);
-				props.load(inputStream);
-			}
-			return props;
-		} finally {
-			IOUtils.closeQuietly(inputStream);
-		}
-	}
-	
-	private static String data_dir() {
-		return PathUtils.concat(FileUtils.getUserDirectoryPath(), ".stat/agent/");
-	}
-
-	private static void print_helper() {
-		LOG.error("Usage: ./agent.sh start|stop");
 	}
 }
