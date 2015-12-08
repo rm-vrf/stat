@@ -21,7 +21,7 @@ public class ProcessData {
 	private String tt;
 	private String stat;
 	@JSONField(name="cpu_time")
-	private String cpuTime;
+	private long cpuTime;
 
 	public String getInstanceId() {
 		return instanceId;
@@ -111,11 +111,11 @@ public class ProcessData {
 		this.stat = stat;
 	}
 
-	public String getCpuTime() {
+	public long getCpuTime() {
 		return cpuTime;
 	}
 
-	public void setCpuTime(String cpuTime) {
+	public void setCpuTime(long cpuTime) {
 		this.cpuTime = cpuTime;
 	}
 }

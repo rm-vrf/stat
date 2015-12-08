@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,7 +117,7 @@ public class CollectServiceImpl implements CollectService {
 						data.setRss(p.getRss());
 						data.setTt(p.getTt());
 						data.setStat(p.getStat());
-						data.setCpuTime(p.getTime());
+						data.setCpuTime(parse_time(p.getTime()));
 						processService.insertData(data);
 					}
 					
@@ -405,6 +406,29 @@ public class CollectServiceImpl implements CollectService {
 		hc.setConnectionTimeout(1000);
 		hc.setReadTimeout(10000);
 		return hc.get(url);
+	}
+
+	private long parse_time(String s) {
+		long time = 0L;
+
+		// mille second
+		String ms = StringUtils.substringAfter(s, ".");
+		if (StringUtils.isNotEmpty(ms)) {
+			time += Long.valueOf(ms);
+		}
+		
+		// mm:ss
+		s = StringUtils.substringBefore(s, ".");
+		String[] parts = StringUtils.split(s, ":");
+		ArrayUtils.reverse(parts);
+		for (int i = 0; i < parts.length; i ++) {
+			if (StringUtils.isNotEmpty(parts[i])) {
+				long value = Long.valueOf(parts[i]) * (long)(Math.pow(60, i)) * 1000;
+				time += value;
+			}
+		}
+		
+		return time;
 	}
 
 }
