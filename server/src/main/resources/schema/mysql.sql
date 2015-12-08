@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `deployment` (
   `name` varchar(128) NOT NULL,
   `description` text,
   `instance_count` int(11) DEFAULT NULL,
+  `user` varchar(64) DEFAULT NULL,
   `working_directory` varchar(255) DEFAULT NULL,
   `environment` text,
   `start_command` varchar(255) DEFAULT NULL,
@@ -118,6 +119,22 @@ CREATE TABLE IF NOT EXISTS `memory_data` (
   `free_percent` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `metric` (
+  `agent_id` varchar(32) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `description` text,
+  `script_type` varchar(64) DEFAULT NULL,
+  `content_type` varchar(64) DEFAULT NULL,
+  `script` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `metric_data` (
+  `agent_id` varchar(32) NOT NULL,
+  `name` varchar(128) NOT NULL,
+  `time` datetime NOT NULL,
+  `value` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `network` (
   `agent_id` varchar(32) NOT NULL,
   `address` varchar(128) NOT NULL,
@@ -172,13 +189,15 @@ CREATE TABLE IF NOT EXISTS `node` (
   `port` int(11) DEFAULT NULL,
   `hostname` varchar(128) DEFAULT NULL,
   `description` text,
+  `location` varchar(64) DEFAULT NULL,
   `os_name` varchar(128) DEFAULT NULL,
   `os_version` varchar(128) DEFAULT NULL,
   `cpu` int(11) DEFAULT NULL,
   `architecture` varchar(128) DEFAULT NULL,
   `id_rsa` text,
   `id_rsa_pub` text,
-  `create_time` datetime DEFAULT NULL
+  `create_time` datetime DEFAULT NULL,
+  `enabled` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `node_data` (
@@ -186,6 +205,11 @@ CREATE TABLE IF NOT EXISTS `node_data` (
   `time` datetime NOT NULL,
   `load` double DEFAULT NULL,
   `available` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `node_tag` (
+  `agent_id` varchar(32) NOT NULL,
+  `tag` varchar(64) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `process_data` (
@@ -200,7 +224,7 @@ CREATE TABLE IF NOT EXISTS `process_data` (
   `rss` bigint(20) DEFAULT NULL,
   `tt` varchar(64) DEFAULT NULL,
   `stat` varchar(64) DEFAULT NULL,
-  `cpu_time` varchar(64) DEFAULT NULL
+  `cpu_time` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `process_instance` (
@@ -224,13 +248,6 @@ CREATE TABLE IF NOT EXISTS `process_monitor` (
   `instance_count` int(11) DEFAULT NULL,
   `enabled` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('activemq', NULL, 'activemq.jar start', 0, 1);
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('apache', NULL, 'httpd', 11, 1);
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('elasticsearch', NULL, 'org.elasticsearch.bootstrap.ElasticsearchF', 1, 1);
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('getty', NULL, 'getty.jar --port=1025', 0, 1);
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('mysql', NULL, 'mysql', 3, 1);
-INSERT INTO `process_monitor` (`name`, `description`, `query`, `instance_count`, `enabled`) VALUES('tomcat', NULL, 'tomcat org.apache.catalina.startup.Bootstrap', 1, 1);
 
 CREATE TABLE IF NOT EXISTS `stack` (
   `command_id` varchar(32) NOT NULL,
@@ -276,6 +293,12 @@ ALTER TABLE `gc_data`
 ALTER TABLE `memory_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
 
+ALTER TABLE `metric`
+  ADD PRIMARY KEY (`agent_id`,`name`);
+
+ALTER TABLE `metric_data`
+  ADD PRIMARY KEY (`agent_id`,`name`,`time`);
+
 ALTER TABLE `network`
   ADD PRIMARY KEY (`agent_id`,`address`);
 
@@ -283,10 +306,14 @@ ALTER TABLE `network_data`
   ADD PRIMARY KEY (`agent_id`,`address`,`time`);
 
 ALTER TABLE `node`
-  ADD PRIMARY KEY (`agent_id`);
+  ADD PRIMARY KEY (`agent_id`),
+  ADD KEY `enabled` (`enabled`);
 
 ALTER TABLE `node_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
+
+ALTER TABLE `node_tag`
+  ADD PRIMARY KEY (`agent_id`,`tag`);
 
 ALTER TABLE `process_data`
   ADD PRIMARY KEY (`instance_id`,`time`);
@@ -305,4 +332,4 @@ ALTER TABLE `stack`
 
 ALTER TABLE `stack_data`
   ADD PRIMARY KEY (`command_id`,`time`),
-  ADD KEY `pid_time` (`pid`,`time`);
+  ADD UNIQUE KEY `pid_time` (`pid`,`time`);

@@ -23,11 +23,13 @@
 	<select id="getNodes" resultMap="nodeResult">
 		SELECT *
 		FROM `node`
+		ORDER BY `hostname`
 	</select>
 	
 	<select id="getEnableNodes" resultMap="nodeResult">
 		SELECT *
 		FROM `node` WHERE enabled=1
+		ORDER BY `hostname`
 	</select>
 	
 	<select id="getNode" parameterType="string" resultMap="nodeResult">
