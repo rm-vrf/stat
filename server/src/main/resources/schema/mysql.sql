@@ -1,9 +1,25 @@
+--
+-- Database: `stat`
+--
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `config`
+--
+
 CREATE TABLE IF NOT EXISTS `config` (
   `name` varchar(64) NOT NULL,
   `int_value` int(11) DEFAULT NULL,
   `string_value` varchar(128) DEFAULT NULL,
   `time_value` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `cpu_data`
+--
 
 CREATE TABLE IF NOT EXISTS `cpu_data` (
   `agent_id` varchar(32) NOT NULL,
@@ -19,13 +35,19 @@ CREATE TABLE IF NOT EXISTS `cpu_data` (
   `combined` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `deployment`
+--
+
 CREATE TABLE IF NOT EXISTS `deployment` (
   `agent_id` varchar(32) NOT NULL,
   `name` varchar(128) NOT NULL,
   `description` text,
   `instance_count` int(11) DEFAULT NULL,
   `user` varchar(64) DEFAULT NULL,
-  `working_directory` varchar(255) DEFAULT NULL,
+  `work_directory` varchar(255) DEFAULT NULL,
   `environment` text,
   `start_command` varchar(255) DEFAULT NULL,
   `stop_command` varchar(255) DEFAULT NULL,
@@ -39,6 +61,12 @@ CREATE TABLE IF NOT EXISTS `deployment` (
   `classpath` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `disk`
+--
+
 CREATE TABLE IF NOT EXISTS `disk` (
   `agent_id` varchar(32) NOT NULL,
   `dir_name` varchar(128) NOT NULL,
@@ -49,6 +77,12 @@ CREATE TABLE IF NOT EXISTS `disk` (
   `type` int(11) DEFAULT NULL,
   `flags` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `disk_data`
+--
 
 CREATE TABLE IF NOT EXISTS `disk_data` (
   `agent_id` varchar(32) NOT NULL,
@@ -73,6 +107,12 @@ CREATE TABLE IF NOT EXISTS `disk_data` (
   `use_percent` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `gc`
+--
+
 CREATE TABLE IF NOT EXISTS `gc` (
   `command_id` varchar(32) NOT NULL,
   `agent_id` varchar(32) DEFAULT NULL,
@@ -81,6 +121,12 @@ CREATE TABLE IF NOT EXISTS `gc` (
   `status` varchar(16) DEFAULT NULL,
   `name` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `gc_data`
+--
 
 CREATE TABLE IF NOT EXISTS `gc_data` (
   `command_id` varchar(32) NOT NULL,
@@ -106,6 +152,12 @@ CREATE TABLE IF NOT EXISTS `gc_data` (
   `gct` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `memory_data`
+--
+
 CREATE TABLE IF NOT EXISTS `memory_data` (
   `agent_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
@@ -119,21 +171,41 @@ CREATE TABLE IF NOT EXISTS `memory_data` (
   `free_percent` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `metric`
+--
+
 CREATE TABLE IF NOT EXISTS `metric` (
   `agent_id` varchar(32) NOT NULL,
   `name` varchar(128) NOT NULL,
   `description` text,
   `script_type` varchar(64) DEFAULT NULL,
   `content_type` varchar(64) DEFAULT NULL,
+  `format` varchar(128) DEFAULT NULL,
   `script` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `metric_data`
+--
 
 CREATE TABLE IF NOT EXISTS `metric_data` (
   `agent_id` varchar(32) NOT NULL,
   `name` varchar(128) NOT NULL,
+  `metric` varchar(64) NOT NULL,
   `time` datetime NOT NULL,
   `value` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `network`
+--
 
 CREATE TABLE IF NOT EXISTS `network` (
   `agent_id` varchar(32) NOT NULL,
@@ -149,6 +221,12 @@ CREATE TABLE IF NOT EXISTS `network` (
   `mtu` bigint(20) DEFAULT NULL,
   `metric` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `network_data`
+--
 
 CREATE TABLE IF NOT EXISTS `network_data` (
   `agent_id` varchar(32) NOT NULL,
@@ -182,6 +260,12 @@ CREATE TABLE IF NOT EXISTS `network_data` (
   `speed` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `node`
+--
+
 CREATE TABLE IF NOT EXISTS `node` (
   `agent_id` varchar(32) NOT NULL,
   `schema` varchar(16) DEFAULT NULL,
@@ -200,6 +284,12 @@ CREATE TABLE IF NOT EXISTS `node` (
   `enabled` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `node_data`
+--
+
 CREATE TABLE IF NOT EXISTS `node_data` (
   `agent_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
@@ -207,10 +297,22 @@ CREATE TABLE IF NOT EXISTS `node_data` (
   `available` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `node_tag`
+--
+
 CREATE TABLE IF NOT EXISTS `node_tag` (
   `agent_id` varchar(32) NOT NULL,
   `tag` varchar(64) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `process_data`
+--
 
 CREATE TABLE IF NOT EXISTS `process_data` (
   `instance_id` varchar(32) NOT NULL,
@@ -219,27 +321,40 @@ CREATE TABLE IF NOT EXISTS `process_data` (
   `name` varchar(128) DEFAULT NULL,
   `pid` bigint(20) DEFAULT NULL,
   `cpu_percent` double DEFAULT NULL,
-  `memory_percent` double DEFAULT NULL,
+  `threads` bigint(20) DEFAULT NULL,
   `vsz` bigint(20) DEFAULT NULL,
   `rss` bigint(20) DEFAULT NULL,
-  `tt` varchar(64) DEFAULT NULL,
-  `stat` varchar(64) DEFAULT NULL,
-  `cpu_time` bigint(20) DEFAULT NULL
+  `cpu_sys` bigint(20) DEFAULT NULL,
+  `cpu_user` bigint(20) DEFAULT NULL,
+  `cpu_total` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `process_instance`
+--
 
 CREATE TABLE IF NOT EXISTS `process_instance` (
   `instance_id` varchar(32) NOT NULL,
   `agent_id` varchar(32) DEFAULT NULL,
   `pid` bigint(20) DEFAULT NULL,
-  `deployment_name` varchar(128) DEFAULT NULL,
-  `monitor_name` varchar(128) DEFAULT NULL,
-  `status` varchar(32) DEFAULT NULL,
+  `ppid` bigint(20) DEFAULT NULL,
+  `status` varchar(16) DEFAULT NULL,
+  `name` varchar(128) DEFAULT NULL,
+  `group` varchar(64) DEFAULT NULL,
   `user` varchar(64) DEFAULT NULL,
-  `type` varchar(16) DEFAULT NULL,
-  `started` varchar(32) DEFAULT NULL,
+  `work_directory` varchar(128) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL,
   `command` text,
-  `main_class` text
+  `args` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `process_monitor`
+--
 
 CREATE TABLE IF NOT EXISTS `process_monitor` (
   `name` varchar(128) NOT NULL,
@@ -248,6 +363,12 @@ CREATE TABLE IF NOT EXISTS `process_monitor` (
   `instance_count` int(11) DEFAULT NULL,
   `enabled` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `stack`
+--
 
 CREATE TABLE IF NOT EXISTS `stack` (
   `command_id` varchar(32) NOT NULL,
@@ -258,6 +379,12 @@ CREATE TABLE IF NOT EXISTS `stack` (
   `name` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `stack_data`
+--
+
 CREATE TABLE IF NOT EXISTS `stack_data` (
   `command_id` varchar(32) NOT NULL,
   `time` datetime NOT NULL,
@@ -267,69 +394,133 @@ CREATE TABLE IF NOT EXISTS `stack_data` (
   `stacks` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `config`
+--
 ALTER TABLE `config`
   ADD PRIMARY KEY (`name`);
 
+--
+-- Indexes for table `cpu_data`
+--
 ALTER TABLE `cpu_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
 
+--
+-- Indexes for table `deployment`
+--
 ALTER TABLE `deployment`
   ADD PRIMARY KEY (`agent_id`,`name`);
 
+--
+-- Indexes for table `disk`
+--
 ALTER TABLE `disk`
   ADD PRIMARY KEY (`agent_id`,`dir_name`);
 
+--
+-- Indexes for table `disk_data`
+--
 ALTER TABLE `disk_data`
   ADD PRIMARY KEY (`agent_id`,`dir_name`,`time`);
 
+--
+-- Indexes for table `gc`
+--
 ALTER TABLE `gc`
   ADD PRIMARY KEY (`command_id`),
   ADD KEY `status` (`status`);
 
+--
+-- Indexes for table `gc_data`
+--
 ALTER TABLE `gc_data`
   ADD PRIMARY KEY (`command_id`,`time`),
   ADD KEY `pid_time` (`pid`,`time`);
 
+--
+-- Indexes for table `memory_data`
+--
 ALTER TABLE `memory_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
 
+--
+-- Indexes for table `metric`
+--
 ALTER TABLE `metric`
   ADD PRIMARY KEY (`agent_id`,`name`);
 
+--
+-- Indexes for table `metric_data`
+--
 ALTER TABLE `metric_data`
-  ADD PRIMARY KEY (`agent_id`,`name`,`time`);
+  ADD PRIMARY KEY (`agent_id`,`name`,`metric`,`time`);
 
+--
+-- Indexes for table `network`
+--
 ALTER TABLE `network`
   ADD PRIMARY KEY (`agent_id`,`address`);
 
+--
+-- Indexes for table `network_data`
+--
 ALTER TABLE `network_data`
   ADD PRIMARY KEY (`agent_id`,`address`,`time`);
 
+--
+-- Indexes for table `node`
+--
 ALTER TABLE `node`
   ADD PRIMARY KEY (`agent_id`),
   ADD KEY `enabled` (`enabled`);
 
+--
+-- Indexes for table `node_data`
+--
 ALTER TABLE `node_data`
   ADD PRIMARY KEY (`agent_id`,`time`);
 
+--
+-- Indexes for table `node_tag`
+--
 ALTER TABLE `node_tag`
   ADD PRIMARY KEY (`agent_id`,`tag`);
 
+--
+-- Indexes for table `process_data`
+--
 ALTER TABLE `process_data`
   ADD PRIMARY KEY (`instance_id`,`time`);
 
+--
+-- Indexes for table `process_instance`
+--
 ALTER TABLE `process_instance`
   ADD PRIMARY KEY (`instance_id`),
-  ADD KEY `agent_id_status` (`agent_id`,`status`);
+  ADD KEY `agent_id_status` (`agent_id`,`group`);
 
+--
+-- Indexes for table `process_monitor`
+--
 ALTER TABLE `process_monitor`
   ADD PRIMARY KEY (`name`),
   ADD KEY `enabled` (`enabled`);
 
+--
+-- Indexes for table `stack`
+--
 ALTER TABLE `stack`
   ADD PRIMARY KEY (`command_id`),
   ADD KEY `status` (`status`);
 
+--
+-- Indexes for table `stack_data`
+--
 ALTER TABLE `stack_data`
   ADD PRIMARY KEY (`command_id`,`time`),
   ADD UNIQUE KEY `pid_time` (`pid`,`time`);

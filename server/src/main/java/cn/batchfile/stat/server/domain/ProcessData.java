@@ -14,14 +14,15 @@ public class ProcessData {
 	private long pid;
 	@JSONField(name="cpu_percent")
 	private double cpuPercent;
-	@JSONField(name="memory_percent")
-	private double memoryPercent;
+	private long threads;
 	private long vsz;
 	private long rss;
-	private String tt;
-	private String stat;
-	@JSONField(name="cpu_time")
-	private long cpuTime;
+	@JSONField(name="cpu_sys")
+	private long cpuSys;
+	@JSONField(name="cpu_user")
+	private long cpuUser;
+	@JSONField(name="cpu_total")
+	private long cpuTotal;
 
 	public String getInstanceId() {
 		return instanceId;
@@ -71,14 +72,6 @@ public class ProcessData {
 		this.cpuPercent = cpuPercent;
 	}
 
-	public double getMemoryPercent() {
-		return memoryPercent;
-	}
-
-	public void setMemoryPercent(double memoryPercent) {
-		this.memoryPercent = memoryPercent;
-	}
-
 	public long getVsz() {
 		return vsz;
 	}
@@ -95,27 +88,35 @@ public class ProcessData {
 		this.rss = rss;
 	}
 
-	public String getTt() {
-		return tt;
+	public long getThreads() {
+		return threads;
 	}
 
-	public void setTt(String tt) {
-		this.tt = tt;
+	public void setThreads(long threads) {
+		this.threads = threads;
 	}
 
-	public String getStat() {
-		return stat;
+	public long getCpuSys() {
+		return cpuSys;
 	}
 
-	public void setStat(String stat) {
-		this.stat = stat;
+	public void setCpuSys(long cpuSys) {
+		this.cpuSys = cpuSys;
 	}
 
-	public long getCpuTime() {
-		return cpuTime;
+	public long getCpuUser() {
+		return cpuUser;
 	}
 
-	public void setCpuTime(long cpuTime) {
-		this.cpuTime = cpuTime;
+	public void setCpuUser(long cpuUser) {
+		this.cpuUser = cpuUser;
+	}
+
+	public long getCpuTotal() {
+		return cpuTotal;
+	}
+
+	public void setCpuTotal(long cpuTotal) {
+		this.cpuTotal = cpuTotal;
 	}
 }

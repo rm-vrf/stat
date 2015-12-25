@@ -37,7 +37,7 @@ public class GcServiceImpl implements GcService {
 			List<ProcessInstance> pis = processDao.getInstancesByAgentPidStatus(agentId, pid, "running");
 			if (pis != null && pis.size() > 0) {
 				ProcessInstance pi = pis.get(0);
-				name = StringUtils.isEmpty(pi.getDeploymentName()) ? pi.getMonitorName() : pi.getDeploymentName();
+				name = pi.getName();
 			}
 		}
 		

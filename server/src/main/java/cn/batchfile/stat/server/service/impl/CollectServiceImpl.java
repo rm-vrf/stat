@@ -1,11 +1,9 @@
 package cn.batchfile.stat.server.service.impl;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,12 +110,12 @@ public class CollectServiceImpl implements CollectService {
 						data.setName(monitor.getName());
 						data.setPid(p.getPid());
 						data.setCpuPercent(p.getCpuPercent());
-						data.setMemoryPercent(p.getMemoryPercent());
+						data.setThreads(p.getThreads());
 						data.setVsz(p.getVsz());
 						data.setRss(p.getRss());
-						data.setTt(p.getTt());
-						data.setStat(p.getStat());
-						data.setCpuTime(parse_time(p.getTime()));
+						data.setCpuSys(p.getCpuSys());
+						data.setCpuTotal(p.getCpuTotal());
+						data.setCpuUser(p.getCpuUser());
 						processService.insertData(data);
 					}
 					
@@ -246,13 +244,15 @@ public class CollectServiceImpl implements CollectService {
 		instance.setInstanceId(find_instance_id(instances, node.getAgentId(), p.getPid(), "running"));
 		instance.setAgentId(node.getAgentId());
 		instance.setPid(p.getPid());
-		instance.setMonitorName(monitor.getName());
+		instance.setPpid(p.getPpid());
 		instance.setStatus("running");
+		instance.setName(StringUtils.isEmpty(p.getName()) ? monitor.getName() : p.getName());
 		instance.setUser(p.getUser());
-		instance.setType(p.getType());
-		instance.setStarted(new SimpleDateFormat("MM-dd HH:mm").format(time));
-		instance.setCommand(p.getCommand());
-		instance.setMainClass(p.getMainClass());
+		instance.setGroup(p.getGroup());
+		instance.setWorkDirectory(p.getWorkDirectory());
+		instance.setStartTime(p.getStartTime());
+		instance.setCommand(p.getExe());
+		instance.setArgs(StringUtils.join(p.getArgs(), " "));
 		return instance;
 	}
 
@@ -406,29 +406,6 @@ public class CollectServiceImpl implements CollectService {
 		hc.setConnectionTimeout(1000);
 		hc.setReadTimeout(10000);
 		return hc.get(url);
-	}
-
-	private long parse_time(String s) {
-		long time = 0L;
-
-		// mille second
-		String ms = StringUtils.substringAfter(s, ".");
-		if (StringUtils.isNotEmpty(ms)) {
-			time += Long.valueOf(ms);
-		}
-		
-		// mm:ss
-		s = StringUtils.substringBefore(s, ".");
-		String[] parts = StringUtils.split(s, ":");
-		ArrayUtils.reverse(parts);
-		for (int i = 0; i < parts.length; i ++) {
-			if (StringUtils.isNotEmpty(parts[i])) {
-				long value = Long.valueOf(parts[i]) * (long)(Math.pow(60, i)) * 1000;
-				time += value;
-			}
-		}
-		
-		return time;
 	}
 
 }

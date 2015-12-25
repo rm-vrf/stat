@@ -14,14 +14,15 @@
 		<result property="instanceId" column="instance_id"/>
 		<result property="agentId" column="agent_id"/>
 		<result property="pid" column="pid"/>
-		<result property="deploymentName" column="deployment_name"/>
-		<result property="monitorName" column="monitor_name"/>
+		<result property="ppid" column="ppid"/>
 		<result property="status" column="status"/>
+		<result property="name" column="name"/>
+		<result property="group" column="group"/>
 		<result property="user" column="user"/>
-		<result property="type" column="type"/>
-		<result property="started" column="started"/>
+		<result property="workDirectory" column="work_directory"/>
+		<result property="startTime" column="start_time"/>
 		<result property="command" column="command"/>
-		<result property="mainClass" column="main_class"/>
+		<result property="args" column="args"/>
 	</resultMap>
 	
 <!-- 	<resultMap id="processResult" type="Process"> -->
@@ -59,25 +60,25 @@
 		SELECT * FROM `process_instance` 
 		WHERE `agent_id`=#{param1} 
 			AND `status`=#{param3}
-			AND (`deployment_name`=#{param2} OR `monitor_name`=#{param2}) 
+			AND `name`=#{param2} 
 	</select>
 	
 	<insert id="insertInstance" parameterType="ProcessInstance">
 		REPLACE INTO `process_instance`
-		(`instance_id`,`agent_id`,`pid`,`deployment_name`,`monitor_name`,
-		`status`,`user`,`type`,`started`,`command`,`main_class`) 
+		(`instance_id`,`agent_id`,`pid`,`ppid`,`name`,`status`,
+		`user`,`group`,`start_time`,`work_directory`,`command`,`args`) 
 		VALUES
-		(#{instanceId},#{agentId},#{pid},#{deploymentName},#{monitorName},
-		#{status},#{user},#{type},#{started},#{command},#{mainClass}) 
+		(#{instanceId},#{agentId},#{pid},#{ppid},#{name},#{status},
+		#{user},#{group},#{startTime},#{workDirectory},#{command},#{args}) 
 	</insert>
 	
 	<insert id="insertData" parameterType="ProcessData">
 		REPLACE INTO `process_data`
 		(`instance_id`,`time`,`agent_id`,`name`,
-		`pid`,`cpu_percent`,`memory_percent`,`vsz`,`rss`,`tt`,`stat`,`cpu_time`) 
+		`pid`,`cpu_percent`,`threads`,`vsz`,`rss`,`cpu_sys`,`cpu_user`,`cpu_total`) 
 		VALUES
 		(#{instanceId},#{time},#{agentId},#{name},
-		#{pid},#{cpuPercent},#{memoryPercent},#{vsz},#{rss},#{tt},#{stat},#{cpuTime}) 
+		#{pid},#{cpuPercent},#{threads},#{vsz},#{rss},#{cpuSys},#{cpuUser},#{cpuTotal}) 
 	</insert>
 
 	<update id="updateInstanceStatus" parameterType="map">

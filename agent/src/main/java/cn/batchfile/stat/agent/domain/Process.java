@@ -1,32 +1,32 @@
 package cn.batchfile.stat.agent.domain;
 
+import java.util.Date;
+
 import com.alibaba.fastjson.annotation.JSONField;
 
 public class Process {
-	private String user;
 	private long pid;
-	private String type;
+	private long ppid;
+	private String name;
+	private String user;
+	private String group;
+	@JSONField(name="work_directory")
+	private String workDirectory;
+	private String exe;
+	private String[] args;
+	@JSONField(name="start_time")
+	private Date startTime;
+	@JSONField(name="cpu_sys")
+	private long cpuSys;
+	@JSONField(name="cpu_user")
+	private long cpuUser;
+	@JSONField(name="cpu_total")
+	private long cpuTotal;
 	@JSONField(name="cpu_percent")
 	private double cpuPercent;
-	@JSONField(name="memory_percent")
-	private double memoryPercent;
 	private long vsz;
 	private long rss;
-	private String tt;
-	private String stat;
-	private String started;
-	private String time;
-	private String command;
-	@JSONField(name="main_class")
-	private String mainClass;
-	
-	public String getUser() {
-		return user;
-	}
-	
-	public void setUser(String user) {
-		this.user = user;
-	}
+	private long threads;
 	
 	public long getPid() {
 		return pid;
@@ -36,12 +36,92 @@ public class Process {
 		this.pid = pid;
 	}
 	
-	public String getType() {
-		return type;
+	public long getPpid() {
+		return ppid;
+	}
+
+	public void setPpid(long ppid) {
+		this.ppid = ppid;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getUser() {
+		return user;
 	}
 	
-	public void setType(String type) {
-		this.type = type;
+	public void setUser(String user) {
+		this.user = user;
+	}
+	
+	public String getGroup() {
+		return group;
+	}
+	
+	public void setGroup(String group) {
+		this.group = group;
+	}
+	
+	public String getWorkDirectory() {
+		return workDirectory;
+	}
+
+	public void setWorkDirectory(String workDirectory) {
+		this.workDirectory = workDirectory;
+	}
+
+	public String getExe() {
+		return exe;
+	}
+	
+	public void setExe(String exe) {
+		this.exe = exe;
+	}
+	
+	public String[] getArgs() {
+		return args;
+	}
+	
+	public void setArgs(String[] args) {
+		this.args = args;
+	}
+	
+	public Date getStartTime() {
+		return startTime;
+	}
+	
+	public void setStartTime(Date startTime) {
+		this.startTime = startTime;
+	}
+	
+	public long getCpuSys() {
+		return cpuSys;
+	}
+	
+	public void setCpuSys(long cpuSys) {
+		this.cpuSys = cpuSys;
+	}
+	
+	public long getCpuUser() {
+		return cpuUser;
+	}
+	
+	public void setCpuUser(long cpuUser) {
+		this.cpuUser = cpuUser;
+	}
+	
+	public long getCpuTotal() {
+		return cpuTotal;
+	}
+	
+	public void setCpuTotal(long cpuTotal) {
+		this.cpuTotal = cpuTotal;
 	}
 	
 	public double getCpuPercent() {
@@ -50,14 +130,6 @@ public class Process {
 	
 	public void setCpuPercent(double cpuPercent) {
 		this.cpuPercent = cpuPercent;
-	}
-	
-	public double getMemoryPercent() {
-		return memoryPercent;
-	}
-	
-	public void setMemoryPercent(double memoryPercent) {
-		this.memoryPercent = memoryPercent;
 	}
 	
 	public long getVsz() {
@@ -76,51 +148,11 @@ public class Process {
 		this.rss = rss;
 	}
 	
-	public String getTt() {
-		return tt;
+	public long getThreads() {
+		return threads;
 	}
 	
-	public void setTt(String tt) {
-		this.tt = tt;
-	}
-	
-	public String getStat() {
-		return stat;
-	}
-	
-	public void setStat(String stat) {
-		this.stat = stat;
-	}
-	
-	public String getStarted() {
-		return started;
-	}
-	
-	public void setStarted(String started) {
-		this.started = started;
-	}
-	
-	public String getTime() {
-		return time;
-	}
-	
-	public void setTime(String time) {
-		this.time = time;
-	}
-
-	public String getCommand() {
-		return command;
-	}
-
-	public void setCommand(String command) {
-		this.command = command;
-	}
-
-	public String getMainClass() {
-		return mainClass;
-	}
-
-	public void setMainClass(String mainClass) {
-		this.mainClass = mainClass;
+	public void setThreads(long threads) {
+		this.threads = threads;
 	}
 }
