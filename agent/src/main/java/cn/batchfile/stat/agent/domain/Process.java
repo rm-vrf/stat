@@ -14,6 +14,8 @@ public class Process {
 	private String workDirectory;
 	private String exe;
 	private String[] args;
+	@JSONField(name="java_args")
+	private String javaArgs;
 	@JSONField(name="start_time")
 	private Date startTime;
 	@JSONField(name="cpu_sys")
@@ -92,6 +94,14 @@ public class Process {
 		this.args = args;
 	}
 	
+	public String getJavaArgs() {
+		return javaArgs;
+	}
+
+	public void setJavaArgs(String javaArgs) {
+		this.javaArgs = javaArgs;
+	}
+
 	public Date getStartTime() {
 		return startTime;
 	}

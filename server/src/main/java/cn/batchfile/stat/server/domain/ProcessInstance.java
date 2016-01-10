@@ -13,6 +13,8 @@ public class ProcessInstance {
 	private long ppid;
 	private String status;
 	private String name;
+	private String deployment;
+	private String monitor;
 	private String user;
 	private String group;
 	@JSONField(name="start_time")
@@ -21,6 +23,8 @@ public class ProcessInstance {
 	private String workDirectory;
 	private String command;
 	private String args;
+	@JSONField(name="java_args")
+	private String javaArgs;
 
 	public String getAgentId() {
 		return agentId;
@@ -86,6 +90,22 @@ public class ProcessInstance {
 		this.name = name;
 	}
 
+	public String getDeployment() {
+		return deployment;
+	}
+
+	public void setDeployment(String deployment) {
+		this.deployment = deployment;
+	}
+
+	public String getMonitor() {
+		return monitor;
+	}
+
+	public void setMonitor(String monitor) {
+		this.monitor = monitor;
+	}
+
 	public String getGroup() {
 		return group;
 	}
@@ -116,5 +136,13 @@ public class ProcessInstance {
 
 	public void setArgs(String args) {
 		this.args = args;
+	}
+
+	public String getJavaArgs() {
+		return javaArgs;
+	}
+
+	public void setJavaArgs(String javaArgs) {
+		this.javaArgs = javaArgs;
 	}
 }

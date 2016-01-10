@@ -2,6 +2,7 @@ package cn.batchfile.stat.agent.service.impl;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,10 +41,11 @@ public class ProcessServiceImpl implements ProcessService {
 				while (true) {
 					try {
 						long[] pids = sigar.getProcList();
+						Map<Long, String> jps = jps();
 						Map<Long, Process> tps = new ConcurrentHashMap<Long, Process>();
 						for (long pid : pids) {
 							try {
-								Process p = compose_process(pid, sigar);
+								Process p = compose_process(pid, jps, sigar);
 								tps.put(pid, p);
 							} catch (Exception e) {}
 						}
@@ -59,9 +61,10 @@ public class ProcessServiceImpl implements ProcessService {
 	public List<Process> findProcesses(String[] query) {
 		List<Process> list = new ArrayList<Process>();
 		for (Process process : ps.values()) {
-			String cmd = String.format("%s %s %s", 
+			String cmd = String.format("%s %s %s %s", 
 					process.getName(), 
 					process.getExe(),
+					process.getJavaArgs(),
 					StringUtils.join(process.getArgs(), " "));
 			if (match(cmd, query)) {
 				list.add(process);
@@ -168,9 +171,10 @@ public class ProcessServiceImpl implements ProcessService {
 		return stack;
 	}
 
-	private Process compose_process(long pid, Sigar sigar) throws SigarException {
+	private Process compose_process(long pid, Map<Long, String> jps, Sigar sigar) throws SigarException {
 		Process process = new Process();
 		process.setPid(pid);
+		process.setJavaArgs(jps.get(pid));
 
 		try {
 			String[] args = sigar.getProcArgs(pid);
@@ -212,5 +216,22 @@ public class ProcessServiceImpl implements ProcessService {
 		} catch (SigarNotImplementedException ex) {}
 
 		return process;
+	}
+	
+	private Map<Long, String> jps() {
+		Map<Long, String> map = new HashMap<Long, String>();
+		try {
+			String cmd = "jps -lm";
+			String out = commandService.execute(cmd);
+			out = StringUtils.remove(out, '\r');
+			String[] lines = StringUtils.split(out, '\n');
+			for (String line : lines) {
+				String[] arr = StringUtils.split(line, ' ');
+				String pid = arr == null || arr.length == 0 ? StringUtils.EMPTY : arr[0];
+				String main_class = StringUtils.substring(line, StringUtils.length(pid) + 1);
+				map.put(Long.valueOf(pid), main_class);
+			}
+		} catch (Exception e) {}
+		return map;
 	}
 }

@@ -10,7 +10,9 @@ public interface ProcessService {
 
 	List<ProcessMonitor> getEnabledMonitors();
 
-	List<ProcessInstance> getInstancesByAgentNameStatus(String agentId, String name, String string);
+	List<ProcessInstance> getInstancesByAgentNameStatus(String agentId, String name, String status);
+	
+	List<ProcessInstance> getInstancesByAgentMonitorStatus(String agentId, String monitor, String status);
 
 	void insertInstance(ProcessInstance instance);
 

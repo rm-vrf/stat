@@ -14,6 +14,8 @@ public interface ProcessDao {
 
 	List<ProcessInstance> getInstancesByAgentNameStatus(String agentId, String name, String status);
 
+	List<ProcessInstance> getInstancesByAgentMonitorStatus(String agentId, String monitor, String status);
+	
 	void insertInstance(ProcessInstance instance);
 
 	void insertData(ProcessData data);
@@ -21,4 +23,5 @@ public interface ProcessDao {
 	void updateInstanceStatus(String instanceId, String status);
 
 	void updateMonitorInstanceCount(String name, int instanceCount);
+
 }

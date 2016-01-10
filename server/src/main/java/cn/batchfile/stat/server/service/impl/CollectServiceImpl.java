@@ -83,7 +83,7 @@ public class CollectServiceImpl implements CollectService {
 				LOG.info(String.format("collect process data, monitor: %s, ip: %s", monitor.getName(), node.getAddress()));
 				
 				//上一次采集的进程列表
-				List<ProcessInstance> runningInstances = processService.getInstancesByAgentNameStatus(node.getAgentId(), monitor.getName(), "running");
+				List<ProcessInstance> runningInstances = processService.getInstancesByAgentMonitorStatus(node.getAgentId(), monitor.getName(), "running");
 				
 				try {
 					//获得运行中的进程
@@ -246,13 +246,16 @@ public class CollectServiceImpl implements CollectService {
 		instance.setPid(p.getPid());
 		instance.setPpid(p.getPpid());
 		instance.setStatus("running");
-		instance.setName(StringUtils.isEmpty(p.getName()) ? monitor.getName() : p.getName());
+		instance.setName(p.getName());
+		//instance.setDeployment(StringUtils.EMPTY);
+		instance.setMonitor(monitor.getName());
 		instance.setUser(p.getUser());
 		instance.setGroup(p.getGroup());
 		instance.setWorkDirectory(p.getWorkDirectory());
 		instance.setStartTime(p.getStartTime());
 		instance.setCommand(p.getExe());
 		instance.setArgs(StringUtils.join(p.getArgs(), " "));
+		instance.setJavaArgs(p.getJavaArgs());
 		return instance;
 	}
 

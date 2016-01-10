@@ -28,6 +28,11 @@ public class ProcessServiceImpl implements ProcessService {
 	}
 
 	@Override
+	public List<ProcessInstance> getInstancesByAgentMonitorStatus(String agentId, String monitor, String status) {
+		return processDao.getInstancesByAgentMonitorStatus(agentId, monitor, status);
+	}
+	
+	@Override
 	public void insertInstance(ProcessInstance instance) {
 		processDao.insertInstance(instance);
 	}

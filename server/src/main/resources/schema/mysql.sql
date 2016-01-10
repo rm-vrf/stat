@@ -342,12 +342,15 @@ CREATE TABLE IF NOT EXISTS `process_instance` (
   `ppid` bigint(20) DEFAULT NULL,
   `status` varchar(16) DEFAULT NULL,
   `name` varchar(128) DEFAULT NULL,
+  `deployment` varchar(128) DEFAULT NULL,
+  `monitor` varchar(128) DEFAULT NULL,
   `group` varchar(64) DEFAULT NULL,
   `user` varchar(64) DEFAULT NULL,
   `work_directory` varchar(128) DEFAULT NULL,
   `start_time` datetime DEFAULT NULL,
   `command` text,
-  `args` text
+  `args` text,
+  `java_args` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------

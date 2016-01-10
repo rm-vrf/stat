@@ -17,12 +17,15 @@
 		<result property="ppid" column="ppid"/>
 		<result property="status" column="status"/>
 		<result property="name" column="name"/>
+		<result property="deployment" column="deployment"/>
+		<result property="monitor" column="monitor"/>
 		<result property="group" column="group"/>
 		<result property="user" column="user"/>
 		<result property="workDirectory" column="work_directory"/>
 		<result property="startTime" column="start_time"/>
 		<result property="command" column="command"/>
 		<result property="args" column="args"/>
+		<result property="javaArgs" column="java_args"/>
 	</resultMap>
 	
 <!-- 	<resultMap id="processResult" type="Process"> -->
@@ -63,13 +66,20 @@
 			AND `name`=#{param2} 
 	</select>
 	
+	<select id="getInstancesByAgentMonitorStatus" parameterType="map" resultMap="processInstanceResult">
+		SELECT * FROM `process_instance` 
+		WHERE `agent_id`=#{param1} 
+			AND `status`=#{param3}
+			AND `monitor`=#{param2} 
+	</select>
+	
 	<insert id="insertInstance" parameterType="ProcessInstance">
 		REPLACE INTO `process_instance`
-		(`instance_id`,`agent_id`,`pid`,`ppid`,`name`,`status`,
-		`user`,`group`,`start_time`,`work_directory`,`command`,`args`) 
+		(`instance_id`,`agent_id`,`pid`,`ppid`,`name`,`deployment`,`monitor`,`status`,
+		`user`,`group`,`start_time`,`work_directory`,`command`,`args`,`java_args`) 
 		VALUES
-		(#{instanceId},#{agentId},#{pid},#{ppid},#{name},#{status},
-		#{user},#{group},#{startTime},#{workDirectory},#{command},#{args}) 
+		(#{instanceId},#{agentId},#{pid},#{ppid},#{name},#{deployment},#{monitor},#{status},
+		#{user},#{group},#{startTime},#{workDirectory},#{command},#{args},#{javaArgs}) 
 	</insert>
 	
 	<insert id="insertData" parameterType="ProcessData">
