@@ -174,10 +174,10 @@ public class CollectServiceImpl implements CollectService {
 				nodeData.setAvailable(0);
 			} finally {
 				nodeService.insertData(nodeData);
-				configService.setDate("collect.time", now);
-				LOG.info("collect everything, end");
 			}
 		}
+		configService.setDate("collect.time", now);
+		LOG.info("collect everything, end");
 	}
 	
 	@Override
