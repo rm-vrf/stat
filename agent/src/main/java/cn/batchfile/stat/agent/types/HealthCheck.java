@@ -1,7 +1,7 @@
 package cn.batchfile.stat.agent.types;
 
 public class HealthCheck {
-	private int startupSeconds;
+	private int initialDelaySeconds;
 	private int intervalSeconds;
 	private int maxConsecutiveFailures;
 	private String path;
@@ -9,12 +9,12 @@ public class HealthCheck {
 	private String protocol;
 	private int timeoutSeconds;
 
-	public int getStartupSeconds() {
-		return startupSeconds;
+	public int getInitialDelaySeconds() {
+		return initialDelaySeconds;
 	}
 
-	public void setStartupSeconds(int startupSeconds) {
-		this.startupSeconds = startupSeconds;
+	public void setInitialDelaySeconds(int initialDelaySeconds) {
+		this.initialDelaySeconds = initialDelaySeconds;
 	}
 
 	public int getIntervalSeconds() {
