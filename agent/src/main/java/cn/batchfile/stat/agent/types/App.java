@@ -1,0 +1,90 @@
+package cn.batchfile.stat.agent.types;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class App {
+	private String name;
+	private String toProcess;
+	private String workingDirectory;
+	private Map<String, String> envs = new HashMap<String, String>();
+	private List<String> args = new ArrayList<String>();
+	private List<Integer> ports = new ArrayList<Integer>();
+	private List<String> uris = new ArrayList<String>();
+	private int scale;
+	private HealthCheck healthCheck;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getToProcess() {
+		return toProcess;
+	}
+
+	public void setToProcess(String toProcess) {
+		this.toProcess = toProcess;
+	}
+
+	public String getWorkingDirectory() {
+		return workingDirectory;
+	}
+
+	public void setWorkingDirectory(String workingDirectory) {
+		this.workingDirectory = workingDirectory;
+	}
+
+	public Map<String, String> getEnvs() {
+		return envs;
+	}
+
+	public void setEnvs(Map<String, String> envs) {
+		this.envs = envs;
+	}
+
+	public List<String> getArgs() {
+		return args;
+	}
+
+	public void setArgs(List<String> args) {
+		this.args = args;
+	}
+
+	public List<Integer> getPorts() {
+		return ports;
+	}
+
+	public void setPorts(List<Integer> ports) {
+		this.ports = ports;
+	}
+
+	public List<String> getUris() {
+		return uris;
+	}
+
+	public void setUris(List<String> uris) {
+		this.uris = uris;
+	}
+
+	public int getScale() {
+		return scale;
+	}
+
+	public void setScale(int scale) {
+		this.scale = scale;
+	}
+
+	public HealthCheck getHealthCheck() {
+		return healthCheck;
+	}
+
+	public void setHealthCheck(HealthCheck healthCheck) {
+		this.healthCheck = healthCheck;
+	}
+}
