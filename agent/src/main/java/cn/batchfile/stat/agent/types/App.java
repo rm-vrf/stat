@@ -13,6 +13,7 @@ public class App {
 	private List<String> args = new ArrayList<String>();
 	private List<Integer> ports = new ArrayList<Integer>();
 	private List<String> uris = new ArrayList<String>();
+	private int killSignal = 15;
 	private int scale;
 	private HealthCheck healthCheck;
 
@@ -70,6 +71,14 @@ public class App {
 
 	public void setUris(List<String> uris) {
 		this.uris = uris;
+	}
+
+	public int getKillSignal() {
+		return killSignal;
+	}
+
+	public void setKillSignal(int killSignal) {
+		this.killSignal = killSignal;
 	}
 
 	public int getScale() {

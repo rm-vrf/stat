@@ -1,13 +1,13 @@
 package cn.batchfile.stat.agent.types;
 
 public class HealthCheck {
-	private int initialDelaySeconds;
-	private int intervalSeconds;
-	private int maxConsecutiveFailures;
-	private String path;
-	private int portIndex;
-	private String protocol;
-	private int timeoutSeconds;
+	private int initialDelaySeconds = 60;
+	private int intervalSeconds = 60;
+	private int maxConsecutiveFailures = 3;
+	private String path = "/";
+	private int portIndex = 0;
+	private String protocol = "HTTP";
+	private int timeoutSeconds = 20;
 
 	public int getInitialDelaySeconds() {
 		return initialDelaySeconds;
