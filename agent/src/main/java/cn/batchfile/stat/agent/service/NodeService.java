@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +54,7 @@ public class NodeService {
 		node = new Node();
 
 		node.setId(getId());
+		node.setHostname(getHostname());
 		node.setDisks(getDisks());
 		node.setMemory(getMemory());
 		node.setNetworks(getNetworks());
@@ -115,6 +118,11 @@ public class NodeService {
 		}
 		
 		return id;
+	}
+	
+	private String getHostname() throws UnknownHostException {
+		InetAddress ip = InetAddress.getLocalHost();
+		return ip.getHostName();
 	}
 	
 	private Os getOs() {

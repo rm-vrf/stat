@@ -7,6 +7,7 @@ import java.util.List;
 public class Proc {
 	private long pid;
 	private long ppid;
+	private List<Long> tree = new ArrayList<Long>();
 	private String app;
 	private String name;
 	private String user;
@@ -31,6 +32,14 @@ public class Proc {
 
 	public void setPpid(long ppid) {
 		this.ppid = ppid;
+	}
+
+	public List<Long> getTree() {
+		return tree;
+	}
+
+	public void setTree(List<Long> tree) {
+		this.tree = tree;
 	}
 
 	public String getApp() {

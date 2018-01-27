@@ -76,14 +76,20 @@ public class AppService {
 		FileUtils.deleteQuietly(f);
 	}
 	
-	public int getScale(String name) throws IOException {
-		App app = getApp(name);
-		return app.getScale();
-	}
+//	public int getScale(String name) throws IOException {
+//		App app = getApp(name);
+//		return app.getScale();
+//	}
 	
-	public void putScale(String name, int scale) throws UnsupportedEncodingException, IOException {
+	public void putScale(String name, int scale) throws IOException {
 		App app = getApp(name);
 		app.setScale(scale);
+		putApp(app);
+	}
+	
+	public void putStart(String name, boolean start) throws IOException {
+		App app = getApp(name);
+		app.setStart(start);
 		putApp(app);
 	}
 }

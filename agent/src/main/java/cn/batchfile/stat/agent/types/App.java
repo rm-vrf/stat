@@ -15,6 +15,7 @@ public class App {
 	private List<String> uris = new ArrayList<String>();
 	private int killSignal = 15;
 	private int scale;
+	private boolean start = true;
 	private List<HealthCheck> healthChecks;
 
 	public String getName() {
@@ -87,6 +88,14 @@ public class App {
 
 	public void setScale(int scale) {
 		this.scale = scale;
+	}
+
+	public boolean isStart() {
+		return start;
+	}
+
+	public void setStart(boolean start) {
+		this.start = start;
 	}
 
 	public List<HealthCheck> getHealthChecks() {

@@ -27,6 +27,7 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.hyperic.sigar.ProcCpu;
 import org.hyperic.sigar.ProcCredName;
 import org.hyperic.sigar.ProcExe;
+import org.hyperic.sigar.ProcMem;
 import org.hyperic.sigar.ProcState;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
@@ -81,20 +82,24 @@ public class ProcService {
 	
 	@Scheduled(fixedDelay = 10000)
 	public void job() throws SigarException, IOException, CommandLineException {
-		
-		List<Proc> ps = ps();
-		
-		//清理多余的文件
-		cleanFile(ps);
-		
-		//停止多余的进程
-		stopProc(ps);
-		
-		//按计划拉起进程
-		startProc(ps);
-		
-		//清理输出信息
-		cleanOuts(ps);
+		refresh();
+	}
+	
+	public void refresh() throws SigarException, IOException, CommandLineException {
+		synchronized (this) {
+			//检查文件存储，把废弃的进程号清理掉
+			checkFileStore();
+			
+			//停止多余的进程
+			checkRunningProc();
+			
+			//按计划拉起进程
+			startScheduleProc();
+			
+			//清理输出信息
+			cleanSystemOut(systemErrs);
+			cleanSystemOut(systemOuts);
+		}
 	}
 
 	public List<Long> getProcs() {
@@ -147,6 +152,24 @@ public class ProcService {
 		return getOutputCache(pid, systemErrs);
 	}
 	
+	public void killProcs(List<Long> pids) throws SigarException, IOException {
+		for (Long pid : pids) {
+			//杀进程树
+			Proc proc = getProc(pid);
+			App app = appService.getApp(proc.getApp());
+			killProcTree(proc, app.getKillSignal());
+			
+			//删除登记信息
+			deleteProc(proc.getPid());
+			log.info("stop process, pid: {}, app name: {}", proc.getPid(), proc.getApp());
+		}
+	}
+	
+	private void deleteProc(long pid) {
+		File f = new File(procDirectory, String.valueOf(pid));
+		FileUtils.deleteQuietly(f);
+	}
+
 	private List<String> getOutputCache(long pid, Map<Long, LinkedBlockingQueue<String>> queues) {
 		List<String> list = new ArrayList<String>();
 		LinkedBlockingQueue<String> queue = queues.get(pid);
@@ -165,11 +188,6 @@ public class ProcService {
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
 	
-	private void deleteProc(long pid) {
-		File f = new File(procDirectory, String.valueOf(pid));
-		FileUtils.deleteQuietly(f);
-	}
-
 	private List<Proc> ps() throws SigarException {
 		List<Proc> ps = new ArrayList<Proc>();
 		long[] pids = sigar.getProcList();
@@ -181,7 +199,7 @@ public class ProcService {
 		return ps;
 	}
 
-	private void stopProc(List<Proc> ps) throws IOException {
+	private void checkRunningProc() throws IOException {
 		//获取登记的进程
 		List<Long> pids = getProcs();
 		List<Proc> procs = new ArrayList<Proc>();
@@ -191,19 +209,20 @@ public class ProcService {
 		}
 		
 		//按照应用名称归类
-		Map<String, List<Proc>> groups = procs.stream().collect(Collectors.groupingBy(e -> e.getApp()));
+		Map<String, List<Proc>> groups = procs.stream().collect(Collectors.groupingBy(p -> p.getApp()));
 		
 		//判断进程是不是超过了计划的数量
 		for (Entry<String, List<Proc>> entry : groups.entrySet()) {
 			//得到计划的进程数量
 			String appName = entry.getKey();
 			App app = appService.getApp(appName);
-			int scale = app == null ? 0 : app.getScale();
-			
+			int scale = app == null || !app.isStart() ? 0 : app.getScale();
+
+			//杀掉多余的进程
 			for (int i = scale; i < entry.getValue().size(); i ++) {
-				//杀进程
+				//杀进程树
 				Proc proc = entry.getValue().get(i);
-				killProcTree(proc.getPid(), ps, app.getKillSignal());
+				killProcTree(proc, app.getKillSignal());
 				
 				//删除登记信息
 				deleteProc(proc.getPid());
@@ -212,16 +231,18 @@ public class ProcService {
 		}
 	}
 	
-	private void killProcTree(long pid, List<Proc> ps, int signal) {
-		List<Long> tree = new ArrayList<Long>();
-		tree.add(pid);
-		getTree(tree, pid, ps);
-		for (int i = tree.size() - 1; i >= 0; i --) {
+	private void killProcTree(Proc proc, int signal) {
+		//杀子进程
+		for (int i = proc.getTree().size() - 1; i >= 0; i --) {
 			try {
-				sigar.kill(tree.get(i), signal);
+				sigar.kill(proc.getTree().get(i), signal);
 			} catch (Exception e) {}
-			deleteProc(tree.get(i), ps);
 		}
+		
+		//杀进程
+		try {
+			sigar.kill(proc.getPid(), signal);
+		} catch (Exception e) {}
 	}
 	
 	private void getTree(List<Long> tree, long pid, List<Proc> ps) {
@@ -241,18 +262,8 @@ public class ProcService {
 		return null;
 	}
 	
-	private void deleteProc(long pid, List<Proc> ps) {
-		Iterator<Proc> it = ps.iterator();
-		while (it.hasNext()) {
-			if (it.next().getPid() == pid) {
-				it.remove();
-				break;
-			}
-		}
-	}
-
-	private void startProc(List<Proc> ps) throws IOException, CommandLineException, SigarException {
-		//应用列表
+	private void startScheduleProc() throws IOException, CommandLineException, SigarException {
+		//登记应用
 		List<App> apps = new ArrayList<App>();
 		List<String> appNames = appService.getApps();
 		for (String name : appNames) {
@@ -261,7 +272,7 @@ public class ProcService {
 		}
 		log.debug("app count: {}", apps.size());
 		
-		//进程列表
+		//登记进程
 		List<Proc> procs = new ArrayList<Proc>();
 		List<Long> pids = getProcs();
 		for (Long pid : pids) {
@@ -270,24 +281,32 @@ public class ProcService {
 		}
 		log.debug("proc count: {}", procs.size());
 		
+		//按照应用名称归类进程
+		Map<String, List<Proc>> groups = procs.stream().collect(Collectors.groupingBy(p -> p.getApp()));
+		
 		//检查应用，比较计划数量和实际数量
 		for (App app : apps) {
-			int procCount = count(app.getName(), procs);
-			log.debug("schedule app: {}, scale: {}, proc instance: {}", app.getName(), app.getScale(), procCount);
-			
-			for (int i = procCount; i < app.getScale(); i ++) {
-				//启动进程
+			List<Proc> procList = groups.get(app.getName());
+			int procCount = procList == null ? 0 : procList.size();
+			int scale = app.isStart() ? app.getScale() : 0;
+			log.debug("schedule app: {}, scale: {}, proc instance: {}", app.getName(), scale, procCount);
+
+			//如果登记的进程比计划的少，启动
+			for (int i = procCount; i < scale; i ++) {
+				//启动进程，得到端口号
 				log.info("start proc of app: {}, #{}", app.getName(), i);
 				Proc proc = new Proc();
 				long pid = startProc(app, proc.getPorts());
 				log.info("started, pid: {}", pid);
 				
-				//登记进程信息
+				//获取完整的进程信息
 				composeProc(proc, pid, app.getName());
-				putProc(proc);
 				
-				//在列表中添加进程信息，这一步必要性不大，只是为了数据完整
-				ps.add(proc);
+				//获取子进程编号
+				getTree(proc.getTree(), pid, ps());
+				
+				//登记进程信息
+				putProc(proc);
 			}
 		}
 	}
@@ -295,28 +314,36 @@ public class ProcService {
 	private void composeProc(Proc proc, long pid, String app) {
 		proc.setPid(pid);
 		proc.setApp(app);
+
+		if (StringUtils.isNotEmpty(app)) {
+			try {
+				String[] args = sigar.getProcArgs(pid);
+				proc.setArgs(args);
+			} catch (Exception ex) {}
+		}
 		
-		try {
-			String[] args = sigar.getProcArgs(pid);
-			proc.setArgs(args);
-		} catch (Exception ex) {}
+		if (StringUtils.isNotEmpty(app)) {
+			try {
+				ProcCpu cpu = sigar.getProcCpu(pid);
+				proc.setStartTime(new Date(cpu.getStartTime()));
+			} catch (Exception ex) {}
+		}
+
+		if (StringUtils.isNotEmpty(app)) {
+			try {
+				ProcCredName credName = sigar.getProcCredName(pid);
+				proc.setUser(credName.getUser());
+				proc.setGroup(credName.getGroup());
+			} catch (Exception ex) {}
+		}
 		
-		try {
-			ProcCpu cpu = sigar.getProcCpu(pid);
-			proc.setStartTime(new Date(cpu.getStartTime()));
-		} catch (Exception ex) {}
-		
-		try {
-			ProcCredName credName = sigar.getProcCredName(pid);
-			proc.setUser(credName.getUser());
-			proc.setGroup(credName.getGroup());
-		} catch (Exception ex) {}
-		
-		try {
-			ProcExe exe = sigar.getProcExe(pid);
-			proc.setWorkDirectory(exe.getCwd());
-			proc.setExe(exe.getName());
-		} catch (Exception ex) {}
+		if (StringUtils.isNotEmpty(app)) {
+			try {
+				ProcExe exe = sigar.getProcExe(pid);
+				proc.setWorkDirectory(exe.getCwd());
+				proc.setExe(exe.getName());
+			} catch (Exception ex) {}
+		}
 		
 		try {
 			ProcState state = sigar.getProcState(pid);
@@ -438,48 +465,49 @@ public class ProcService {
 		return ret;
 	}
 	
-	private int count(String app, List<Proc> procs) {
-		int count = 0;
-		for (Proc proc : procs) {
-			if (StringUtils.equals(app, proc.getApp())) {
-				count ++;
-			}
-		}
-		return count;
-	}
-
-	private void cleanFile(List<Proc> ps) {
+	private void checkFileStore() throws IOException {
 		List<Long> list = getProcs();
 		for (long pid : list) {
-			if (!existProc(pid, ps)) {
+			Proc proc = getProc(pid);
+			
+			if (!runningProc(proc)) {
 				deleteProc(pid);
+				//App app = appService.getApp(proc.getApp());
+				//killProcTree(proc, app.getKillSignal());
 			}
 		}
 	}
 	
-	private boolean existProc(long pid, List<Proc> ps) {
-		for (Proc p : ps) {
-			if (p.getPid() == pid) {
+	private boolean runningProc(Proc proc) {
+		List<Long> pids = new ArrayList<Long>();
+		pids.add(proc.getPid());
+		pids.addAll(proc.getTree());
+		
+		for (long pid : pids) {
+			if (runningProc(pid)) {
 				return true;
 			}
 		}
+		
 		return false;
 	}
 	
-	private void cleanOuts(List<Proc> ps) {
-		Iterator<Long> outIter = systemOuts.keySet().iterator();
-		while (outIter.hasNext()) {
-			Long pid = outIter.next();
-			if (!existProc(pid, ps)) {
-				systemOuts.remove(pid);
-			}
+	private boolean runningProc(long pid) {
+		try {
+			ProcMem mem = sigar.getProcMem(pid);
+			return mem.getSize() > 0;
+		} catch (Exception e) {
+			return false;
 		}
-
-		Iterator<Long> errIter = systemErrs.keySet().iterator();
-		while (errIter.hasNext()) {
-			Long pid = errIter.next();
-			if (!existProc(pid, ps)) {
-				systemErrs.remove(pid);
+	}
+	
+	private void cleanSystemOut(Map<Long, LinkedBlockingQueue<String>> map) {
+		List<Long> pids = getProcs();
+		Iterator<Long> iter = map.keySet().iterator();
+		while (iter.hasNext()) {
+			Long key = iter.next();
+			if (!pids.contains(key)) {
+				map.remove(key);
 			}
 		}
 	}

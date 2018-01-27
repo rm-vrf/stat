@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Node {
 	private String id;
+	private String hostname;
 	private Os os;
 	private Memory memory;
 	private List<Network> networks = new ArrayList<Network>();
@@ -18,6 +19,14 @@ public class Node {
 		this.id = id;
 	}
 	
+	public String getHostname() {
+		return hostname;
+	}
+
+	public void setHostname(String hostname) {
+		this.hostname = hostname;
+	}
+
 	public Os getOs() {
 		return os;
 	}
