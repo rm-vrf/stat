@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -48,11 +50,16 @@ public class ProcService {
 
 	protected static final Logger log = LoggerFactory.getLogger(ProcService.class);
 	
-	private Sigar sigar;
 	private File procDirectory;
+	private Sigar sigar;
+	private Map<Long, LinkedBlockingQueue<String>> systemOuts = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
+	private Map<Long, LinkedBlockingQueue<String>> systemErrs = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
 	
 	@Value("${store.directory}")
 	private String storeDirectory;
+	
+	@Value("${out.cache.line.count:500}")
+	private int outCacheLineCount;
 	
 	@Autowired
 	private AppService appService;
@@ -85,6 +92,82 @@ public class ProcService {
 		
 		//按计划拉起进程
 		startProc(ps);
+		
+		//清理输出信息
+		cleanOuts(ps);
+	}
+
+	public List<Long> getProcs() {
+		List<Long> list = new ArrayList<>();
+		String[] files = procDirectory.list();
+		for (String file : files) {
+			if (!StringUtils.startsWith(file, ".") && StringUtils.isNumeric(file)) {
+				Long l = Long.valueOf(file);
+				list.add(l);
+			}
+		}
+		return list;
+	}
+
+	public Proc getProc(long pid) throws IOException {
+		Proc proc = new Proc();
+		File f = new File(procDirectory, String.valueOf(pid));
+		if (f.exists()) {
+			String s = FileUtils.readFileToString(f, "UTF-8");
+			if (StringUtils.isNotEmpty(s)) {
+				proc = JSON.parseObject(s, Proc.class);
+			}
+		}
+		return proc;
+	}
+	
+	public List<Long> getProcs(String app) throws IOException {
+		List<Long> list = new ArrayList<>();
+		File[] files = procDirectory.listFiles();
+		for (File file : files) {
+			if (!StringUtils.startsWith(file.getName(), ".") && StringUtils.isNumeric(file.getName())) {
+				String s = FileUtils.readFileToString(file, "UTF-8");
+				if (StringUtils.isNotEmpty(s)) {
+					Proc proc = JSON.parseObject(s, Proc.class);
+					if (StringUtils.equals(proc.getApp(), app)) {
+						Long l = Long.valueOf(file.getName());
+						list.add(l);
+					}
+				}
+			}
+		}
+		return list;
+	}
+	
+	public List<String> getSystemOut(long pid) {
+		return getOutputCache(pid, systemOuts);
+	}
+	
+	public List<String> getSystemErr(long pid) {
+		return getOutputCache(pid, systemErrs);
+	}
+	
+	private List<String> getOutputCache(long pid, Map<Long, LinkedBlockingQueue<String>> queues) {
+		List<String> list = new ArrayList<String>();
+		LinkedBlockingQueue<String> queue = queues.get(pid);
+		if (queue != null) {
+			String s = null;
+			while ((s = queue.poll()) != null) {
+				list.add(s);
+			}
+		}
+		return list;
+	}
+
+	private void putProc(Proc proc) throws UnsupportedEncodingException, IOException {
+		String s = JSON.toJSONString(proc);
+		File f = new File(procDirectory, String.valueOf(proc.getPid()));
+		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
+	}
+	
+	private void deleteProc(long pid) {
+		File f = new File(procDirectory, String.valueOf(pid));
+		FileUtils.deleteQuietly(f);
 	}
 
 	private List<Proc> ps() throws SigarException {
@@ -168,41 +251,6 @@ public class ProcService {
 		}
 	}
 
-	public List<Long> getProcs() {
-		List<Long> list = new ArrayList<>();
-		String[] files = procDirectory.list();
-		for (String file : files) {
-			if (!StringUtils.startsWith(file, ".") && StringUtils.isNumeric(file)) {
-				Long l = Long.valueOf(file);
-				list.add(l);
-			}
-		}
-		return list;
-	}
-
-	public Proc getProc(long pid) throws IOException {
-		Proc proc = new Proc();
-		File f = new File(procDirectory, String.valueOf(pid));
-		if (f.exists()) {
-			String s = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(s)) {
-				proc = JSON.parseObject(s, Proc.class);
-			}
-		}
-		return proc;
-	}
-	
-	public void putProc(Proc proc) throws UnsupportedEncodingException, IOException {
-		String s = JSON.toJSONString(proc);
-		File f = new File(procDirectory, String.valueOf(proc.getPid()));
-		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
-	}
-	
-	public void deleteProc(long pid) {
-		File f = new File(procDirectory, String.valueOf(pid));
-		FileUtils.deleteQuietly(f);
-	}
-
 	private void startProc(List<Proc> ps) throws IOException, CommandLineException, SigarException {
 		//应用列表
 		List<App> apps = new ArrayList<App>();
@@ -283,19 +331,28 @@ public class ProcService {
 		
 		//执行命令，记录输出
 		log.info("cmd: " + commandline.toString());
+		
+		//构建输出存储器
+		LinkedBlockingQueue<String> systemOut = new LinkedBlockingQueue<String>(outCacheLineCount);
+		LinkedBlockingQueue<String> systemErr = new LinkedBlockingQueue<String>(outCacheLineCount);
+		
 		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(commandline, null, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
-				System.out.println(line);
+				systemOut.offer(line);
 			}
 		}, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
-				System.err.println(line);
+				systemErr.offer(line);
 			}
 		}, 0);
 		
-		return callable.getPid();
+		long pid = callable.getPid();
+		systemOuts.put(pid, systemOut);
+		systemErrs.put(pid, systemErr);
+		
+		return pid;
 	}
 
 	private Commandline composeCommandLine(App app, List<Integer> ports) throws IOException {
@@ -409,4 +466,22 @@ public class ProcService {
 		return false;
 	}
 	
+	private void cleanOuts(List<Proc> ps) {
+		Iterator<Long> outIter = systemOuts.keySet().iterator();
+		while (outIter.hasNext()) {
+			Long pid = outIter.next();
+			if (!existProc(pid, ps)) {
+				systemOuts.remove(pid);
+			}
+		}
+
+		Iterator<Long> errIter = systemErrs.keySet().iterator();
+		while (errIter.hasNext()) {
+			Long pid = errIter.next();
+			if (!existProc(pid, ps)) {
+				systemErrs.remove(pid);
+			}
+		}
+	}
+
 }
