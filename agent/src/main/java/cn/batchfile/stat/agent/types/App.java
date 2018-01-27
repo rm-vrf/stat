@@ -15,7 +15,7 @@ public class App {
 	private List<String> uris = new ArrayList<String>();
 	private int killSignal = 15;
 	private int scale;
-	private HealthCheck healthCheck;
+	private List<HealthCheck> healthChecks;
 
 	public String getName() {
 		return name;
@@ -89,11 +89,11 @@ public class App {
 		this.scale = scale;
 	}
 
-	public HealthCheck getHealthCheck() {
-		return healthCheck;
+	public List<HealthCheck> getHealthChecks() {
+		return healthChecks;
 	}
 
-	public void setHealthCheck(HealthCheck healthCheck) {
-		this.healthCheck = healthCheck;
+	public void setHealthChecks(List<HealthCheck> healthChecks) {
+		this.healthChecks = healthChecks;
 	}
 }

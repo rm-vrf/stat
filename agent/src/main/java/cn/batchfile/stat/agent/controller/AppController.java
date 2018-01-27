@@ -47,7 +47,7 @@ public class AppController {
 	}
 
 	@RequestMapping(value="/v1/app/{name}/scale", method=RequestMethod.PUT)
-	public void putScale(@PathVariable("name") String name, @RequestParam("scale") int scale) throws UnsupportedEncodingException, IOException {
+	public void putScale(@PathVariable("name") String name, @RequestParam("num") int scale) throws UnsupportedEncodingException, IOException {
 		appService.putScale(name, scale);
 	}
 }
