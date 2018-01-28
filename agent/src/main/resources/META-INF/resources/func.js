@@ -10,6 +10,10 @@ function _get_param(name) {
     return vars;
 };
 
+function _get_node(callback) {
+    $.get('/v1/node', callback);
+}
+
 function _get_app_list(callback) {
     $.get('/v1/app', callback);
 }
@@ -33,6 +37,10 @@ function _put_scale(app, num, callback) {
 
 function _get_proc_list(callback) {
     $.get('/v1/proc', callback);
+}
+
+function _get_proc(pid, callback) {
+    $.get('/v1/proc/' + pid, callback);
 }
 
 function _get_app_proc_list(app, callback) {

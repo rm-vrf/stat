@@ -152,6 +152,20 @@ th {
   color: #fff;
   text-align: left;
 }
+th.pid {
+  text-align: center;
+}
+th.ppid {
+  text-align: center;
+}
+th.stime {
+  width: 120px;
+}
+th.cmd {
+  width: 200px;
+}
+th.port {
+}
 th.state {
   text-align: center;
   width: 44px;
