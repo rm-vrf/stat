@@ -53,3 +53,7 @@ function _kill_proc(pid, callback) {
     $.post(url, callback);
 }
 
+function _get_out(pid, out, callback) {
+    var url = '/v1/proc/' + pid + '/_' + out;
+    $.get(url, callback);
+}

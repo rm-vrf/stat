@@ -1,28 +1,41 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:meld="http://www.plope.com/software/meld3">
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title meld:id="title">Supervisor Status</title>
-  <link href="supervisor.css" rel="stylesheet" type="text/css" />
+    <title>Supervisor - </title>
+    <meta charset="UTF-8"/>
+    <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
+    <script src="http://keleyi.com/keleyi/pmedia/jquery-1.10.1.min.js" type="text/javascript"></script>
+    <script src="func.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            var pid = _get_param('pid').pid.replace('#', '');
+            var out = _get_param('out').out.replace('#', '');
+            $('#tailbody').append('Log of pid #' + pid + ': <br/>');
+            setInterval(function() {
+                log_out(pid, out);
+            }, 1000);
+        });
+        
+        function log_out(pid, out) {
+            var url = '/v1/proc/' + pid + '/_' + out;
+            $.get(url, function(lines, status) {
+                $.each(lines, function(i, line) {
+                    $('#tailbody').append(line + '<br/>');
+                    $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+                });
+            });
+        }
+    </script>
 </head>
 <body>
-
-<div meld:id="content">
-
-<pre meld:id="tailbody"></pre>
-
-<form meld:id="form" action="index.html" method="POST">
-
-<div style="margin-top: 10px;">
-  <a href="tail.html?processname=thisprocess" meld:id="refresh_anchor">
-    <input type="button" value=" Refresh " name="refresh" />
-  </a>
+<div id="content">
+    <div id="tailbody"></div>
+    <div style="margin-top: 10px;" id="tail">
+        <a href="#" id="refresh_anchor" class="hidden">
+            <input type="button" value=" Refresh " name="refresh" />
+        </a>
+    </div>
 </div>
-
-</form>
-
-</div>
-
 </body>
 </html>
