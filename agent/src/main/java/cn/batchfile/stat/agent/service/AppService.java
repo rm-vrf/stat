@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import cn.batchfile.stat.agent.types.App;
 
@@ -66,7 +67,7 @@ public class AppService {
 	}
 	
 	public void putApp(App app) throws UnsupportedEncodingException, IOException {
-		String s = JSON.toJSONString(app);
+		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
 		File f = new File(appDirectory, app.getName());
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
@@ -75,11 +76,6 @@ public class AppService {
 		File f = new File(appDirectory, name);
 		FileUtils.deleteQuietly(f);
 	}
-	
-//	public int getScale(String name) throws IOException {
-//		App app = getApp(name);
-//		return app.getScale();
-//	}
 	
 	public void putScale(String name, int scale) throws IOException {
 		App app = getApp(name);

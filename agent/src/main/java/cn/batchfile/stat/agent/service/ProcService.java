@@ -3,7 +3,8 @@ package cn.batchfile.stat.agent.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.ServerSocket;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,19 +19,11 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.plexus.util.cli.Arg;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
-import org.hyperic.sigar.ProcCpu;
-import org.hyperic.sigar.ProcCredName;
-import org.hyperic.sigar.ProcExe;
-import org.hyperic.sigar.ProcMem;
-import org.hyperic.sigar.ProcState;
-import org.hyperic.sigar.Sigar;
-import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +32,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import cn.batchfile.stat.agent.types.App;
 import cn.batchfile.stat.agent.types.Proc;
@@ -52,9 +46,14 @@ public class ProcService {
 	protected static final Logger log = LoggerFactory.getLogger(ProcService.class);
 	
 	private File procDirectory;
-	private Sigar sigar;
 	private Map<Long, LinkedBlockingQueue<String>> systemOuts = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
 	private Map<Long, LinkedBlockingQueue<String>> systemErrs = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
+	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat> () {
+		@Override
+		protected DateFormat initialValue() {
+			return new SimpleDateFormat("MM-dd HH:mm");
+		}
+	};
 	
 	@Value("${store.directory}")
 	private String storeDirectory;
@@ -65,10 +64,14 @@ public class ProcService {
 	@Autowired
 	private AppService appService;
 	
+	@Autowired
+	private SysService sysService;
+	
+	@Autowired
+	private NodeService nodeService;
+	
 	@PostConstruct
 	public void init() throws IOException {
-		sigar = new Sigar();
-		
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
 			FileUtils.forceMkdir(f);
@@ -80,12 +83,12 @@ public class ProcService {
 		}
 	}
 	
-	@Scheduled(fixedDelay = 10000)
-	public void job() throws SigarException, IOException, CommandLineException {
+	@Scheduled(fixedDelay = 5000)
+	public void job() throws IOException, CommandLineException {
 		refresh();
 	}
 	
-	public void refresh() throws SigarException, IOException, CommandLineException {
+	public void refresh() throws IOException, CommandLineException {
 		synchronized (this) {
 			//检查文件存储，把废弃的进程号清理掉
 			checkFileStore();
@@ -152,7 +155,7 @@ public class ProcService {
 		return getOutputCache(pid, systemErrs);
 	}
 	
-	public void killProcs(List<Long> pids) throws SigarException, IOException {
+	public void killProcs(List<Long> pids) throws IOException {
 		for (Long pid : pids) {
 			//杀进程树
 			Proc proc = getProc(pid);
@@ -183,22 +186,11 @@ public class ProcService {
 	}
 
 	private void putProc(Proc proc) throws UnsupportedEncodingException, IOException {
-		String s = JSON.toJSONString(proc);
+		String s = JSON.toJSONString(proc, SerializerFeature.PrettyFormat);
 		File f = new File(procDirectory, String.valueOf(proc.getPid()));
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
 	
-	private List<Proc> ps() throws SigarException {
-		List<Proc> ps = new ArrayList<Proc>();
-		long[] pids = sigar.getProcList();
-		for (long pid : pids) {
-			Proc p = new Proc();
-			composeProc(p, pid, null);
-			ps.add(p);
-		}
-		return ps;
-	}
-
 	private void checkRunningProc() throws IOException {
 		//获取登记的进程
 		List<Long> pids = getProcs();
@@ -235,13 +227,13 @@ public class ProcService {
 		//杀子进程
 		for (int i = proc.getTree().size() - 1; i >= 0; i --) {
 			try {
-				sigar.kill(proc.getTree().get(i), signal);
+				sysService.kill(proc.getTree().get(i), signal);
 			} catch (Exception e) {}
 		}
 		
 		//杀进程
 		try {
-			sigar.kill(proc.getPid(), signal);
+			sysService.kill(proc.getPid(), signal);
 		} catch (Exception e) {}
 	}
 	
@@ -262,7 +254,7 @@ public class ProcService {
 		return null;
 	}
 	
-	private void startScheduleProc() throws IOException, CommandLineException, SigarException {
+	private void startScheduleProc() throws IOException, CommandLineException {
 		//登记应用
 		List<App> apps = new ArrayList<App>();
 		List<String> appNames = appService.getApps();
@@ -294,62 +286,45 @@ public class ProcService {
 			//如果登记的进程比计划的少，启动
 			for (int i = procCount; i < scale; i ++) {
 				//启动进程，得到端口号
-				log.info("start proc of app: {}, #{}", app.getName(), i);
 				Proc proc = new Proc();
+				log.info("start proc of app: {}, #{}", app.getName(), i);
 				long pid = startProc(app, proc.getPorts());
-				log.info("started, pid: {}", pid);
-				
-				//获取完整的进程信息
-				composeProc(proc, pid, app.getName());
-				
+
 				//获取子进程编号
-				getTree(proc.getTree(), pid, ps());
+				List<Proc> ps = sysService.ps();
+				getTree(proc.getTree(), pid, ps);
+				log.info("started, pid: {}, tree: {}", pid, proc.getTree().toString());
+
+				//补充进程的基本信息
+				proc.setApp(app.getName());
+				proc.setPid(pid);
+				composeProc(proc, ps);
+				proc.setStartTime(TIME_FORMAT.get().format(new Date()));
 				
-				//登记进程信息
+				//保存进程信息
 				putProc(proc);
 			}
 		}
 	}
 	
-	private void composeProc(Proc proc, long pid, String app) {
-		proc.setPid(pid);
-		proc.setApp(app);
-
-		if (StringUtils.isNotEmpty(app)) {
-			try {
-				String[] args = sigar.getProcArgs(pid);
-				proc.setArgs(args);
-			} catch (Exception ex) {}
-		}
-		
-		if (StringUtils.isNotEmpty(app)) {
-			try {
-				ProcCpu cpu = sigar.getProcCpu(pid);
-				proc.setStartTime(new Date(cpu.getStartTime()));
-			} catch (Exception ex) {}
+	private void composeProc(Proc proc, List<Proc> ps) {
+		//在列表中寻找进程
+		Proc p = null;
+		for (Proc e : ps) {
+			if (e.getPid() == proc.getPid()) {
+				p = e;
+				break;
+			}
 		}
 
-		if (StringUtils.isNotEmpty(app)) {
-			try {
-				ProcCredName credName = sigar.getProcCredName(pid);
-				proc.setUser(credName.getUser());
-				proc.setGroup(credName.getGroup());
-			} catch (Exception ex) {}
+		//一定要有，没有就不正常了
+		if (p != null) {
+			proc.setCmd(p.getCmd());
+			proc.setPpid(p.getPpid());
+			proc.setStartTime(p.getStartTime());
+			proc.setTty(p.getTty());
+			proc.setUid(p.getUid());
 		}
-		
-		if (StringUtils.isNotEmpty(app)) {
-			try {
-				ProcExe exe = sigar.getProcExe(pid);
-				proc.setWorkDirectory(exe.getCwd());
-				proc.setExe(exe.getName());
-			} catch (Exception ex) {}
-		}
-		
-		try {
-			ProcState state = sigar.getProcState(pid);
-			proc.setPpid(state.getPpid());
-			proc.setName(state.getName());
-		} catch (Exception ex) {}
 	}
 
 	private long startProc(App app, List<Integer> ports) throws CommandLineException, IOException {
@@ -384,13 +359,16 @@ public class ProcService {
 
 	private Commandline composeCommandLine(App app, List<Integer> ports) throws IOException {
 		
-		//设置通配替换符号
+		//设置通配容器，加入顺序：系统环境变量，进程属性，节点全局环境变量
 		Map<String, String> vars = new HashMap<String, String>();
 		vars.putAll(System.getenv());
 		for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
 			if (entry.getKey() != null && entry.getValue() != null) {
 				vars.put(entry.getKey().toString(), entry.getValue().toString());
 			}
+		}
+		if (nodeService.getEnvs() != null) {
+			vars.putAll(nodeService.getEnvs());
 		}
 		
 		//创建命令行工具
@@ -401,13 +379,13 @@ public class ProcService {
 			commandline.setWorkingDirectory(new File(app.getWorkingDirectory()));
 		}
 		
-		//设置端口
+		//选择端口
 		if (app.getPorts() != null) {
 			for (int i = 0; i < app.getPorts().size(); i ++) {
 				int port = 0;
 				Integer configPort = app.getPorts().get(i);
 				if (configPort == null || configPort == 0) {
-					port = randomPort();
+					port = sysService.randomPort();
 					ports.add(port);
 				} else {
 					if (PortUtil.isUsedPort(configPort)) {
@@ -415,7 +393,8 @@ public class ProcService {
 					}
 					ports.add(configPort);
 				}
-				
+
+				//把端口加入环境变量
 				commandline.addEnvironment(String.format("PORT_%s", i + 1), String.valueOf(port));
 				vars.put(String.format("PORT_%s", i + 1), String.valueOf(port));
 				if (i == 0) {
@@ -425,7 +404,14 @@ public class ProcService {
 			}
 		}
 		
-		//设置环境变量
+		//全局环境变量
+		if (nodeService.getEnvs() != null) {
+			for (Entry<String, String> env : nodeService.getEnvs().entrySet()) {
+				commandline.addEnvironment(env.getKey(), replacePlaceholder(env.getValue(), vars));
+			}
+		}
+		
+		//应用环境变量
 		if (app.getEnvs() != null) {
 			for (Entry<String, String> env : app.getEnvs().entrySet()) {
 				commandline.addEnvironment(env.getKey(), replacePlaceholder(env.getValue(), vars));
@@ -443,24 +429,17 @@ public class ProcService {
 		return commandline;
 	}
 	
-	private int randomPort() throws IOException {
-		ServerSocket socket = new ServerSocket(0);
-		int port = socket.getLocalPort();
-		IOUtils.closeQuietly(socket);
-		return port;
-	}
-
 	private String replacePlaceholder(String s, Map<String, String> vars) {
 		String ret = s;
-		String var = StringUtils.substringBetween(ret, "${", "}");
-		
-		//替换通配符
-		while (StringUtils.isNotEmpty(var)) {
-			//替换环境变量
-			ret = StringUtils.replace(ret, String.format("${%s}", var), vars.get(var));
-			
-			//寻找下一个通配符
-			var = StringUtils.substringBetween(ret, "${", "}");
+		String[] phs = StringUtils.substringsBetween(ret, "${", "}");
+		if (phs != null) {
+			for (String ph : phs) {
+				//替换环境变量
+				String t = vars.get(ph);
+				if (StringUtils.isNotEmpty(t)) {
+					ret = StringUtils.replace(ret, String.format("${%s}", ph), t);
+				}
+			}
 		}
 		return ret;
 	}
@@ -471,9 +450,12 @@ public class ProcService {
 			Proc proc = getProc(pid);
 			
 			if (!runningProc(proc)) {
+				//删除进程信息
 				deleteProc(pid);
-				//App app = appService.getApp(proc.getApp());
-				//killProcTree(proc, app.getKillSignal());
+				
+				//为了保险，把进程杀干净
+				App app = appService.getApp(proc.getApp());
+				killProcTree(proc, app.getKillSignal());
 			}
 		}
 	}
@@ -493,12 +475,8 @@ public class ProcService {
 	}
 	
 	private boolean runningProc(long pid) {
-		try {
-			ProcMem mem = sigar.getProcMem(pid);
-			return mem.getSize() > 0;
-		} catch (Exception e) {
-			return false;
-		}
+		Proc p = sysService.ps(pid);
+		return p != null;
 	}
 	
 	private void cleanSystemOut(Map<Long, LinkedBlockingQueue<String>> map) {
