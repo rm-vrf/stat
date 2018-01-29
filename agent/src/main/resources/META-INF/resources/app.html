@@ -1,0 +1,410 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Supervisor - 应用</title>
+    <meta charset="UTF-8"/>
+    <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
+    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
+    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
+    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
+    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/common.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            var name = _get_param('name').name;
+            if (name) {
+                name = name.replace('#', '');
+                _get_app(name, function(app, status) {
+                    show_app(app);
+                });
+            }
+            
+            $('#healthCheck').change(function(sel) {
+                var show = parseInt(sel.target.value);
+                if (show) {
+                    $('#healthChecks').show();
+                } else {
+                    $('#healthChecks').hide();
+                }
+            });
+            
+            $('#save').click(function() {
+                save_app();
+            });
+        });
+        
+        function save_app() {
+            var start = $('#start').val() == 'true';
+            var scale = parseInt($('#scale').val());
+            var name = $('#name').val();
+            var toProcess = $('#toProcess').val();
+            var workingDirectory = $('#workingDirectory').val();
+            var killSignal = parseInt($('#killSignal').val());
+            var ports = get_ports($('#ports').val());
+            var args = get_list('args');
+            var uris = get_list('uris');
+            var envs = get_map('envNames', 'envValues');
+            var health_checks = get_health_checks();
+            
+            var app = {
+                name: name,
+                toProcess: toProcess,
+                workingDirectory: workingDirectory,
+                envs: envs,
+                args: args,
+                ports: ports,
+                uris: uris,
+                killSignal: killSignal,
+                scale: scale,
+                start: start,
+                healthChecks: health_checks
+            };
+            var json = JSON.stringify(app);
+            //alert(json);
+            
+            $.ajax({
+                url: '/v1/app',
+                type: 'PUT',
+                dataType: 'json',
+                contentType: 'application/json',
+                data: json,
+                success: function(data) {
+                    jAlert('已经保存', '提示');
+                },
+                error: function(data) {
+                    jAlert('已经保存', '提示');
+                }
+            });
+        }
+        
+        function get_health_checks() {
+            var r = new Array();
+            var show = $('#healthCheck').val();
+            if (show == '1') {
+                var initialDelaySeconds = $('#healthCheck_initialDelaySeconds').val();
+                var intervalSeconds = $('#healthCheck_intervalSeconds').val();
+                var protocol = $('#healthCheck_protocol').val();
+                var path = $('#healthCheck_path').val();
+                var portIndex = $('#healthCheck_portIndex').val();
+                var timeoutSeconds = $('#healthCheck_timeoutSeconds').val();
+                var maxConsecutiveFailures = $('#healthCheck_maxConsecutiveFailures').val();
+                
+                r.push({
+                    initialDelaySeconds: initialDelaySeconds,
+                    intervalSeconds: intervalSeconds,
+                    protocol: protocol,
+                    path: path,
+                    portIndex: portIndex,
+                    timeoutSeconds: timeoutSeconds,
+                    maxConsecutiveFailures: maxConsecutiveFailures
+                });
+            }
+            return r;
+        }
+        
+        function get_map(keyId, valueId) {
+            var map = new Object();
+            var keys = get_list(keyId);
+            var values = get_list(valueId);
+            if (keys) {
+                for (var i=0; i<keys.length; i++) {
+                    map[keys[i]] = values[i];
+                }
+            }
+            return map;
+        }
+        
+        function get_list(id) {
+            var r = new Array();
+            var list = $(":text");
+            if (list) {
+                for (var i=0; i<list.length; i++) {
+                    var e = list[i];
+                    if (e.id == id) {
+                        r.push(e.value);
+                    }
+                }
+            }
+            return r;
+        }
+        
+        function get_ports(s) {
+            var p = new Array();
+            if (s) {
+                var ary = s.split(',');
+                if (ary != null) {
+                    for (var i=0; i<ary.length; i++) {
+                        p.push(parseInt(ary[i]));
+                    }
+                }
+            }
+            return p;
+        }
+        
+        function show_app(app) {
+            $('#start').val(app.start);
+            $('#scale').val(app.scale);
+            $('#name').val(app.name);
+            $('#name').attr("disabled","disabled")
+            $('#toProcess').val(app.toProcess);
+            $('#workingDirectory').val(app.workingDirectory);
+            if (app.args) {
+                $.each(app.args, function(i, arg) {
+                    add_arg(arg);
+                });
+            }
+            if (app.envs) {
+                $.each(app.envs, function(k, v) {
+                    add_env(k, v);
+                });
+            }
+            if (app.uris) {
+                $.each(app.uris, function(i, uri) {
+                    add_uri(uri);
+                });
+            }
+            $('#killSignal').val(app.killSignal);
+            $('#ports').val(app.ports);
+            if (app.healthChecks && app.healthChecks.length > 0) {
+                show_health_check(app.healthChecks[0]);
+            } else {
+                $('#healthCheck').val('0');
+                $('#healthChecks').hide();
+            }
+        }
+        
+        function show_health_check(healthCheck) {
+            $('#healthCheck').val('1');
+            $('#healthChecks').show();
+            $('#healthCheck_initialDelaySeconds').val(healthCheck.initialDelaySeconds);
+            $('#healthCheck_intervalSeconds').val(healthCheck.intervalSeconds);
+            $('#healthCheck_protocol').val(healthCheck.protocol);
+            $('#healthCheck_path').val(healthCheck.path);
+            $('#healthCheck_portIndex').val(healthCheck.portIndex);
+            $('#healthCheck_timeoutSeconds').val(healthCheck.timeoutSeconds);
+            $('#healthCheck_maxConsecutiveFailures').val(healthCheck.maxConsecutiveFailures);
+        }
+        
+        function add_arg(val) {
+            var max = 0;
+            var es = $('#args').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "arg_" + (max+1);
+            var div = '<div id="' + id + '">'
+            div += '<input type="text" name="args" size="80" maxlength="200" value="' + val + '" id="args"/>';
+            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#args').append(div);
+        }
+        
+        function add_env(name, val) {
+            var max = 0;
+            var es = $('#envs').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "env_" + (max+1);
+            var div = '<div id="' + id + '">';
+            div += '<input type="text" name="envNames" size="30" maxlength="200" value="' + name + '" id="envNames"/>';
+            div += ' = ';
+            div += '<input type="text" name="envValues" size="40" maxlength="200" value="' + val + '" id="envValues"/>';
+            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#envs').append(div);
+        }
+                                    
+        function add_uri(val) {
+            var max = 0;
+            var es = $('#uris').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "uri_" + (max+1);
+            var div = '<div id="' + id + '">'
+            div += '<input type="text" name="uris" size="80" maxlength="200" value="' + val + '" id="uris"/>';
+            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#uris').append(div);
+        }
+        
+        function remove(id) {
+            $('#' + id).remove();
+        }
+    </script>
+</head>
+<body>
+<div id="wrapper">
+
+    <div id="header">
+        <a href="/"><img src="images/stat.gif" alt="Status" /></a>
+    </div>
+
+    <div id="content">
+        <div class="hidden" id="statusmessage">&nbsp;</div>
+        
+        <p>请使用下面的表单新建/修改应用。</p>
+        
+        <form id="f" name="f" action="#" method="post">
+            <input type="hidden" name="scale" value="" id="scale"/>
+            <input type="hidden" name="start" value="" id="start"/>
+            
+            <div class="jive-contentBox">
+                <table cellpadding="3" cellspacing="0" border="0">
+                    <tbody>
+                        <tr>
+                            <td width="1%" nowrap></td>
+                            <td width="49%" nowrap>
+                                <div>应用名称: *</div>
+                                <div>
+                                    <input type="text" name="name" size="80" maxlength="30" value="" id="name"/>
+                                    <span id="name_message" style="display:none"></span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>进程: *</div>
+                                <div>
+                                    <input type="text" name="toProcess" size="80" maxlength="200" value="" id="toProcess"/>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td nowrap>
+                                <div>工作目录:</div>
+                                <div>
+                                    <input type="text" name="workingDirectory" size="80" maxlength="200" value="" id="workingDirectory"/>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>参数: <a href="#" onclick="add_arg('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div id="args"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>环境变量: <a href="#" onclick="add_env('', '')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div id="envs"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>退出信号: *</div>
+                                <div>
+                                    <select name="killSignal" id="killSignal" style="width:430px">
+                                        <option value="1"> 1 - HUP (hang up)</option>
+                                        <option value="2"> 2 - INT (interrupt)</option>
+                                        <option value="3"> 3 - QUIT (quit)</option>
+                                        <option value="6"> 6 - ABRT (abort)</option>
+                                        <option value="9"> 9 - KILL (non-catchable, non-ignorable kill)</option>
+                                        <option value="14">14 - ALRM (alarm clock)</option>
+                                        <option value="15" selected>15 - TERM (software termination signal)</option>
+                                    </select>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>端口:</div>
+                                <div>
+                                    <input type="text" name="ports" size="80" maxlength="200" value="0,0" id="ports"/>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td nowrap></td>
+                            <td>
+                                <div>下载地址: <a href="#" onclick="add_uri('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div id="uris"></div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td width="1%" nowrap></td>
+                            <td width="49%" nowrap>
+                                <div>健康检查:</div>
+                                <div>
+                                    <select name="healthCheck" id="healthCheck" style="width:430px">
+                                        <option value="1">开启</option>
+                                        <option value="0" selected>关闭</option>
+                                    </select>
+                                </div>
+                                <div id="healthChecks" class="hidden">
+                                    <div>初始延时（秒）:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_initialDelaySeconds" size="80" maxlength="30" value="60" id="healthCheck_initialDelaySeconds"/>
+                                    </div>
+                                    <div>检查间隔（秒）:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_intervalSeconds" size="80" maxlength="30" value="20" id="healthCheck_intervalSeconds"/>
+                                    </div>
+                                    <div>协议:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_protocol" size="80" maxlength="30" value="HTTP" id="healthCheck_protocol"/>
+                                    </div>
+                                    <div>访问路径:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_path" size="80" maxlength="30" value="/" id="healthCheck_path"/>
+                                    </div>
+                                    <div>端口序号:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_portIndex" size="80" maxlength="30" value="0" id="healthCheck_portIndex"/>
+                                    </div>
+                                    <div>超时（秒）:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_timeoutSeconds" size="80" maxlength="30" value="20" id="healthCheck_timeoutSeconds"/>
+                                    </div>
+                                    <div>允许的连续失败次数:</div>
+                                    <div>
+                                        <input type="text" name="healthCheck_maxConsecutiveFailures" size="80" maxlength="30" value="3" id="healthCheck_maxConsecutiveFailures"/>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding-top: 10px;">
+                                <input type="button" name="save" id="save" value=" 保存 ">
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+
+    <br/><br/>
+    <div class="push">
+    </div>
+</div>
+
+<div id="footer" class="clr">
+    <div class="left">
+        <a href="/">Supervisor</a> <span id="supervisor_version">#</span>
+    </div>
+    <div class="right">
+        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>iFlytek</strong>
+    </div>
+</div>
+</body>
+</html>

@@ -2,11 +2,14 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Supervisor - </title>
+    <title>Supervisor - 输出</title>
     <meta charset="UTF-8"/>
     <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <script src="http://keleyi.com/keleyi/pmedia/jquery-1.10.1.min.js" type="text/javascript"></script>
-    <script src="func.js" type="text/javascript"></script>
+    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
+    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
+    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
+    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
             var pid = _get_param('pid').pid.replace('#', '');
@@ -18,12 +21,11 @@
         });
         
         function log_out(pid, out) {
-            var url = '/v1/proc/' + pid + '/_' + out;
-            $.get(url, function(lines, status) {
+            _get_out(pid, out, function(lines, status) {
                 $.each(lines, function(i, line) {
                     $('#tailbody').append(line + '<br/>');
-                    $("html, body").animate({ scrollTop: $(document).height() }, "slow");
                 });
+                $("html, body").animate({ scrollTop: $(document).height() }, "slow");
             });
         }
     </script>

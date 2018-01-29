@@ -137,7 +137,7 @@ public class SysService {
 			for (int i = 7; i < ary.length; i ++) {
 				cmd.add(ary[i]);
 			}
-			p.setUid(Long.valueOf(uid));
+			p.setUid(uid);
 			p.setPid(Long.valueOf(pid));
 			p.setPpid(Long.valueOf(ppid));
 			p.setStartTime(stime);

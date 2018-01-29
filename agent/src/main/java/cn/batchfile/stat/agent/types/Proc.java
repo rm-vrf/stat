@@ -11,7 +11,7 @@ import java.util.List;
 public class Proc {
 	private long pid;
 	private long ppid;
-	private long uid;
+	private String uid;
 	private String tty;
 	private String startTime;
 	private String cmd;
@@ -87,7 +87,7 @@ public class Proc {
 	 * 进程所有者的用户名
 	 * @return 进程所有者的用户名
 	 */
-	public long getUid() {
+	public String getUid() {
 		return uid;
 	}
 
@@ -95,7 +95,7 @@ public class Proc {
 	 * 进程所有者的用户名
 	 * @param uid 进程所有者的用户名
 	 */
-	public void setUid(long uid) {
+	public void setUid(String uid) {
 		this.uid = uid;
 	}
 

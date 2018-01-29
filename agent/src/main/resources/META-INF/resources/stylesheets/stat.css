@@ -121,6 +121,10 @@ html, body {
   text-decoration: none;
 }
 
+#newapp a {
+  width: 84px;
+  background: url("../images/button_newapp.gif") 0 0 no-repeat;
+}
 #refresh a {
   width: 62px;
   background: url("../images/button_refresh.gif") 0 0 no-repeat;
@@ -131,6 +135,9 @@ html, body {
 #restart_all a {
   width: 84px;
   background: url("../images/button_restart.gif") 0 0 no-repeat;
+}
+#newapp a:hover {
+  background-position: -84px;
 }
 #restart_all a:hover {
   background-position: -84px;
@@ -183,7 +190,7 @@ th.action {
 }
 td, th {
   padding: 4px 8px;
-  border-bottom: 1px solid #fff;
+  border-bottom: 1px solid #F0F0F0;
 }
 tr td {
   background-color: #FBFBFB;
@@ -238,4 +245,19 @@ tr.shade td {
 }
 #footer a {
   font-size: inherit;
+}
+#nodestatus {
+    color:#999999;
+    float:right;
+    font-size:8pt;
+    line-height:11pt;
+    margin:0;
+    padding:15px 15px 0 0;
+    text-align:right;
+    width:475px;
+}
+#title {
+  m#argin-bottom: 13px;
+  #padding: 10px 0 13px 0;
+  #line-height:11pt;
 }
