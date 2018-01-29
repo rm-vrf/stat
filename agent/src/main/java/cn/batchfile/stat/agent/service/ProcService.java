@@ -238,20 +238,21 @@ public class ProcService {
 	}
 	
 	private void getTree(List<Long> tree, long pid, List<Proc> ps) {
-		Proc child = findProcByPpid(pid, ps);
-		if (child != null) {
+		List<Proc> children = findProcByPpid(pid, ps);
+		for (Proc child : children) {
 			tree.add(child.getPid());
-			pid = child.getPid();
+			getTree(	tree, child.getPid(), ps);
 		}
 	}
 	
-	private Proc findProcByPpid(long ppid, List<Proc> ps) {
+	private List<Proc> findProcByPpid(long ppid, List<Proc> ps) {
+		List<Proc> list = new ArrayList<Proc>();
 		for (Proc p : ps) {
 			if (p.getPpid() == ppid) {
-				return p;
+				list.add(p);
 			}
 		}
-		return null;
+		return list;
 	}
 	
 	private void startScheduleProc() throws IOException, CommandLineException {
@@ -448,14 +449,15 @@ public class ProcService {
 		List<Long> list = getProcs();
 		for (long pid : list) {
 			Proc proc = getProc(pid);
-			
+
+			//有一种异常的情况：主进程已经没了，孩子进程还在。全部重启，也可以等到健康检查
 			if (!runningProc(proc)) {
-				//删除进程信息
-				deleteProc(pid);
-				
 				//为了保险，把进程杀干净
 				App app = appService.getApp(proc.getApp());
 				killProcTree(proc, app.getKillSignal());
+				
+				//删除进程信息
+				deleteProc(pid);
 			}
 		}
 	}
@@ -463,7 +465,8 @@ public class ProcService {
 	private boolean runningProc(Proc proc) {
 		List<Long> pids = new ArrayList<Long>();
 		pids.add(proc.getPid());
-		pids.addAll(proc.getTree());
+		//判断进程状态的时候，以主进程为准，子进程不算
+		//pids.addAll(proc.getTree());
 		
 		for (long pid : pids) {
 			if (runningProc(pid)) {

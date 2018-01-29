@@ -1,14 +1,17 @@
 package cn.batchfile.stat.agent.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -20,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import cn.batchfile.stat.agent.types.Disk;
+import cn.batchfile.stat.agent.types.Memory;
+import cn.batchfile.stat.agent.types.Network;
 import cn.batchfile.stat.agent.types.Os;
 import cn.batchfile.stat.agent.types.Proc;
 
@@ -115,7 +121,7 @@ public class SysService {
 		List<Proc> ps = new ArrayList<Proc>();
 		for (String line : lines) {
 			String[] ary = StringUtils.split(line);
-			if (!StringUtils.isNumeric(ary[1])) {
+			if (ary == null || ary.length < 2 || !StringUtils.isNumeric(ary[1])) {
 				continue;
 			}
 			
@@ -143,57 +149,71 @@ public class SysService {
 		return ps;
 	}
 
-//	public List<Disk> getDisks() throws SigarException {
-//		FileSystem[] fss = sigar.getFileSystemList();
-//		List<Disk> list = new ArrayList<Disk>();
-//		for (FileSystem fs : fss) {
-//			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
-//			Disk disk = new Disk();
-//			disk.setDevName(fs.getDevName());
-//			disk.setDirName(fs.getDirName());
-//			disk.setOptions(fs.getOptions());
-//			disk.setSysTypeName(fs.getSysTypeName());
-//			disk.setTotal(fsu.getTotal());
-//			disk.setType(fs.getType());
-//			disk.setTypeName(fs.getTypeName());
-//			list.add(disk);
-//		}
-//		return list;
-//	}
+	public List<Disk> getDisks() {
+		List<Disk> list = new ArrayList<Disk>();
+		File[] roots = File.listRoots();
+		for (File root : roots) {
+			Disk disk = new Disk();
+			disk.setDirName(root.getAbsolutePath());
+			disk.setTotal(root.getTotalSpace());
+			list.add(disk);
+		}
+		return list;
+	}
 
-//	public Memory getMemory() throws SigarException {
-//		Memory memory = new Memory();
-//		Mem mem = sigar.getMem();
-//		memory.setRam(mem.getRam());
-//		memory.setTotal(mem.getTotal());
-//	
-//		return memory;
-//	}
+	public Memory getMemory() {
+		Memory memory = new Memory();
+		try {
+			List<String> lines = exec("free -k");
+			for (String line : lines) {
+				String[] ary = StringUtils.split(line, " ");
+				if (ary == null || ary.length < 2 || !StringUtils.isNumeric(ary[1])) {
+					continue;
+				}
+				
+				if (StringUtils.equalsIgnoreCase(ary[0], "mem:")) {
+					memory.setRam(Long.valueOf(ary[1]) * 1024);
+					memory.setTotal(memory.getRam());
+					break;
+				}
+			}
+		} catch (Exception e) {
+			log.error("error when get memeory info", e);
+		}
+		return memory;
+	}
 
-//	public List<Network> getNetworks() throws SigarException {
-//		String[] netIfs = sigar.getNetInterfaceList();
-//		List<Network> networks = new ArrayList<Network>();
-//	
-//		for (String name : netIfs) {
-//			NetInterfaceConfig config = sigar.getNetInterfaceConfig(name);
-//			NetInterfaceStat stat = sigar.getNetInterfaceStat(name);
-//			if (stat.getRxBytes() > 0 
-//					&& !config.getAddress().equals("127.0.0.1") 
-//					&& !config.getAddress().equals("0.0.0.0")) {
-//				Network network = new Network();
-//				network.setAddress(config.getAddress());
-//				network.setBroadcast(config.getBroadcast());
-//				network.setDescription(config.getDescription());
-//				network.setDestination(config.getDestination());
-//				network.setHwaddr(config.getHwaddr());
-//				network.setMtu(config.getMtu());
-//				network.setName(config.getName());
-//				network.setNetmask(config.getNetmask());
-//				network.setType(config.getType());
-//			
-//				networks.add(network);
-//			}
-//		}
-//		return networks;
-//	}
+	public List<Network> getNetworks() {
+		List<Network> networks = new ArrayList<Network>();
+		try {
+			Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
+			Enumeration<InetAddress> addresses;
+			while (en.hasMoreElements()) {
+				NetworkInterface networkinterface = en.nextElement();
+				addresses = networkinterface.getInetAddresses();
+				while (addresses.hasMoreElements()) {
+					InetAddress address = addresses.nextElement(); 
+					
+					Network network = new Network();
+					network.setName(networkinterface.getName());
+					network.setPointToPoint(networkinterface.isPointToPoint());
+					network.setIndex(networkinterface.getIndex());
+					network.setUp(networkinterface.isUp());
+					network.setMtu(networkinterface.getMTU());
+					network.setVirtual(networkinterface.isVirtual());
+					network.setAddress(address.getHostAddress());
+					network.setSiteLocal(address.isSiteLocalAddress());
+					network.setLoopback(address.isLoopbackAddress());
+					network.setLinkLocal(address.isLinkLocalAddress());
+					network.setAnyLocal(address.isAnyLocalAddress());
+					network.setMulticast(address.isMulticastAddress());
+					
+					networks.add(network);
+				}
+			}
+		} catch (Exception e) {
+			log.error("error when get network info", e);
+		}
+		return networks;
+	}
 }

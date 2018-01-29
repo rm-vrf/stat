@@ -43,9 +43,9 @@ public class NodeService {
 		node.setId(getId());
 		node.setHostname(sysService.getHostname());
 		node.setOs(sysService.getOs());
-		//node.setDisks(sysService.getDisks());
-		//node.setMemory(sysService.getMemory());
-		//node.setNetworks(sysService.getNetworks());
+		node.setDisks(sysService.getDisks());
+		node.setMemory(sysService.getMemory());
+		node.setNetworks(sysService.getNetworks());
 
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
