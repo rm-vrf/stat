@@ -1,14 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Supervisor - 应用列表</title>
-    <meta charset="UTF-8"/>
     <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
-    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
-    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         var _desc = ['警告', '停止', '正常', '错误'];
@@ -22,110 +18,106 @@
         });
         
         function delete_app(name) {
-            jConfirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？', '确认', function(r) {
-                if (r) {
-                    $.ajax({
-                        url: '/v1/app/' + name,
-                        type: 'DELETE',
-                        dataType: 'json',
-                        contentType: 'application/json',
-                        success: function(data) {
-                            jAlert('已经删除', '提示');
-                        },
-                        error: function(data) {
-                           jAlert('已经删除', '提示');
-                        }
-                    });
-                }
-            });
+            if (confirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？')) {
+                $.ajax({
+                    url: '/v1/app/' + name,
+                    type: 'DELETE',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(data, status, xhr) {
+                        alert('已经删除应用 ' + name);
+                    },
+                    error: function(xhr, status, error) {
+                        alert('删除失败，状态：' + status + '，信息：' + error);
+                    }
+                });
+            }
         }
         
         function stop_app(name) {
-            jConfirm('是否要停止应用 ' + name + ' ？', '确认', function(r) {
-                if (r) {
-                    _stop_app(name, function() {
-                        jAlert('已经发出停止指令', '提示');
-                    });
-                }
-            });
+            if (confirm('是否要停止应用 ' + name + ' ？')) {
+                $.post('/v1/app/' + name + '/_stop', function(data, status, xhr) {
+                    alert('已经对应用 ' + name + ' 发出停止指令');
+                });
+            }
         }
 
         function start_app(name) {
-            _start_app(name, function(msg, stat) {
-                jAlert('已经发出启动指令', '提示');
+            $.post('/v1/app/' + name + '/_start', function(data, status, xhr) {
+                alert('已经对应用 ' + name + ' 发出启动指令');
             });
         }
 
         function scale_app(name) {
-            _get_app(name, function(app) {
-                jPrompt('输入应用 ' + name + ' 的进程数量：', app.scale, '输入', function (n) {
-                    if (n) {
-                        _put_scale(name, n, function(msg, stat) {
-                            jAlert('更新成功', '提示');
-                        });
-                    }
-                });
+            $.get('/v1/app/' + name, function(app, status, xhr) {
+                var scale = prompt('输入应用 ' + name + ' 的进程数量：', app.scale);
+                if (scale > '') {
+                    var url = '/v1/app/' + app.name + '/_scale?num=' + scale;
+                    $.post(url, function(data, status, xhr) {
+                        alert('更新应用 ' + name + ' 的进程数量成功');
+                    });
+                }
             });
         }
         
         function restart_all() {
-            jConfirm('已经停止的应用仍然保持停止状态，需要继续吗？', '确认', function(r) {
-                if (r) {
-                    _get_proc_list(function(ps, status) {
-                        $.each(ps, function(i, p) {
-                            _kill_proc(p, function(ret, status) {});
+            if (confirm('已经停止的应用仍然保持停止状态，需要继续吗？')) {
+                $.get('/v1/proc', function(pids, status, xhr) {
+                    var count = 0;
+                    $.each(pids, function(i, pid) {
+                        var url = '/v1/proc/' + pid + '/_kill';
+                        $.post(url, function(data, status) {
+                            count ++;
                         });
-                        jAlert('已经发出重启指令', '提示');
                     });
-                }
-            });
+                    alert('已经发出重启指令');
+                });
+            }
         }
         
         function stop_all() {
-            jConfirm('停止所有应用，需要继续吗？', '确认', function(r) {
-                if (r) {
-                    var keys = get_table_keys();
-                    $.each(keys, function(i, app_name) {
-                        _stop_app(app_name, function(ret, status) {});
+            if (confirm('停止所有应用，需要继续吗？')) {
+                var keys = get_table_keys();
+                var count = 0;
+                $.each(keys, function(i, key) {
+                    $.post('/v1/app/' + key + '/_stop', function(data, status, xhr) {
+                        count ++;
                     });
-                    jAlert('已经发出停止指令', '提示');
-                }
-            });
+                });
+                alert('已经发出停止指令');
+            }
         }
         
         function refresh_rows() {
             var keys = get_table_keys();
-            $.each(keys, function(i, app_name) {
-                refresh_row(app_name);
+            $.each(keys, function(i, key) {
+                refresh_row(key);
             });
         }
         
-        function refresh_row(app_name) {
-            _get_app(app_name, function(app_data, status) {
-                var scale = app_data.scale;
-                var start = app_data.start;
-                _get_app_proc_list(app_name, function(proc_list, status) {
-                    var proc_count = proc_list.length;
-                    update_row(app_name, start, scale, proc_count);
+        function refresh_row(name) {
+            $.get('/v1/app/' + name, function(app, status, xhr) {
+                $.get(url = '/v1/app/' + app.name + '/proc', function(procs, status, xhr) {
+                    update_row(app.name, app.start, app.scale, procs.length);
                 });
             });
         }
         
         function refresh_list() {
-            _get_app_list(function(app_names, status) {
+            $.get('/v1/app', function(names, status, xhr) {
                 //remove deleted app
                 var keys = get_table_keys();
                 $.each(keys, function(i, key) {
-                    if ($.inArray(key, app_names) < 0) {
+                    if ($.inArray(key, names) < 0) {
                         remove_row(key);
                     }
                 });
                 
                 //add new app
-                $.each(app_names, function(i, app_name) {
-                    if ($.inArray(app_name, keys) < 0) {
-                        add_row(app_name);
-                        refresh_row(app_name);
+                $.each(names, function(i, name) {
+                    if ($.inArray(name, keys) < 0) {
+                        add_row(name);
+                        refresh_row(name);
                     }
                 });
             });
@@ -140,7 +132,6 @@
                     keys.push(key);
                 }
             });
-            //alert(keys);
             return keys;
         }
         
@@ -180,10 +171,10 @@
             }
         }
         
-        function remove_row(name) {
+        function remove_row(key) {
             //alert('remove row: ' + name);
             var keys = get_table_keys();
-            var pos = $.inArray(name, keys);
+            var pos = $.inArray(key, keys);
             if (pos >= 0) {
                 $("#statustable tr:gt(0):eq(" + pos + ")").remove();
             }
@@ -224,7 +215,7 @@
 <div id="wrapper">
 
     <div id="header">
-        <a href="/"><img src="images/stat.gif" alt="Status" /></a>
+        <a href="/"><img src="images/supervisor.gif" alt="Status" /></a>
         <p id="nodestatus">
             主机：<strong><span id="hostname"></span></strong>（<span id="address"></span>）- 
             磁盘：<span id="diskspace"></span> GB - 
@@ -260,7 +251,7 @@
         <a href="/">Supervisor</a> <span id="supervisor_version">#</span>
     </div>
     <div class="right">
-        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>iFlytek</strong>
+        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
     </div>
 </div>
 </body>

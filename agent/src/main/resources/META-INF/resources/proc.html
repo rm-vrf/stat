@@ -1,63 +1,57 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Supervisor - 进程列表</title>
-    <meta charset="UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Supervisor - 应用列表</title>
     <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
-    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
-    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
+            var prefer_ip_address = true;
             var app = _get_param('app').app.replace('#', '');
             
-            _get_node(function(node, status) {
-                refresh_list(app, node);
+            $.get('/v1/node', function(node, status, xhr) {
+                var hostname = get_hostname(node, prefer_ip_address);
+                refresh_list(app, hostname);
                 setInterval(function() {
-                    refresh_list(app, node);
+                    refresh_list(app, hostname);
                 }, 5000);
             });
         });
         
         function kill_all() {
-            jConfirm('重新启动所有进程，需要继续吗？', '确认', function(r) {
-                if (r) {
-                    var keys = get_table_keys();
-                    $.each(keys, function(i, key) {
-                        _kill_proc(key, function(msg, status) {});
-                    });
-                    jAlert('已经发出重启指令', '提示');
-                }
-            });
+            if (confirm('重新启动所有进程，需要继续吗？')) {
+                var keys = get_table_keys();
+                $.each(keys, function(i, key) {
+                    $.post('/v1/proc/' + key + '/_kill', function(data, status, xhr) {});
+                });
+                alert('已经发出重启指令');
+            }
         }
         
         function kill(pid) {
-            jConfirm('停止进程，需要继续吗？', '确认', function(r) {
-                if (r) {
-                    _kill_proc(pid, function(msg, status) {});
-                    jAlert('已经发出停止指令', '提示');
-                }
-            });
+            if (confirm('停止进程，需要继续吗？')) {
+                $.post('/v1/proc/' + pid + '/_kill', function(data, status, xhr) {});
+                alert('已经发出停止指令');
+            }
         }
 
-        function refresh_list(app, node) {
-            _get_app_proc_list(app, function(ps, status) {
+        function refresh_list(app, hostname) {
+            $.get('/v1/app/' + app + '/proc', function(pids, status, xhr) {
                 //remove deleted row
                 var keys = get_table_keys();
                 $.each(keys, function(i, key) {
-                    if ($.inArray(key, ps) < 0) {
+                    if ($.inArray(key, pids) < 0) {
                         remove_row(key);
                     }
                 });
                 
                 //add new row
-                $.each(ps, function(i, pid) {
+                $.each(pids, function(i, pid) {
                     if ($.inArray(pid, keys) < 0) {
                         add_row(pid);
-                        refresh_row(pid, node);
+                        refresh_row(pid, hostname);
                     }
                 });
             });
@@ -75,16 +69,16 @@
             return keys;
         }
         
-        function refresh_row(pid, node) {
-            _get_proc(pid, function(p, status) {
-                update_row(p, node);
+        function refresh_row(pid, hostname) {
+            $.get('/v1/proc/' + pid, function(p, status, xhr) {
+                update_row(p, hostname);
             });
         }
         
-        function update_row(p, node) {
+        function update_row(p, hostname) {
             var text = new Array();
             $.each(p.ports, function(i, port) {
-                text.push('<a href="http://' + node.hostname + ':' + port + '" target="_blank">' + port + '</a>');
+                text.push('<a href="http://' + hostname + ':' + port + '" target="_blank">' + port + '</a>');
             });
             
             $('#ppid_' + p.pid).text(p.ppid);
@@ -131,7 +125,7 @@
 <div id="wrapper">
 
     <div id="header">
-        <a href="/"><img src="images/stat.gif" alt="Status" /></a>
+        <a href="/"><img src="images/supervisor.gif" alt="Status" /></a>
         <p id="nodestatus">
             主机：<strong><span id="hostname"></span></strong>（<span id="address"></span>）- 
             磁盘：<span id="diskspace"></span> GB - 
@@ -166,7 +160,7 @@
         <a href="/">Supervisor</a> <span id="supervisor_version">#</span>
     </div>
     <div class="right">
-        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>iFlytek</strong>
+        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
     </div>
 </div>
 </body>
