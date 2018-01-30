@@ -72,6 +72,17 @@ public class AppService {
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
 	
+	public void postApp(App app) throws UnsupportedEncodingException, IOException {
+		//check name
+		App a = getApp(app.getName());
+		if (a != null) {
+			throw new RuntimeException("Duplicated application name");
+		}
+
+		//put data
+		putApp(app);
+	}
+	
 	public void deleteApp(String name) {
 		File f = new File(appDirectory, name);
 		FileUtils.deleteQuietly(f);

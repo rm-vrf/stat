@@ -1,27 +1,23 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Supervisor - 输出</title>
-    <meta charset="UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Supervisor - 应用列表</title>
     <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
-    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
-    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
-            var pid = _get_param('pid').pid.replace('#', '');
-            var out = _get_param('out').out.replace('#', '');
-            $('#tailbody').append('Log of pid #' + pid + ': <br/>');
+            var pid = get_param('pid').pid.replace('#', '');
+            var out = get_param('out').out.replace('#', '');
+            $('#header').text('Log of pid #' + pid + ': ');
             setInterval(function() {
                 log_out(pid, out);
             }, 1000);
         });
         
         function log_out(pid, out) {
-            _get_out(pid, out, function(lines, status) {
+            $.get('/v1/proc/' + pid + '/_' + out, function(lines, status, xhr) {
                 $.each(lines, function(i, line) {
                     $('#tailbody').append(line + '<br/>');
                 });
@@ -31,13 +27,8 @@
     </script>
 </head>
 <body>
-<div id="content">
+    <div id="header"></div>
     <div id="tailbody"></div>
-    <div style="margin-top: 10px;" id="tail">
-        <a href="#" id="refresh_anchor" class="hidden">
-            <input type="button" value=" Refresh " name="refresh" />
-        </a>
-    </div>
 </div>
 </body>
 </html>

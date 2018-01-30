@@ -35,7 +35,7 @@ function get_hostname(node, prefer_ip_address) {
     return hostname;
 }
 
-function _get_param(name) {
+function get_param(name) {
     var vars = [], hash;
     var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
     for(var i = 0; i < hashes.length; i++) {
@@ -86,7 +86,7 @@ function _get_proc_list(callback) {
 }
 
 function _get_out(pid, out, callback) {
-    var url = '/v1/proc/' + pid + '/_' + out;
-    $.get(url, callback);
+    var url = ;
+    
 }
 */

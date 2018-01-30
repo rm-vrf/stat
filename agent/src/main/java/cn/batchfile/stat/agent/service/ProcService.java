@@ -454,7 +454,8 @@ public class ProcService {
 			if (!runningProc(proc)) {
 				//为了保险，把进程杀干净
 				App app = appService.getApp(proc.getApp());
-				killProcTree(proc, app.getKillSignal());
+				int signal = app == null ? 9 : app.getKillSignal();
+				killProcTree(proc, signal);
 				
 				//删除进程信息
 				deleteProc(pid);

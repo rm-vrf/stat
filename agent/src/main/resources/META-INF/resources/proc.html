@@ -9,7 +9,7 @@
     <script>
         $(document).ready(function () {
             var prefer_ip_address = true;
-            var app = _get_param('app').app.replace('#', '');
+            var app = get_param('app').app.replace('#', '');
             
             $.get('/v1/node', function(node, status, xhr) {
                 var hostname = get_hostname(node, prefer_ip_address);
@@ -150,7 +150,7 @@
             </tr>
         </table>
     </div>
-
+    <br/>
     <div class="push">
     </div>
 </div>
