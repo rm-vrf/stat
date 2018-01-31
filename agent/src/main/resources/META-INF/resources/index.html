@@ -190,19 +190,19 @@
             row += '<td class="action">';
             row += '<ul>';
             row += '<li">';
-            row += '<a href="#" onclick="start_app(\'' + name + '\')" id="action_start_' + name + '" style="display:none">启动</a> ';
+            row += '<a href="javascript:void(0)" onclick="start_app(\'' + name + '\')" id="action_start_' + name + '" style="display:none">启动</a> ';
             row += '</li>';
             row += '<li">';
-            row += '<a href="#" onclick="stop_app(\'' + name + '\')" id="action_stop_' + name + '" style="display:none">停止</a> ';
+            row += '<a href="javascript:void(0)" onclick="stop_app(\'' + name + '\')" id="action_stop_' + name + '" style="display:none">停止</a> ';
             row += '</li>';
             row += '<li">';
-            row += '<a href="#" onclick="scale_app(\'' + name + '\')" id="action_scale">调整计划</a> ';
+            row += '<a href="javascript:void(0)" onclick="scale_app(\'' + name + '\')" id="action_scale">调整计划</a> ';
             row += '</li>';
             row += '<li">';
             row += '<a href="app.html?name=' + name + '" id="action_edit">编辑</a> ';
             row += '</li>';
             row += '<li">';
-            row += '<a href="#" onclick="delete_app(\'' + name + '\')" id="action_delete">删除</a> ';
+            row += '<a href="javascript:void(0)" onclick="delete_app(\'' + name + '\')" id="action_delete">删除</a> ';
             row += '</li>';
             row += '</ul>';
             row += '</td>';
@@ -226,8 +226,8 @@
     <div id="content">
         <div class="hidden" id="statusmessage">&nbsp;</div>
         <ul id="buttons" class="clr">
-            <li id="restart_all"><a onclick="restart_all()" href="#">&nbsp;</a></li>
-            <li id="stop_all"><a onclick="stop_all()" href="#">&nbsp;</a></li>
+            <li id="restart_all"><a onclick="restart_all()" href="javascript:void(0)">&nbsp;</a></li>
+            <li id="stop_all"><a onclick="stop_all()" href="javascript:void(0)">&nbsp;</a></li>
             <li id="newapp"><a href="app.html">&nbsp;</a></li>
         </ul>
         <table cellspacing="0" id="statustable">

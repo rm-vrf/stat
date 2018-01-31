@@ -1,14 +1,10 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Supervisor - 应用</title>
-    <meta charset="UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Supervisor - 应用列表</title>
     <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <link href="stylesheets/jquery.alerts.css" rel="stylesheet" type="text/css" />
-    <script src="js/jquery-1.10.1.min.js" type="text/javascript"></script>
-    <script src="js/jquery-ui-1.10.3.min.js" type="text/javascript"></script>
-    <script src="js/jquery.alerts.js" type="text/javascript"></script>
+    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
@@ -61,7 +57,7 @@
                 healthChecks: health_checks
             };
             var json = JSON.stringify(app);
-            
+
             var method = $('#stat').val() == 'edit' ? 'PUT' : 'POST';
             var url = $('#stat').val() == 'edit' ? '/v1/app/' + app.name : '/v1/app';
             
@@ -73,6 +69,7 @@
                 dataType: 'json',
                 success: function(data, status, xhr) {
                     alert('已经保存');
+                    window.location.href = '/';
                 },
                 error: function(xhr, status, error) {
                     alert('保存失败，状态：' + status + '，信息：' + error);
@@ -199,7 +196,7 @@
             var id = "arg_" + (max+1);
             var div = '<div id="' + id + '">'
             div += '<input type="text" name="arg" size="80" maxlength="200" value="' + val + '" id="arg"/>';
-            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
             div += '</div>';
             $('#args').append(div);
         }
@@ -218,7 +215,7 @@
             div += '<input type="text" name="envName" size="30" maxlength="200" value="' + name + '" id="envName"/>';
             div += ' = ';
             div += '<input type="text" name="envValue" size="40" maxlength="200" value="' + val + '" id="envValue"/>';
-            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
             div += '</div>';
             $('#envs').append(div);
         }
@@ -235,7 +232,7 @@
             var id = "uri_" + (max+1);
             var div = '<div id="' + id + '">'
             div += '<input type="text" name="uri" size="80" maxlength="200" value="' + val + '" id="uri"/>';
-            div += '<a href="#" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
             div += '</div>';
             $('#uris').append(div);
         }
@@ -255,7 +252,7 @@
     <div id="content">
         <div class="hidden" id="statusmessage">&nbsp;</div>
         <p>请使用下面的表单新建/修改应用。</p>
-        <form id="f" name="f" action="#" method="post">
+        <form id="f" name="f" method="post">
             <input type="hidden" name="stat" value="add" id="stat"/>
             <input type="hidden" name="scale" value="0" id="scale"/>
             <input type="hidden" name="start" value="false" id="start"/>
@@ -293,14 +290,14 @@
                         <tr>
                             <td nowrap></td>
                             <td>
-                                <div>参数: <a href="#" onclick="add_arg('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div>参数: <a href="javascript:void(0)" onclick="add_arg('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
                                 <div id="args"></div>
                             </td>
                         </tr>
                         <tr>
                             <td nowrap></td>
                             <td>
-                                <div>环境变量: <a href="#" onclick="add_env('', '')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div>环境变量: <a href="javascript:void(0)" onclick="add_env('', '')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
                                 <div id="envs"></div>
                             </td>
                         </tr>
@@ -333,7 +330,7 @@
                         <tr>
                             <td nowrap></td>
                             <td>
-                                <div>下载地址: <a href="#" onclick="add_uri('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
+                                <div>下载地址: <a href="javascript:void(0)" onclick="add_uri('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
                                 <div id="uris"></div>
                             </td>
                         </tr>

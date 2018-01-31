@@ -104,7 +104,7 @@
             row += '<a href="tail.html?pid=' + pid + '&out=stderr" id="action_stderr" target="_blank">stderr</a> ';
             row += '</li>';
             row += '<li">';
-            row += '<a href="#" onclick="kill(' + pid + ')" id="action_kill">kill</a> ';
+            row += '<a href="javascript:void(0)" onclick="kill(' + pid + ')" id="action_kill">kill</a> ';
             row += '</li>';
             row += '</ul>';
             row += '</td>';
@@ -136,7 +136,7 @@
     <div id="content">
         <div class="hidden" id="statusmessage">&nbsp;</div>
         <ul id="buttons" class="clr">
-            <li id="restart_all"><a onclick="kill_all()" href="#">&nbsp;</a></li>
+            <li id="restart_all"><a onclick="kill_all()" href="javascript:void(0)">&nbsp;</a></li>
         </ul>
         <table cellspacing="0" id="statustable">
             <tr>
