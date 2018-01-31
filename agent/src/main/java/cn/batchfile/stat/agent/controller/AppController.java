@@ -48,6 +48,7 @@ public class AppController {
 		
 		RestResponse<String> resp = new RestResponse<String>();
 		try {
+			app.setName(name);
 			appService.putApp(app);
 			resp.setOk(true);
 			resp.setBody(app.getName());

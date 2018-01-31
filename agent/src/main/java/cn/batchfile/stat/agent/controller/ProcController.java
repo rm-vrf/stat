@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.codehaus.plexus.util.cli.CommandLineException;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import cn.batchfile.stat.agent.domain.RestResponse;
 import cn.batchfile.stat.agent.service.ProcService;
 import cn.batchfile.stat.agent.types.Proc;
 
@@ -47,17 +49,37 @@ public class ProcController {
 	}
 	
 	@RequestMapping(value="/v1/proc/{pid}/_kill", method=RequestMethod.POST)
-	public void killProc(@PathVariable("pid") long pid) throws IOException {
-		procService.killProcs(Arrays.asList(new Long[] {pid}));
+	public RestResponse<Long> killProc(HttpServletResponse response,
+			@PathVariable("pid") long pid) throws IOException {
+
+		RestResponse<Long> resp = new RestResponse<Long>();
+		try {
+			procService.killProcs(Arrays.asList(new Long[] {pid}));
+			resp.setOk(true);
+			resp.setBody(pid);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.setStatus(500);
+		}
+		return resp;
 	}
 	
 	@RequestMapping(value="/v1/proc/_kill", method=RequestMethod.POST)
-	public void killProcs(@RequestBody List<Long> pids) throws IOException {
-		procService.killProcs(pids);
+	public RestResponse<List<Long>> killProcs(HttpServletResponse response, 
+			@RequestBody List<Long> pids) throws IOException {
+		
+		RestResponse<List<Long>> resp = new RestResponse<List<Long>>();
+		try {
+			procService.killProcs(pids);
+			resp.setOk(true);
+			resp.setBody(pids);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.setStatus(500);
+		}
+		return resp;
 	}
-
-	@RequestMapping(value="/v1/proc/_refresh", method=RequestMethod.PUT)
-	public void refreshProc() throws IOException, CommandLineException {
-		procService.refresh();
-	}
+	
 }

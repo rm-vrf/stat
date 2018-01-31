@@ -67,6 +67,7 @@ public class AppService {
 	}
 	
 	public void putApp(App app) throws UnsupportedEncodingException, IOException {
+		//TODO check name
 		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
 		File f = new File(appDirectory, app.getName());
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));

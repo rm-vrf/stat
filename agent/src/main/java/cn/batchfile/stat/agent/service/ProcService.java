@@ -342,11 +342,17 @@ public class ProcService {
 		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(commandline, null, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
+				if (systemOut.remainingCapacity() < 1) {
+					systemOut.poll();
+				}
 				systemOut.offer(line);
 			}
 		}, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
+				if (systemErr.remainingCapacity() < 1) {
+					systemErr.poll();
+				}
 				systemErr.offer(line);
 			}
 		}, 0);
