@@ -67,7 +67,7 @@ public class AppService {
 	}
 	
 	public void putApp(App app) throws UnsupportedEncodingException, IOException {
-		//TODO check name
+		//check name
 		checkAppName(app.getName());
 		
 		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
