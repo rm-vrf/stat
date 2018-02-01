@@ -38,9 +38,9 @@
             var workingDirectory = $('#workingDirectory').val();
             var killSignal = parseInt($('#killSignal').val());
             var ports = get_ports($('#ports').val());
-            var args = get_list('arg');
-            var uris = get_list('uri');
-            var envs = get_map('envName', 'envValue');
+            var args = get_list('args', 'arg');
+            var uris = get_list('uris', 'uri');
+            var envs = get_map('envs', 'envName', 'envValue');
             var health_checks = get_health_checks();
             
             var app = {
@@ -102,10 +102,10 @@
             return r;
         }
         
-        function get_map(keyId, valueId) {
+        function get_map(panelId, keyId, valueId) {
             var map = new Object();
-            var keys = get_list(keyId);
-            var values = get_list(valueId);
+            var keys = get_list(panelId, keyId);
+            var values = get_list(panelId, valueId);
             if (keys) {
                 for (var i=0; i<keys.length; i++) {
                     map[keys[i]] = values[i];
@@ -114,11 +114,13 @@
             return map;
         }
         
-        function get_list(id) {
+        function get_list(panelId, ctlId) {
+            var list = $('#' + panelId + ' input[type="text"]');
             var r = new Array();
-            var list = $('#' + id);
             for (var i=0; i<list.length; i++) {
-                r.push(list.val());
+                if (list[i].id == ctlId) {
+                    r.push(list[i].value);
+                }
             }
             return r;
         }

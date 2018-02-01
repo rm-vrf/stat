@@ -77,7 +77,6 @@ public class AppController {
 		return resp;
 	}
 	
-	
 	@RequestMapping(value="/v1/app/{name}", method=RequestMethod.DELETE)
 	public RestResponse<String> deleteApp(HttpServletResponse response,
 			@PathVariable("name") String name) {
