@@ -2,6 +2,10 @@ $(document).ready(function () {
     $.get('/v1/node', function(node, status, xhr) {
         $('#hostname').text(node.hostname);
         $('#address').text(get_hostname(node, true));
+        var os = node.os;
+        if (os) {
+            $('#cpucore').text(os.cpu);
+        }
         var disk_total = 0;
         $.each(node.disks, function(i, disk) {
             disk_total += disk.total / 1024 / 1024 / 1024;

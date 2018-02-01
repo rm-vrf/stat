@@ -68,6 +68,8 @@ public class AppService {
 	
 	public void putApp(App app) throws UnsupportedEncodingException, IOException {
 		//TODO check name
+		checkAppName(app.getName());
+		
 		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
 		File f = new File(appDirectory, app.getName());
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
@@ -99,5 +101,34 @@ public class AppService {
 		App app = getApp(name);
 		app.setStart(start);
 		putApp(app);
+	}
+
+	private void checkAppName(String name) {
+		for (int i = 0; i < name.length(); i ++) {
+			char c = name.charAt(i);
+			if (!validChar(c)) {
+				throw new RuntimeException("Invalid char in application name: " + c);
+			}
+		}
+	}
+
+	private boolean validChar(char c) {
+		if (c >= '0' && c <= '9') {
+			return true;
+		}
+		
+		if (c >= 'a' && c <= 'z') {
+			return true;
+		}
+		
+		if (c >= 'A' && c <= 'Z') {
+			return true;
+		}
+		
+		if (c == '_' || c == '-') {
+			return true;
+		}
+		
+		return false;
 	}
 }

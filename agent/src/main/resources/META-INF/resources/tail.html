@@ -10,7 +10,7 @@
         $(document).ready(function () {
             var pid = get_param('pid').pid.replace('#', '');
             var out = get_param('out').out.replace('#', '');
-            $('#header').text('Log of pid #' + pid + ': ');
+            $('#tailHeader').text('Log of pid #' + pid + ': ');
             setInterval(function() {
                 log_out(pid, out);
             }, 1000);
@@ -27,7 +27,7 @@
     </script>
 </head>
 <body>
-    <div id="header"></div>
+    <div id="tailHeader"></div>
     <div id="tailbody"></div>
 </div>
 </body>
