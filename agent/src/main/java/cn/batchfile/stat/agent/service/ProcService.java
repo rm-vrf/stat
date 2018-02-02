@@ -34,6 +34,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import cn.batchfile.stat.agent.types.App;
+import cn.batchfile.stat.agent.types.Choreo;
 import cn.batchfile.stat.agent.types.Proc;
 import cn.batchfile.stat.util.PortUtil;
 import cn.batchfile.stat.util.cmd.CommandLineCallable;
@@ -209,7 +210,8 @@ public class ProcService {
 			//得到计划的进程数量
 			String appName = entry.getKey();
 			App app = appService.getApp(appName);
-			int scale = app == null || !app.isStart() ? 0 : app.getScale();
+			Choreo choreo = appService.getChoreo(appName);
+			int scale = (app == null || choreo == null || !choreo.isStart()) ? 0 : choreo.getScale();
 
 			//杀掉多余的进程
 			for (int i = scale; i < entry.getValue().size(); i ++) {
@@ -282,7 +284,8 @@ public class ProcService {
 		for (App app : apps) {
 			List<Proc> procList = groups.get(app.getName());
 			int procCount = procList == null ? 0 : procList.size();
-			int scale = app.isStart() ? app.getScale() : 0;
+			Choreo choreo = appService.getChoreo(app.getName());
+			int scale = choreo != null && choreo.isStart() ? choreo.getScale() : 0;
 			log.debug("schedule app: {}, scale: {}, proc instance: {}", app.getName(), scale, procCount);
 
 			//如果登记的进程比计划的少，启动

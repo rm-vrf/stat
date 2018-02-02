@@ -31,8 +31,6 @@
         });
         
         function save_app() {
-            var start = $('#start').val() == 'true';
-            var scale = parseInt($('#scale').val());
             var name = $('#name').val();
             var toProcess = $('#toProcess').val();
             var workingDirectory = $('#workingDirectory').val();
@@ -52,8 +50,6 @@
                 ports: ports,
                 uris: uris,
                 killSignal: killSignal,
-                scale: scale,
-                start: start,
                 healthChecks: health_checks
             };
             var json = JSON.stringify(app);
@@ -144,8 +140,6 @@
             $('#name').attr("disabled","disabled")
             
             //display data
-            $('#start').val(app.start);
-            $('#scale').val(app.scale);
             $('#name').val(app.name);
             $('#toProcess').val(app.toProcess);
             $('#workingDirectory').val(app.workingDirectory);
@@ -256,8 +250,6 @@
         <p>请使用下面的表单新建/修改应用。</p>
         <form id="f" name="f" method="post">
             <input type="hidden" name="stat" value="add" id="stat"/>
-            <input type="hidden" name="scale" value="0" id="scale"/>
-            <input type="hidden" name="start" value="false" id="start"/>
             <div class="jive-contentBox">
                 <table cellpadding="3" cellspacing="0" border="0">
                     <tbody>

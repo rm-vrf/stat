@@ -1,149 +1,69 @@
 package cn.batchfile.stat.server.domain;
 
-import java.util.Date;
+public class Node extends cn.batchfile.stat.agent.types.Node {
 
-import com.alibaba.fastjson.annotation.JSONField;
-
-public class Node {
-	@JSONField(name="agent_id")
-	private String agentId;
 	private String schema;
 	private String address;
 	private int port;
-	private String hostname;
-	private String description;
-	private String location;
-	@JSONField(name="os_name")
-	private String osName;
-	@JSONField(name="os_version")
-	private String osVersion;
-	private int cpu;
-	private String architecture;
-	@JSONField(serialize=false, deserialize=false)
-	private String idRsa;
-	@JSONField(serialize=false, deserialize=false)
-	private String idRsaPub;
-	@JSONField(name="create_time")
-	private Date createTime;
-	private boolean enabled;
-	
-	public String getAgentId() {
-		return agentId;
-	}
-	
-	public void setAgentId(String agentId) {
-		this.agentId = agentId;
-	}
-	
+	private String username;
+	private String password;
+	private boolean slow;
+	private boolean avail;
+
 	public String getSchema() {
 		return schema;
 	}
-	
+
 	public void setSchema(String schema) {
 		this.schema = schema;
 	}
-	
+
 	public String getAddress() {
 		return address;
 	}
-	
+
 	public void setAddress(String address) {
 		this.address = address;
 	}
-	
+
 	public int getPort() {
 		return port;
 	}
-	
+
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
-	public String getHostname() {
-		return hostname;
-	}
-	
-	public void setHostname(String hostname) {
-		this.hostname = hostname;
-	}
-	
-	public String getDescription() {
-		return description;
-	}
-	
-	public void setDescription(String description) {
-		this.description = description;
-	}
-	
-	public String getLocation() {
-		return location;
+
+	public String getUsername() {
+		return username;
 	}
 
-	public void setLocation(String location) {
-		this.location = location;
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
-	public String getOsName() {
-		return osName;
-	}
-	
-	public void setOsName(String osName) {
-		this.osName = osName;
-	}
-	
-	public String getOsVersion() {
-		return osVersion;
-	}
-	
-	public void setOsVersion(String osVersion) {
-		this.osVersion = osVersion;
-	}
-	
-	public int getCpu() {
-		return cpu;
-	}
-	
-	public void setCpu(int cpu) {
-		this.cpu = cpu;
-	}
-	
-	public String getArchitecture() {
-		return architecture;
-	}
-	
-	public void setArchitecture(String architecture) {
-		this.architecture = architecture;
-	}
-	
-	public String getIdRsa() {
-		return idRsa;
-	}
-	
-	public void setIdRsa(String idRsa) {
-		this.idRsa = idRsa;
-	}
-	
-	public String getIdRsaPub() {
-		return idRsaPub;
-	}
-	
-	public void setIdRsaPub(String idRsaPub) {
-		this.idRsaPub = idRsaPub;
-	}
-	
-	public Date getCreateTime() {
-		return createTime;
-	}
-	
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
+	public String getPassword() {
+		return password;
 	}
 
-	public boolean isEnabled() {
-		return enabled;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
+	public boolean isSlow() {
+		return slow;
 	}
+
+	public void setSlow(boolean slow) {
+		this.slow = slow;
+	}
+
+	public boolean isAvail() {
+		return avail;
+	}
+
+	public void setAvail(boolean avail) {
+		this.avail = avail;
+	}
+
 }

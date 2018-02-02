@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.domain.RestResponse;
 import cn.batchfile.stat.agent.service.ProcService;
 import cn.batchfile.stat.agent.types.Proc;
+import cn.batchfile.stat.agent.types.RestResponse;
 
 @RestController
 public class ProcController {

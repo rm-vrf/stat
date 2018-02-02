@@ -49,10 +49,10 @@
         }
 
         function scale_app(name) {
-            $.get('/v1/app/' + name, function(app, status, xhr) {
-                var scale = prompt('输入应用 ' + name + ' 的进程数量：', app.scale);
+            $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
+                var scale = prompt('输入应用 ' + name + ' 的进程数量：', choreo.scale);
                 if (scale > '') {
-                    var url = '/v1/app/' + app.name + '/_scale?num=' + scale;
+                    var url = '/v1/app/' + name + '/_scale?num=' + scale;
                     $.post(url, function(data, status, xhr) {
                         alert('更新应用 ' + name + ' 的进程数量成功');
                     });
@@ -96,9 +96,9 @@
         }
         
         function refresh_row(name) {
-            $.get('/v1/app/' + name, function(app, status, xhr) {
-                $.get(url = '/v1/app/' + app.name + '/proc', function(procs, status, xhr) {
-                    update_row(app.name, app.start, app.scale, procs.length);
+            $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
+                $.get(url = '/v1/app/' + name + '/proc', function(ps, status, xhr) {
+                    update_row(name, choreo.start, choreo.scale, ps.length);
                 });
             });
         }
@@ -172,7 +172,6 @@
         }
         
         function remove_row(key) {
-            //alert('remove row: ' + name);
             var keys = get_table_keys();
             var pos = $.inArray(key, keys);
             if (pos >= 0) {

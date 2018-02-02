@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import cn.batchfile.stat.agent.types.App;
+import cn.batchfile.stat.agent.types.Choreo;
 
 @Service
 public class AppService {
@@ -28,6 +29,7 @@ public class AppService {
 	private String storeDirectory;
 	
 	private File appDirectory;
+	private File choreoDirectory;
 	
 	@PostConstruct
 	public void init() throws IOException {
@@ -39,6 +41,11 @@ public class AppService {
 		appDirectory = new File(f, "app");
 		if (!appDirectory.exists()) {
 			FileUtils.forceMkdir(appDirectory);
+		}
+		
+		choreoDirectory = new File(f, "choreo");
+		if (!choreoDirectory.exists()) {
+			FileUtils.forceMkdir(choreoDirectory);
 		}
 	}
 	
@@ -67,40 +74,73 @@ public class AppService {
 	}
 	
 	public void putApp(App app) throws UnsupportedEncodingException, IOException {
-		//check name
+		//检查名称中的非法字符
 		checkAppName(app.getName());
 		
+		//创建App文件
 		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
 		File f = new File(appDirectory, app.getName());
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
 	
 	public void postApp(App app) throws UnsupportedEncodingException, IOException {
-		//check name
+		//检查重复的文件名
 		App a = getApp(app.getName());
 		if (a != null) {
-			throw new RuntimeException("Duplicated application name");
+			throw new RuntimeException("Duplicated application name: " + app.getName());
 		}
 
-		//put data
+		//保存数据
 		putApp(app);
 	}
 	
 	public void deleteApp(String name) {
 		File f = new File(appDirectory, name);
 		FileUtils.deleteQuietly(f);
+		
+		File f2 = new File(choreoDirectory, name);
+		FileUtils.deleteQuietly(f2);
 	}
 	
-	public void putScale(String name, int scale) throws IOException {
-		App app = getApp(name);
-		app.setScale(scale);
-		putApp(app);
+	public void putScale(String app, int scale) throws IOException {
+		Choreo choreo = getChoreo(app);
+		choreo.setScale(scale);
+		putChoreo(choreo);
 	}
 	
-	public void putStart(String name, boolean start) throws IOException {
-		App app = getApp(name);
-		app.setStart(start);
-		putApp(app);
+	public void putStart(String app, boolean start) throws IOException {
+		Choreo choreo = getChoreo(app);
+		choreo.setStart(start);
+		putChoreo(choreo);
+	}
+	
+	public Choreo getChoreo(String app) throws IOException {
+		Choreo choreo = null;
+		File f = new File(choreoDirectory, app);
+		if (f.exists()) {
+			String s = FileUtils.readFileToString(f, "UTF-8");
+			if (StringUtils.isNotEmpty(s)) {
+				choreo = JSON.parseObject(s, Choreo.class);
+			}
+		}
+
+		//如果没有值，给一个默认值
+		if (choreo == null) {
+			App appObject = getApp(app);
+			if (appObject != null) {
+				choreo = new Choreo();
+				choreo.setApp(app);
+				choreo.setScale(0);
+				choreo.setStart(false);
+			}
+		}
+		return choreo;
+	}
+	
+	private void putChoreo(Choreo choreo) throws IOException {
+		String s = JSON.toJSONString(choreo, SerializerFeature.PrettyFormat);
+		File f = new File(choreoDirectory, choreo.getApp());
+		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
 	}
 
 	private void checkAppName(String name) {

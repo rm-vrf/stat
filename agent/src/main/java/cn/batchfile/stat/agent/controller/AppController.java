@@ -9,16 +9,21 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.domain.RestResponse;
 import cn.batchfile.stat.agent.service.AppService;
 import cn.batchfile.stat.agent.types.App;
+import cn.batchfile.stat.agent.types.Choreo;
+import cn.batchfile.stat.agent.types.RestResponse;
 
 @RestController
 public class AppController {
@@ -32,7 +37,7 @@ public class AppController {
 		return appService.getApps();
 	}
 	
-	@RequestMapping(value="/v1/app/{name}", method=RequestMethod.GET)
+	@GetMapping("/v1/app/{name}")
 	public App getApp(HttpServletResponse response, @PathVariable("name") String name) throws IOException {
 		App app = appService.getApp(name);
 		if (app == null) {
@@ -41,7 +46,7 @@ public class AppController {
 		return app;
 	}
 	
-	@RequestMapping(value="/v1/app/{name}", method=RequestMethod.PUT)
+	@PutMapping("/v1/app/{name}")
 	public RestResponse<String> putApp(HttpServletResponse response,
 			@PathVariable("name") String name, 
 			@RequestBody App app) throws UnsupportedEncodingException, IOException {
@@ -60,7 +65,7 @@ public class AppController {
 		return resp;
 	}
 	
-	@RequestMapping(value="/v1/app", method=RequestMethod.POST)
+	@PostMapping("/v1/app")
 	public RestResponse<String> postApp(HttpServletResponse response,
 			@RequestBody App app) throws UnsupportedEncodingException, IOException {
 		
@@ -77,7 +82,7 @@ public class AppController {
 		return resp;
 	}
 	
-	@RequestMapping(value="/v1/app/{name}", method=RequestMethod.DELETE)
+	@DeleteMapping("/v1/app/{name}")
 	public RestResponse<String> deleteApp(HttpServletResponse response,
 			@PathVariable("name") String name) {
 		
@@ -93,8 +98,19 @@ public class AppController {
 		}
 		return resp;
 	}
+	
+	@GetMapping("/v1/app/{name}/choreo")
+	public Choreo getChoreo(HttpServletResponse response,
+			@PathVariable("name") String name) throws IOException {
+		
+		Choreo choreo = appService.getChoreo(name);
+		if (choreo == null) {
+			response.setStatus(404);
+		}
+		return choreo;
+	}
 
-	@RequestMapping(value="/v1/app/{name}/_scale", method=RequestMethod.POST)
+	@PostMapping("/v1/app/{name}/_scale")
 	public RestResponse<Integer> putScale(HttpServletResponse response,
 			@PathVariable("name") String name, 
 			@RequestParam("num") int scale) throws IOException {
@@ -112,7 +128,7 @@ public class AppController {
 		return resp;
 	}
 	
-	@RequestMapping(value="/v1/app/{name}/_start", method=RequestMethod.POST)
+	@PostMapping("/v1/app/{name}/_start")
 	public RestResponse<String> startApp(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
 		
@@ -129,7 +145,7 @@ public class AppController {
 		return resp;
 	}
 
-	@RequestMapping(value="/v1/app/{name}/_stop", method=RequestMethod.POST)
+	@PostMapping("/v1/app/{name}/_stop")
 	public RestResponse<String> stopApp(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
 		

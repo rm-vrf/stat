@@ -1,32 +1,48 @@
 package cn.batchfile.stat.server.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RestController;
 
+import cn.batchfile.stat.agent.domain.RestResponse;
 import cn.batchfile.stat.server.domain.Node;
-import cn.batchfile.stat.server.service.NodeService;
 
-@Controller
+@RestController
 public class NodeController {
 
-	@Autowired
-	private NodeService nodeService;
-	
-	@RequestMapping(value="/a/node", method=RequestMethod.GET)
-	@ResponseBody
+	@GetMapping("/v1/node")
 	public List<Node> getNodes() {
-		return nodeService.getNodes();
+		return new ArrayList<Node>();
 	}
 	
-	@RequestMapping(value="/a/node/{agent_id}", method=RequestMethod.GET)
-	@ResponseBody
-	public Node getNodes(@PathVariable("agent_id") String agentId) {
-		return nodeService.getNode(agentId);
+	@GetMapping("/v1/node/{id}")
+	public Node getNode(String id) {
+		return new Node();
 	}
+
+	@PostMapping("/v1/node")
+	public RestResponse<String> postNode(String uri, String username, String password) {
+		return new RestResponse<String>();
+	}
+	
+	@PutMapping("/v1/node/{id}")
+	public RestResponse<String> putNode(Node node) {
+		return new RestResponse<String>();
+	}
+	
+	@DeleteMapping("/v1/node/{id}")
+	public RestResponse<String> deleteNode(String id) {
+		return new RestResponse<String>();
+	}
+
+	@PostMapping("/v1/node/_search")
+	public List<Node> searchNodes(String tag) {
+		return new ArrayList<Node>();
+	}
+
 }
