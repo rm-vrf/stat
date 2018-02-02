@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,38 +45,45 @@ public class HealthCheckService {
 	@Autowired
 	private ProcService procService;
 	
-	@Scheduled(fixedDelay = 1000)
-	public void init() throws IOException {
-		//找到已经停止的进程
-		List<Long> removePids = new ArrayList<Long>();
-		Iterator<Long> iter = handlers.keySet().iterator();
-		while (iter.hasNext()) {
-			Long pid = iter.next();
-			Proc p = procService.getProc(pid);
-			if (p == null) {
-				removePids.add(pid);
-			}
-		}
-		
-		for (Long pid : removePids) {
-			//废除计时器
-			HealthCheckHandler handler = handlers.remove(pid);
-			try {
-				handler.timer.shutdownNow();
-			} catch (Exception e) {}
+	@Scheduled(fixedDelay = 5000)
+	public void refresh() throws IOException {
+		synchronized (this) {
+			//移除多余的健康检查器
+			List<Long> pids = procService.getProcs();
+			cleanHealthCheck(pids);
 			
-			//清空输出
-			try {
-				handler.results.clear();
-			} catch (Exception e) {}
+			//寻找本地的所有进程，重建健康检查
+			restoreHealthCheck(pids);
 		}
 	}
 	
-	public void register(String app, long pid) throws IOException {
+	public List<HealthCheckResult> getResults(long pid) {
+		List<HealthCheckResult> list = new ArrayList<HealthCheckResult>();
+		HealthCheckHandler handler = handlers.get(pid);
+		if (handler != null) {
+			LinkedBlockingQueue<HealthCheckResult> queue = handler.results;
+			if (queue != null) {
+				HealthCheckResult e = null;
+				while ((e = queue.poll()) != null) {
+					list.add(e);
+				}
+			}
+		}
+		return list;
+	}
+	
+	public List<HealthCheckResult> getResults() {
+		List<HealthCheckResult> list = new ArrayList<HealthCheckResult>();
+		for (long pid : handlers.keySet()) {
+			list.addAll(getResults(pid));
+		}
+		return list;
+	}
+	
+	public void register(App app, Proc p) throws IOException {
 		
-		App appObject = appService.getApp(app);
-		HealthCheck hc = appObject.getHealthChecks() == null || appObject.getHealthChecks().size() == 0 ? 
-				null : appObject.getHealthChecks().get(0);
+		HealthCheck hc = app.getHealthChecks() == null || app.getHealthChecks().size() == 0 ? 
+				null : app.getHealthChecks().get(0);
 
 		if (hc == null) {
 			log.info("no health check for app: {}", app);
@@ -90,7 +96,7 @@ public class HealthCheckService {
 					@Override
 					public void run() {
 						try {
-							check(app, pid);
+							check(app, hc, p);
 						} catch (Exception e) {}
 					}
 				},  
@@ -100,28 +106,26 @@ public class HealthCheckService {
 		
 		HealthCheckHandler handler = new HealthCheckHandler();
 		handler.consecutiveFailures = 0;
-		handler.results = new LinkedBlockingQueue<HealthCheckResult>();
+		handler.results = new LinkedBlockingQueue<HealthCheckResult>(outCacheLineCount);
 		handler.timer = timer;
 		
-		handlers.put(pid, handler);
+		handlers.put(p.getPid(), handler);
 	}
 	
-	private void check(String app, long pid) throws Exception {
-		log.debug("health check app: {}, pid: {}", app, pid);
-		HealthCheckHandler handler = handlers.get(pid);
+	private void check(App app, HealthCheck hc, Proc p) throws Exception {
+		log.debug("health check app: {}, pid: {}", app.getName(), p.getPid());
+		HealthCheckHandler handler = handlers.get(p.getPid());
 		
-		App appObject = appService.getApp(app);
-		HealthCheck hc = appObject.getHealthChecks() == null || appObject.getHealthChecks().size() == 0 ? 
-				null : appObject.getHealthChecks().get(0);
-		
-		Proc p = procService.getProc(pid);
-		
-		if (p == null || hc == null) {
+		if (p == null || hc == null || app == null) {
 			return;
 		}
 
 		//执行检查
-		HealthCheckResult ret = check(appObject, p, hc);
+		String protocal = hc.getProtocol();
+		int port = p.getPorts().get(hc.getPortIndex());
+		String path = hc.getPath();
+		int timeout = hc.getTimeoutSeconds() * 1000;
+		HealthCheckResult ret = sendRequest(app.getName(), p.getPid(), protocal, port, path, timeout);
 		
 		//保存检查结果
 		if (handler.results.remainingCapacity() < 1) {
@@ -139,36 +143,35 @@ public class HealthCheckService {
 			
 			//超过失败次数，杀进程
 			if (handler.consecutiveFailures > hc.getMaxConsecutiveFailures()) {
-				log.info("EXCEED MAX CONSECUTIVE FAILURES, KILL PROCESS: {}, APP: {}", pid, app);
-				procService.killProcs(Arrays.asList(new Long[] {pid}));
+				log.info("EXCEED MAX CONSECUTIVE FAILURES, KILL PROCESS: {}, APP: {}", p.getPid(), app.getName());
+				procService.killProcs(Arrays.asList(new Long[] {p.getPid()}));
 			}
 		}
 	}
 
-	private HealthCheckResult check(App app, Proc p, HealthCheck hc) {
+	private HealthCheckResult sendRequest(String app, long pid, String protocal, int port, String path, int timeout) {
 		HealthCheckResult ret = new HealthCheckResult();
-		ret.setApp(app.getName());
-		ret.setPid(p.getPid());
+		ret.setApp(app);
+		ret.setPid(pid);
 		ret.setTime(new Date());
 		
-		String protocal = hc.getProtocol();
-		String uri = String.format("%s://%s:%s%s", StringUtils.lowerCase(protocal), "127.0.0.1", p.getPorts().get(hc.getPortIndex()), hc.getPath());
+		String uri = String.format("%s://%s:%s%s", StringUtils.lowerCase(protocal), "127.0.0.1", port, path);
 		
 		//构建请求对象
 		RequestConfig config = RequestConfig.custom()
-				.setConnectTimeout(hc.getTimeoutSeconds() * 1000)
-				.setSocketTimeout(hc.getTimeoutSeconds() * 1000)
-				.setConnectionRequestTimeout(hc.getTimeoutSeconds() * 1000)
+				.setConnectTimeout(timeout)
+				.setSocketTimeout(timeout)
+				.setConnectionRequestTimeout(timeout)
 				.build();
 		
 		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse resp = null;
 
-		long beginTime = System.currentTimeMillis();
 		try {
 			//执行请求
 			httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
 			HttpGet req = new HttpGet(uri);
+			long beginTime = System.currentTimeMillis();
 			resp = httpClient.execute(req);
 			
 			//检查返回代码
@@ -190,6 +193,42 @@ public class HealthCheckService {
 		}
 		
 		return ret;
+	}
+	
+	private void restoreHealthCheck(List<Long> pids) throws IOException {
+		for (Long pid : pids) {
+			if (!handlers.containsKey(pid)) {
+				Proc p = procService.getProc(pid);
+				App app = p == null ? null : appService.getApp(p.getApp());
+				if (p != null && app != null) {
+					register(app, p);
+				}
+			}
+		}
+	}
+	
+	private void cleanHealthCheck(List<Long> pids) {
+		//找到已经停止的进程
+		List<Long> removePids = new ArrayList<Long>();
+		for (Long pid : handlers.keySet()) {
+			if (!pids.contains(pid)) {
+				removePids.add(pid);
+			}
+		}
+
+		//移除多余的健康检查器
+		for (Long pid : removePids) {
+			//废除计时器
+			HealthCheckHandler handler = handlers.remove(pid);
+			try {
+				handler.timer.shutdownNow();
+			} catch (Exception e) {}
+			
+			//清空输出
+			try {
+				handler.results.clear();
+			} catch (Exception e) {}
+		}
 	}
 
 	class HealthCheckHandler {

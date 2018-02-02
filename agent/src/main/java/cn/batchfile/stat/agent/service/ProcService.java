@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -90,10 +89,6 @@ public class ProcService {
 	}
 	
 	@Scheduled(fixedDelay = 5000)
-	public void job() throws IOException, CommandLineException, InterruptedException {
-		refresh();
-	}
-	
 	public void refresh() throws IOException, CommandLineException, InterruptedException {
 		synchronized (this) {
 			//检查文件存储，把废弃的进程号清理掉
@@ -110,7 +105,7 @@ public class ProcService {
 			cleanSystemOut(systemOuts);
 		}
 	}
-
+	
 	public List<Long> getProcs() {
 		List<Long> list = new ArrayList<>();
 		String[] files = procDirectory.list();
@@ -315,7 +310,7 @@ public class ProcService {
 				putProc(proc);
 				
 				//注册健康检查
-				healthCheckService.register(app.getName(), pid);
+				healthCheckService.register(app, proc);
 			}
 		}
 	}
@@ -505,9 +500,7 @@ public class ProcService {
 		List<Long> removes = new ArrayList<Long>();
 		List<Long> pids = getProcs();
 		
-		Iterator<Long> iter = map.keySet().iterator();
-		while (iter.hasNext()) {
-			Long key = iter.next();
+		for (long key : map.keySet()) {
 			if (!pids.contains(key)) {
 				removes.add(key);
 			}
@@ -518,6 +511,5 @@ public class ProcService {
 			queue.clear();
 		}
 	}
-
 
 }

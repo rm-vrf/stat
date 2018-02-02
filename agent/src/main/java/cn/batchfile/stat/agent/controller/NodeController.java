@@ -25,22 +25,22 @@ public class NodeController {
 		return nodeService.getNode();
 	}
 	
-	@RequestMapping(value="/v1/tag", method=RequestMethod.GET)
+	@RequestMapping(value="/v1/node/tag", method=RequestMethod.GET)
 	public List<String> getTags() throws IOException {
 		return nodeService.getTags();
 	}
 	
-	@RequestMapping(value="/v1/tag", method=RequestMethod.PUT)
+	@RequestMapping(value="/v1/node/tag", method=RequestMethod.PUT)
 	public void setTags(@RequestBody List<String> tags) throws UnsupportedEncodingException, IOException {
 		nodeService.putTags(tags);
 	}
 
-	@RequestMapping(value="/v1/env", method=RequestMethod.GET)
+	@RequestMapping(value="/v1/node/env", method=RequestMethod.GET)
 	public Map<String, String> getEnvs() throws IOException {
 		return nodeService.getEnvs();
 	}
 	
-	@RequestMapping(value="/v1/env", method=RequestMethod.PUT)
+	@RequestMapping(value="/v1/node/env", method=RequestMethod.PUT)
 	public void setEnvs(@RequestBody Map<String, String> envs) throws UnsupportedEncodingException, IOException {
 		nodeService.putEnvs(envs);
 	}
