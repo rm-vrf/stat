@@ -8,6 +8,7 @@ public class HealthCheckResult {
 	private String app;
 	private Date time;
 	private boolean ok;
+	private String endpoint;
 	private String message;
 	private int code;
 	private long responseTime;
@@ -44,6 +45,14 @@ public class HealthCheckResult {
 		this.ok = ok;
 	}
 	
+	public String getEndpoint() {
+		return endpoint;
+	}
+
+	public void setEndpoint(String endpoint) {
+		this.endpoint = endpoint;
+	}
+
 	public String getMessage() {
 		return message;
 	}

@@ -171,6 +171,7 @@ public class HealthCheckService {
 			//执行请求
 			httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
 			HttpGet req = new HttpGet(uri);
+			ret.setEndpoint(req.toString());
 			long beginTime = System.currentTimeMillis();
 			resp = httpClient.execute(req);
 			
