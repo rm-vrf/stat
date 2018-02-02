@@ -86,7 +86,7 @@ public class HealthCheckService {
 				null : app.getHealthChecks().get(0);
 
 		if (hc == null) {
-			log.info("no health check for app: {}", app);
+			log.info("no health check for app: {}", app.getName());
 			return;
 		}
 		
@@ -201,7 +201,9 @@ public class HealthCheckService {
 			if (!handlers.containsKey(pid)) {
 				Proc p = procService.getProc(pid);
 				App app = p == null ? null : appService.getApp(p.getApp());
-				if (p != null && app != null) {
+				if (p != null && app != null 
+						&& app.getHealthChecks() != null 
+						&& app.getHealthChecks().size() > 0) {
 					register(app, p);
 				}
 			}
