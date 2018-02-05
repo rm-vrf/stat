@@ -211,7 +211,7 @@ public class ProcService {
 			String appName = entry.getKey();
 			App app = appService.getApp(appName);
 			Choreo choreo = appService.getChoreo(appName);
-			int scale = (app == null || choreo == null || !choreo.isStart()) ? 0 : choreo.getScale();
+			int scale = (app == null || choreo == null || !app.isStart()) ? 0 : choreo.getScale();
 
 			//杀掉多余的进程
 			for (int i = scale; i < entry.getValue().size(); i ++) {
@@ -285,7 +285,7 @@ public class ProcService {
 			List<Proc> procList = groups.get(app.getName());
 			int procCount = procList == null ? 0 : procList.size();
 			Choreo choreo = appService.getChoreo(app.getName());
-			int scale = choreo != null && choreo.isStart() ? choreo.getScale() : 0;
+			int scale = choreo != null && app.isStart() ? choreo.getScale() : 0;
 			log.debug("schedule app: {}, scale: {}, proc instance: {}", app.getName(), scale, procCount);
 
 			//如果登记的进程比计划的少，启动

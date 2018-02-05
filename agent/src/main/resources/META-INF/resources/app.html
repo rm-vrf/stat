@@ -32,6 +32,7 @@
         
         function save_app() {
             var name = $('#name').val();
+            var start = $('#start').val() == 'true';
             var toProcess = $('#toProcess').val();
             var workingDirectory = $('#workingDirectory').val();
             var killSignal = parseInt($('#killSignal').val());
@@ -43,6 +44,7 @@
             
             var app = {
                 name: name,
+                start: start,
                 toProcess: toProcess,
                 workingDirectory: workingDirectory,
                 envs: envs,
@@ -140,6 +142,7 @@
             $('#name').attr("disabled","disabled")
             
             //display data
+            $('#start').val(app.start);
             $('#name').val(app.name);
             $('#toProcess').val(app.toProcess);
             $('#workingDirectory').val(app.workingDirectory);
@@ -250,6 +253,7 @@
         <p>请使用下面的表单新建/修改应用。</p>
         <form id="f" name="f" method="post">
             <input type="hidden" name="stat" value="add" id="stat"/>
+            <input type="hidden" name="start" value="true" id="start"/>
             <div class="jive-contentBox">
                 <table cellpadding="3" cellspacing="0" border="0">
                     <tbody>

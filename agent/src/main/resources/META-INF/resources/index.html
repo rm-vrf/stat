@@ -96,9 +96,11 @@
         }
         
         function refresh_row(name) {
-            $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
-                $.get(url = '/v1/app/' + name + '/proc', function(ps, status, xhr) {
-                    update_row(name, choreo.start, choreo.scale, ps.length);
+            $.get('/v1/app/' + name, function(app, status, xhr) {
+                $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
+                    $.get('/v1/app/' + name + '/proc', function(ps, status, xhr) {
+                        update_row(name, app.start, choreo.scale, ps.length);
+                    });
                 });
             });
         }
@@ -156,7 +158,7 @@
             $('#status_text_' + app_name).text(status_desc);
             
             //process count
-            $('#count_' + app_name).text(start ? ps : '停止');
+            $('#count_' + app_name).text(start && ps>0 ? ps : '停止');
             
             //scale
             $('#scale_' + app_name).text(scale);
@@ -216,7 +218,7 @@
     <div id="header">
         <a href="/"><img src="images/supervisor.gif" alt="Status" /></a>
         <p id="nodestatus">
-            主机：<strong><span id="hostname"></span></strong>（<span id="address"></span>）-
+            主机：<strong><span id="hostname"></span></strong> <span id="address"></span><br/>
             CPU：<span id="cpucore"></span> 核 - 
             磁盘：<span id="diskspace"></span> GB - 
             内存：<span id="memory"></span> GB

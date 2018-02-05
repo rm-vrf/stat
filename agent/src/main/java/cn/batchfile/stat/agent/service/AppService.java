@@ -109,9 +109,9 @@ public class AppService {
 	}
 	
 	public void putStart(String app, boolean start) throws IOException {
-		Choreo choreo = getChoreo(app);
-		choreo.setStart(start);
-		putChoreo(choreo);
+		App appObject = getApp(app);
+		appObject.setStart(start);
+		putApp(appObject);
 	}
 	
 	public Choreo getChoreo(String app) throws IOException {
@@ -131,7 +131,7 @@ public class AppService {
 				choreo = new Choreo();
 				choreo.setApp(app);
 				choreo.setScale(0);
-				choreo.setStart(false);
+				//choreo.setStart(false);
 			}
 		}
 		return choreo;

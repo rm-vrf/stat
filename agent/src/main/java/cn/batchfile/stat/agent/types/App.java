@@ -16,6 +16,7 @@ public class App {
 	private List<String> uris = new ArrayList<String>();
 	private int killSignal = 15;
 	private List<HealthCheck> healthChecks;
+	private boolean start;
 
 	public String getName() {
 		return name;
@@ -87,5 +88,13 @@ public class App {
 
 	public void setHealthChecks(List<HealthCheck> healthChecks) {
 		this.healthChecks = healthChecks;
+	}
+
+	public boolean isStart() {
+		return start;
+	}
+
+	public void setStart(boolean start) {
+		this.start = start;
 	}
 }

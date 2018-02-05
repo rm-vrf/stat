@@ -4,7 +4,6 @@ public class Choreo {
 
 	private String app;
 	private int scale;
-	private boolean start = true;
 	
 	public String getApp() {
 		return app;
@@ -20,13 +19,5 @@ public class Choreo {
 	
 	public void setScale(int scale) {
 		this.scale = scale;
-	}
-	
-	public boolean isStart() {
-		return start;
-	}
-	
-	public void setStart(boolean start) {
-		this.start = start;
 	}
 }
