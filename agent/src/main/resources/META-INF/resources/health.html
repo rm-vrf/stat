@@ -27,7 +27,9 @@
                     var respTime = line.responseTime;
                     $('#tailbody').append('' + time + ' [' + endpoint + '] ' + code + ' - ' + ok + '  (' + respTime + ' ms) ' + msg + '<br/>');
                 });
-                $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+                if (lines.length > 0) {
+                    $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+                }
             });
         }
     </script>

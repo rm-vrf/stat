@@ -21,7 +21,9 @@
                 $.each(lines, function(i, line) {
                     $('#tailbody').append(line + '<br/>');
                 });
-                $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+                if (lines.length > 0) {
+                    $("html, body").animate({ scrollTop: $(document).height() }, "slow");
+                }
             });
         }
     </script>

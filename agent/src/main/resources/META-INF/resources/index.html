@@ -158,7 +158,7 @@
             $('#status_text_' + app_name).text(status_desc);
             
             //process count
-            $('#count_' + app_name).text(start && ps>0 ? ps : '停止');
+            $('#count_' + app_name).html(start && ps>0 ? '<a href="proc.html?app=' + app_name + '">' + ps  + '</a>': '停止');
             
             //scale
             $('#scale_' + app_name).text(scale);
@@ -185,9 +185,9 @@
             var row = '<tr id="tr_' + name + '" class="">';
             row += '<td class="hidden">' + name + '</td>';
             row += '<td class="status"><span id="status_text_' + name + '" class=""></span></td>';
+            row += '<td>' + name + '</td>';
             row += '<td><span id="count_' + name + '"></span></td>';
             row += '<td><span id="scale_' + name + '"></span></td>';
-            row += '<td><a href="proc.html?app=' + name + '">' + name + '</a></td>';
             row += '<td class="action">';
             row += '<ul>';
             row += '<li">';
@@ -218,7 +218,7 @@
     <div id="header">
         <a href="/"><img src="images/supervisor.gif" alt="Status" /></a>
         <p id="nodestatus">
-            主机：<strong><span id="hostname"></span></strong> <span id="address"></span><br/>
+            主机：<strong><span id="hostname"></span></strong> <span id="address"></span> - 
             CPU：<span id="cpucore"></span> 核 - 
             磁盘：<span id="diskspace"></span> GB - 
             内存：<span id="memory"></span> GB
@@ -236,9 +236,9 @@
             <tr>
                 <th class="hidden"></th>
                 <th class="state">状态</th>
+                <th class="name">名称</th>
                 <th class="count">实际进程数</th>
                 <th class="scale">计划进程数</th>
-                <th class="name">名称</th>
                 <th class="action">操作</th>
             </tr>
         </table>
