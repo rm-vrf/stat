@@ -6,6 +6,7 @@ import java.util.List;
 public class Node {
 	private String id;
 	private String hostname;
+	private String agentAddress;
 	private Os os;
 	private Memory memory;
 	private List<Network> networks = new ArrayList<Network>();
@@ -21,6 +22,14 @@ public class Node {
 	
 	public String getHostname() {
 		return hostname;
+	}
+
+	public String getAgentAddress() {
+		return agentAddress;
+	}
+
+	public void setAgentAddress(String agentAddress) {
+		this.agentAddress = agentAddress;
 	}
 
 	public void setHostname(String hostname) {

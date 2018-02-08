@@ -3,7 +3,7 @@ package cn.batchfile.stat.agent.types;
 public class Os {
 	private String name;
 	private String version;
-	private int cpu;
+	private int cpus;
 	private String architecture;
 
 	public String getName() {
@@ -22,12 +22,12 @@ public class Os {
 		this.version = version;
 	}
 
-	public int getCpu() {
-		return cpu;
+	public int getCpus() {
+		return cpus;
 	}
 	
-	public void setCpu(int cpu) {
-		this.cpu = cpu;
+	public void setCpus(int cpus) {
+		this.cpus = cpus;
 	}
 	
 	public String getArchitecture() {

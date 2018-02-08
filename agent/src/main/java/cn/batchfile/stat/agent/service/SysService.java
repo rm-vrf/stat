@@ -110,7 +110,7 @@ public class SysService {
 		OperatingSystemMXBean oper = ManagementFactory.getOperatingSystemMXBean();
 		Os os = new Os();
 		os.setArchitecture(oper.getArch());
-		os.setCpu(oper.getAvailableProcessors());
+		os.setCpus(oper.getAvailableProcessors());
 		os.setName(oper.getName());
 		os.setVersion(oper.getVersion());
 		return os;

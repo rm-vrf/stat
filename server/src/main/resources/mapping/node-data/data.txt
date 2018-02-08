@@ -1,0 +1,100 @@
+{
+    "data": {
+        "properties": {
+            "id": {
+                "type": "string"
+            },
+            "hostname": {
+                "type": "string"
+            },
+            "agentAddress": {
+                "type": "string"
+            },
+            "tags": {
+                "type": "string"
+            },
+            "os": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "cpus": {
+                        "type": "long"
+                    },
+                    "architecture": {
+                        "type": "string"
+                    }
+                }
+            },
+            "memory": {
+                "properties": {
+                    "total": {
+                        "type": "long"
+                    },
+                    "ram": {
+                        "type": "long"
+                    }
+                }
+            },
+            "networks": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "pointToPoint": {
+                        "type": "boolean"
+                    },
+                    "index": {
+                        "type": "long"
+                    },
+                    "up": {
+                        "type": "boolean"
+                    },
+                    "mtu": {
+                        "type": "long"
+                    },
+                    "virtual": {
+                        "type": "boolean"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "siteLocal": {
+                        "type": "boolean"
+                    },
+                    "loopback": {
+                        "type": "boolean"
+                    },
+                    "linkLocal": {
+                        "type": "boolean"
+                    },
+                    "anyLocal": {
+                        "type": "boolean"
+                    },
+                    "multicast": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "disks": {
+                "properties": {
+                    "dirName": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "long"
+                    }
+                }
+            },
+            "avail": {
+                "type": "boolean"
+            },
+            "shakehandTime": {
+                "type": "date"
+            }
+        }
+    }
+}

@@ -60,7 +60,7 @@ public class ProcController {
 		} catch (Exception e) {
 			resp.setOk(false);
 			resp.setMessage(e.getMessage());
-			response.setStatus(500);
+			response.sendError(500, e.getMessage());
 		}
 		return resp;
 	}
@@ -77,7 +77,7 @@ public class ProcController {
 		} catch (Exception e) {
 			resp.setOk(false);
 			resp.setMessage(e.getMessage());
-			response.setStatus(500);
+			response.sendError(500, e.getMessage());
 		}
 		return resp;
 	}

@@ -70,7 +70,7 @@
                     window.location.href = '/';
                 },
                 error: function(xhr, status, error) {
-                    alert('保存失败，状态：' + status + '，信息：' + error);
+                    alert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message);
                 }
             });
         }

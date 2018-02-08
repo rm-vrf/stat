@@ -12,6 +12,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -19,17 +20,24 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
 import cn.batchfile.stat.agent.types.App;
-import cn.batchfile.stat.agent.types.Choreo;
 
 @Service
 public class AppService {
 	protected static final Logger log = LoggerFactory.getLogger(AppService.class);
+	private static final char[] INVALID_CHARS = new char[] {
+			'`', '~', '!', '@', '#', 
+			'$', '%', '^', '&', '*', 
+			'+', '=', '\t', '|', '\\', 
+			':', '"', '\'', '<', '>', 
+			'.', '?', '/', ' '
+	};
+	private File appDirectory;
 	
 	@Value("${store.directory}")
-	private String storeDirectory;
+	public String storeDirectory;
 	
-	private File appDirectory;
-	private File choreoDirectory;
+	@Autowired
+	private ChoreoService choreoService;
 	
 	@PostConstruct
 	public void init() throws IOException {
@@ -41,11 +49,6 @@ public class AppService {
 		appDirectory = new File(f, "app");
 		if (!appDirectory.exists()) {
 			FileUtils.forceMkdir(appDirectory);
-		}
-		
-		choreoDirectory = new File(f, "choreo");
-		if (!choreoDirectory.exists()) {
-			FileUtils.forceMkdir(choreoDirectory);
 		}
 	}
 	
@@ -77,6 +80,9 @@ public class AppService {
 		//检查名称中的非法字符
 		checkAppName(app.getName());
 		
+		//检查进程名称
+		checkProcessName(app.getToProcess());
+		
 		//创建App文件
 		String s = JSON.toJSONString(app, SerializerFeature.PrettyFormat);
 		File f = new File(appDirectory, app.getName());
@@ -95,17 +101,12 @@ public class AppService {
 	}
 	
 	public void deleteApp(String name) {
+		if (choreoService != null) {
+			choreoService.deleteChoreo(name);
+		}
+		
 		File f = new File(appDirectory, name);
 		FileUtils.deleteQuietly(f);
-		
-		File f2 = new File(choreoDirectory, name);
-		FileUtils.deleteQuietly(f2);
-	}
-	
-	public void putScale(String app, int scale) throws IOException {
-		Choreo choreo = getChoreo(app);
-		choreo.setScale(scale);
-		putChoreo(choreo);
 	}
 	
 	public void putStart(String app, boolean start) throws IOException {
@@ -114,61 +115,20 @@ public class AppService {
 		putApp(appObject);
 	}
 	
-	public Choreo getChoreo(String app) throws IOException {
-		Choreo choreo = null;
-		File f = new File(choreoDirectory, app);
-		if (f.exists()) {
-			String s = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(s)) {
-				choreo = JSON.parseObject(s, Choreo.class);
-			}
+	private void checkAppName(String name) {
+		if (StringUtils.isBlank(name)) {
+			throw new RuntimeException("Empty application name");
 		}
-
-		//如果没有值，给一个默认值
-		if (choreo == null) {
-			App appObject = getApp(app);
-			if (appObject != null) {
-				choreo = new Choreo();
-				choreo.setApp(app);
-				choreo.setScale(0);
-				//choreo.setStart(false);
-			}
+		
+		if (StringUtils.containsAny(name, INVALID_CHARS)) {
+			throw new RuntimeException("Invalid char in application name: " + name);
 		}
-		return choreo;
 	}
 	
-	private void putChoreo(Choreo choreo) throws IOException {
-		String s = JSON.toJSONString(choreo, SerializerFeature.PrettyFormat);
-		File f = new File(choreoDirectory, choreo.getApp());
-		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
-	}
-
-	private void checkAppName(String name) {
-		for (int i = 0; i < name.length(); i ++) {
-			char c = name.charAt(i);
-			if (!validChar(c)) {
-				throw new RuntimeException("Invalid char in application name: " + c);
-			}
+	private void checkProcessName(String toProcess) {
+		if (StringUtils.isBlank(toProcess)) {
+			throw new RuntimeException("Empty process name");
 		}
 	}
 
-	private boolean validChar(char c) {
-		if (c >= '0' && c <= '9') {
-			return true;
-		}
-		
-		if (c >= 'a' && c <= 'z') {
-			return true;
-		}
-		
-		if (c >= 'A' && c <= 'Z') {
-			return true;
-		}
-		
-		if (c == '_' || c == '-') {
-			return true;
-		}
-		
-		return false;
-	}
 }

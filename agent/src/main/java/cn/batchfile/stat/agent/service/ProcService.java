@@ -65,6 +65,9 @@ public class ProcService {
 	private AppService appService;
 	
 	@Autowired
+	private ChoreoService choreoService;
+	
+	@Autowired
 	private SysService sysService;
 	
 	@Autowired
@@ -210,7 +213,7 @@ public class ProcService {
 			//得到计划的进程数量
 			String appName = entry.getKey();
 			App app = appService.getApp(appName);
-			Choreo choreo = appService.getChoreo(appName);
+			Choreo choreo = choreoService.getChoreo(appName);
 			int scale = (app == null || choreo == null || !app.isStart()) ? 0 : choreo.getScale();
 
 			//杀掉多余的进程
@@ -284,7 +287,7 @@ public class ProcService {
 		for (App app : apps) {
 			List<Proc> procList = groups.get(app.getName());
 			int procCount = procList == null ? 0 : procList.size();
-			Choreo choreo = appService.getChoreo(app.getName());
+			Choreo choreo = choreoService.getChoreo(app.getName());
 			int scale = choreo != null && app.isStart() ? choreo.getScale() : 0;
 			log.debug("schedule app: {}, scale: {}, proc instance: {}", app.getName(), scale, procCount);
 

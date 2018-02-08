@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.domain.RestResponse;
+import cn.batchfile.stat.agent.types.RestResponse;
 import cn.batchfile.stat.server.domain.Node;
 
 @RestController
@@ -26,7 +26,7 @@ public class NodeController {
 	}
 
 	@PostMapping("/v1/node")
-	public RestResponse<String> postNode(String uri, String username, String password) {
+	public RestResponse<String> postNode(Node node) {
 		return new RestResponse<String>();
 	}
 	
@@ -41,7 +41,7 @@ public class NodeController {
 	}
 
 	@PostMapping("/v1/node/_search")
-	public List<Node> searchNodes(String tag) {
+	public List<Node> searchNodes(String query) {
 		return new ArrayList<Node>();
 	}
 

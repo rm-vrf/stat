@@ -28,7 +28,7 @@
                         alert('已经删除应用 ' + name);
                     },
                     error: function(xhr, status, error) {
-                        alert('删除失败，状态：' + status + '，信息：' + error);
+                        alert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message);
                     }
                 });
             }
@@ -49,8 +49,8 @@
         }
 
         function scale_app(name) {
-            $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
-                var scale = prompt('输入应用 ' + name + ' 的进程数量：', choreo.scale);
+            $.get('/v1/app/' + name + '/_scale', function(d, status, xhr) {
+                var scale = prompt('输入应用 ' + name + ' 的进程数量：', d);
                 if (scale > '') {
                     var url = '/v1/app/' + name + '/_scale?num=' + scale;
                     $.post(url, function(data, status, xhr) {
@@ -97,9 +97,9 @@
         
         function refresh_row(name) {
             $.get('/v1/app/' + name, function(app, status, xhr) {
-                $.get('/v1/app/' + name + '/choreo', function(choreo, status, xhr) {
+                $.get('/v1/app/' + name + '/_scale', function(scale, status, xhr) {
                     $.get('/v1/app/' + name + '/proc', function(ps, status, xhr) {
-                        update_row(name, app.start, choreo.scale, ps.length);
+                        update_row(name, app.start, scale, ps.length);
                     });
                 });
             });

@@ -4,7 +4,7 @@ $(document).ready(function () {
         $('#address').text(get_hostname(node, true));
         var os = node.os;
         if (os) {
-            $('#cpucore').text(os.cpu);
+            $('#cpucore').text(os.cpus);
         }
         var disk_total = 0;
         $.each(node.disks, function(i, disk) {

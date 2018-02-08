@@ -1,4 +1,4 @@
-package cn.batchfile.stat.agent.controller;
+package cn.batchfile.stat.server.controller;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.service.AppService;
 import cn.batchfile.stat.agent.types.App;
 import cn.batchfile.stat.agent.types.RestResponse;
+import cn.batchfile.stat.server.service.AppService;
 
 @RestController
 public class AppController {
@@ -130,4 +130,5 @@ public class AppController {
 		}
 		return resp;
 	}
+
 }

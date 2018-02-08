@@ -23,19 +23,28 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
+import cn.batchfile.stat.agent.types.Network;
 import cn.batchfile.stat.agent.types.Node;
 
 @Service
 public class NodeService {
 	protected static final Logger log = LoggerFactory.getLogger(NodeService.class); 
-	
 	private Node node;
 
+	@Autowired
+	private SysService sysService;
+	
 	@Value("${store.directory}")
 	private String storeDirectory;
 	
-	@Autowired
-	private SysService sysService;
+	@Value("${prefer.ip.address:true}")
+	private boolean preferIpAddress;
+	
+	@Value("${agent.address:}")
+	private String agentAddress;
+	
+	@Value("${server.port:0}")
+	private int serverPort;
 	
 	@PostConstruct
 	public void init() throws IOException {
@@ -46,7 +55,27 @@ public class NodeService {
 		node.setDisks(sysService.getDisks());
 		node.setMemory(sysService.getMemory());
 		node.setNetworks(sysService.getNetworks());
-
+		
+		//计算agent地址
+		if (StringUtils.isEmpty(agentAddress)) {
+			String host = StringUtils.EMPTY;
+			if (preferIpAddress) {
+				for (Network n : node.getNetworks()) {
+					if (n.isSiteLocal()) {
+						host = n.getAddress();
+						break;
+					}
+				}
+			} else {
+				host = node.getHostname();
+			}
+			if (StringUtils.isEmpty(host)) {
+				throw new RuntimeException("Cannot get agent address");
+			}
+			agentAddress = String.format("http://%s:%s", host, serverPort);
+		}
+		node.setAgentAddress(agentAddress);
+		
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
 			FileUtils.forceMkdir(f);
