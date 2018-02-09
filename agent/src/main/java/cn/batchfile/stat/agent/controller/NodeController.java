@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.agent.service.NodeService;
-import cn.batchfile.stat.agent.types.Node;
-import cn.batchfile.stat.agent.types.RestResponse;
+import cn.batchfile.stat.domain.Node;
+import cn.batchfile.stat.domain.RestResponse;
 
 @RestController
 public class NodeController {

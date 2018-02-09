@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.agent.service.HealthCheckService;
-import cn.batchfile.stat.agent.types.HealthCheckResult;
+import cn.batchfile.stat.domain.HealthCheckResult;
 
 @RestController
 public class HealthCheckController {

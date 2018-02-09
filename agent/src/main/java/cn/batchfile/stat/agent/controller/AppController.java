@@ -19,29 +19,36 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.service.AppService;
-import cn.batchfile.stat.agent.types.App;
-import cn.batchfile.stat.agent.types.RestResponse;
+import cn.batchfile.stat.domain.App;
+import cn.batchfile.stat.domain.RestResponse;
 
 @RestController
-public class AppController {
+public class AppController extends cn.batchfile.stat.controller.AppController {
 	protected static final Logger log = LoggerFactory.getLogger(AppController.class);
 	
 	@Autowired
-	private AppService appService;
+	@Override
+	public void setAppService(cn.batchfile.stat.service.AppService appService) {
+		super.setAppService(appService);
+	}
 	
 	@RequestMapping(value="/v1/app", method=RequestMethod.GET)
 	public List<String> getApps() {
-		return appService.getApps();
+		return super.getApps();
 	}
 	
 	@GetMapping("/v1/app/{name}")
-	public App getApp(HttpServletResponse response, @PathVariable("name") String name) throws IOException {
-		App app = appService.getApp(name);
-		if (app == null) {
-			response.setStatus(404);
-		} 
-		return app;
+	public App getApp(HttpServletResponse response, 
+			@PathVariable("name") String name) throws IOException {
+		
+		return super.getApp(response, name);
+	}
+	
+	@PostMapping("/v1/app")
+	public RestResponse<String> postApp(HttpServletResponse response,
+			@RequestBody App app) throws UnsupportedEncodingException, IOException {
+		
+		return super.postApp(response, app);
 	}
 	
 	@PutMapping("/v1/app/{name}")
@@ -49,85 +56,28 @@ public class AppController {
 			@PathVariable("name") String name, 
 			@RequestBody App app) throws UnsupportedEncodingException, IOException {
 		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			app.setName(name);
-			appService.putApp(app);
-			resp.setOk(true);
-			resp.setBody(app.getName());
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
-	}
-	
-	@PostMapping("/v1/app")
-	public RestResponse<String> postApp(HttpServletResponse response,
-			@RequestBody App app) throws UnsupportedEncodingException, IOException {
-		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			appService.postApp(app);
-			resp.setOk(true);
-			resp.setBody(app.getName());
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+		return super.putApp(response, name, app);
 	}
 	
 	@DeleteMapping("/v1/app/{name}")
 	public RestResponse<String> deleteApp(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
 		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			appService.deleteApp(name);
-			resp.setOk(true);
-			resp.setBody(name);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+		return super.deleteApp(response, name);
 	}
 	
 	@PostMapping("/v1/app/{name}/_start")
 	public RestResponse<String> startApp(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
-		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			appService.putStart(name, true);
-			resp.setOk(true);
-			resp.setBody(name);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+
+		return super.startApp(response, name);
 	}
 
 	@PostMapping("/v1/app/{name}/_stop")
 	public RestResponse<String> stopApp(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
-		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			appService.putStart(name, false);
-			resp.setOk(true);
-			resp.setBody(name);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+
+		return super.stopApp(response, name);
 	}
+
 }

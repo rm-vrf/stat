@@ -10,29 +10,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.service.ChoreoService;
-import cn.batchfile.stat.agent.types.Choreo;
-import cn.batchfile.stat.agent.types.RestResponse;
+import cn.batchfile.stat.domain.Choreo;
+import cn.batchfile.stat.domain.RestResponse;
 
 @RestController
-public class ChoreoController {
+public class ChoreoController extends cn.batchfile.stat.controller.ChoreoController {
 	protected static final Logger log = LoggerFactory.getLogger(ChoreoController.class);
 	
 	@Autowired
-	private ChoreoService choreoService;
+	@Override
+	public void setChoreoService(cn.batchfile.stat.service.ChoreoService choreoService) {
+		super.setChoreoService(choreoService);
+	}
+	
+	@GetMapping("/v1/app/{name}/choreo")
+	public Choreo getChoreo(HttpServletResponse response,
+			String name) throws IOException {
+		
+		return super.getChoreo(response, name);
+	}
+	
+	@PutMapping("/v1/app/{name}/choreo")
+	public RestResponse<String> putChoreo(HttpServletResponse response, Choreo choreo) throws IOException {
+		return super.putChoreo(response, choreo);
+	}
 	
 	@GetMapping("/v1/app/{name}/_scale")
 	public int getScale(HttpServletResponse response,
 			@PathVariable("name") String name) throws IOException {
 		
-		Choreo choreo = choreoService.getChoreo(name);
-		if (choreo == null) {
-			response.setStatus(404);
-		}
-		return choreo.getScale();
+		return super.getScale(response, name);
 	}
 	
 	@PostMapping("/v1/app/{name}/_scale")
@@ -40,17 +51,7 @@ public class ChoreoController {
 			@PathVariable("name") String name, 
 			@RequestParam("num") int scale) throws IOException {
 		
-		RestResponse<Integer> resp = new RestResponse<Integer>();
-		try {
-			choreoService.putScale(name, scale);
-			resp.setOk(true);
-			resp.setBody(scale);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+		return super.putScale(response, name, scale);
 	}
 	
 }

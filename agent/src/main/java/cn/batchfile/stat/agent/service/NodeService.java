@@ -23,8 +23,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
-import cn.batchfile.stat.agent.types.Network;
-import cn.batchfile.stat.agent.types.Node;
+import cn.batchfile.stat.domain.Network;
+import cn.batchfile.stat.domain.Node;
 
 @Service
 public class NodeService {

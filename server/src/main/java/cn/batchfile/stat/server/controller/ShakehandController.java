@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.types.Node;
-import cn.batchfile.stat.agent.types.Proc;
-import cn.batchfile.stat.agent.types.RestResponse;
+import cn.batchfile.stat.domain.Node;
+import cn.batchfile.stat.domain.Proc;
+import cn.batchfile.stat.domain.RestResponse;
 
 @RestController
 public class ShakehandController {
@@ -52,12 +52,12 @@ public class ShakehandController {
 		return resp;
 	}
 	
+	@PutMapping("/v1/shakehand/proc")
 	public RestResponse<String> putProcs(HttpServletResponse response, 
 			@RequestBody List<Proc> ps,
 			@RequestParam("id") String id,
 			@RequestParam("hostname") String hostname,
 			@RequestParam("agentAddress") String agentAddress) throws IOException {
-		
 		
 		RestResponse<String> resp = new RestResponse<String>();
 		try {

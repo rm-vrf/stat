@@ -33,9 +33,9 @@ import org.springframework.stereotype.Service;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 
-import cn.batchfile.stat.agent.types.App;
-import cn.batchfile.stat.agent.types.Choreo;
-import cn.batchfile.stat.agent.types.Proc;
+import cn.batchfile.stat.domain.App;
+import cn.batchfile.stat.domain.Choreo;
+import cn.batchfile.stat.domain.Proc;
 import cn.batchfile.stat.util.PortUtil;
 import cn.batchfile.stat.util.cmd.CommandLineCallable;
 import cn.batchfile.stat.util.cmd.CommandLineExecutor;

@@ -23,11 +23,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import cn.batchfile.stat.agent.types.Disk;
-import cn.batchfile.stat.agent.types.Memory;
-import cn.batchfile.stat.agent.types.Network;
-import cn.batchfile.stat.agent.types.Os;
-import cn.batchfile.stat.agent.types.Proc;
+import cn.batchfile.stat.domain.Disk;
+import cn.batchfile.stat.domain.Memory;
+import cn.batchfile.stat.domain.Network;
+import cn.batchfile.stat.domain.Os;
+import cn.batchfile.stat.domain.Proc;
 
 @Service
 public class SysService {

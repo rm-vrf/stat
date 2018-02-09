@@ -26,10 +26,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import cn.batchfile.stat.agent.types.App;
-import cn.batchfile.stat.agent.types.HealthCheck;
-import cn.batchfile.stat.agent.types.HealthCheckResult;
-import cn.batchfile.stat.agent.types.Proc;
+import cn.batchfile.stat.domain.App;
+import cn.batchfile.stat.domain.HealthCheck;
+import cn.batchfile.stat.domain.HealthCheckResult;
+import cn.batchfile.stat.domain.Proc;
 
 @Service
 public class HealthCheckService {

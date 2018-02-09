@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.agent.types.RestResponse;
-import cn.batchfile.stat.server.domain.Node;
+import cn.batchfile.stat.domain.Node;
+import cn.batchfile.stat.domain.RestResponse;
 
 @RestController
 public class NodeController {
