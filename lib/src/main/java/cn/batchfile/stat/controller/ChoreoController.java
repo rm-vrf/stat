@@ -1,6 +1,7 @@
 package cn.batchfile.stat.controller;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,6 +28,10 @@ public abstract class ChoreoController {
 			response.setStatus(404);
 		}
 		return choreo;
+	}
+	
+	public List<Choreo> getChoreos(String node) throws IOException {
+		return choreoService.getChoreos(node);
 	}
 	
 	public RestResponse<String> putChoreo(HttpServletResponse response, Choreo choreo) throws IOException {

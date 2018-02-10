@@ -2,6 +2,8 @@ package cn.batchfile.stat.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -61,6 +63,39 @@ public abstract class ChoreoService {
 			}
 		}
 		return choreo;
+	}
+	
+	public List<Choreo> getChoreos(String node) throws IOException {
+		//获取原始列表
+		List<Choreo> chs = new ArrayList<Choreo>();
+		File[] files = choreoDirectory.listFiles();
+		for (File file : files) {
+			if (StringUtils.startsWith(file.getName(), ".")) {
+				continue;
+			}
+			
+			String s = FileUtils.readFileToString(file, "UTF-8");
+			if (StringUtils.isNotEmpty(s)) {
+				Choreo ch = JSON.parseObject(s, Choreo.class);
+				chs.add(ch);
+			}
+		}
+		
+		//按照节点过滤实例数量
+		for (Choreo ch : chs) {
+			int scale = 0;
+			if (ch.getDistribution() != null) {
+				for (String nodeId : ch.getDistribution()) {
+					if (StringUtils.equals(nodeId, node)) {
+						scale ++;
+					}
+				}
+			}
+			ch.setScale(scale);
+			ch.getDistribution().clear();
+		}
+		
+		return chs;
 	}
 	
 	public void putChoreo(Choreo choreo) throws IOException {

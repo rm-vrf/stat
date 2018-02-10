@@ -1,6 +1,7 @@
 package cn.batchfile.stat.server.controller;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -25,6 +26,11 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 	@Override
 	public void setChoreoService(cn.batchfile.stat.service.ChoreoService choreoService) {
 		super.setChoreoService(choreoService);
+	}
+	
+	@GetMapping("/v1/choreo")
+	public List<Choreo> getChoreos(@RequestParam("node") String node) throws IOException {
+		return super.getChoreos(node);
 	}
 	
 	@GetMapping("/v1/app/{name}/choreo")

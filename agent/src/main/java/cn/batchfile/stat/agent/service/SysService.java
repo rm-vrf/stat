@@ -194,21 +194,24 @@ public class SysService {
 				while (addresses.hasMoreElements()) {
 					InetAddress address = addresses.nextElement(); 
 					
-					Network network = new Network();
-					network.setName(networkinterface.getName());
-					network.setPointToPoint(networkinterface.isPointToPoint());
-					network.setIndex(networkinterface.getIndex());
-					network.setUp(networkinterface.isUp());
-					network.setMtu(networkinterface.getMTU());
-					network.setVirtual(networkinterface.isVirtual());
-					network.setAddress(address.getHostAddress());
-					network.setSiteLocal(address.isSiteLocalAddress());
-					network.setLoopback(address.isLoopbackAddress());
-					network.setLinkLocal(address.isLinkLocalAddress());
-					network.setAnyLocal(address.isAnyLocalAddress());
-					network.setMulticast(address.isMulticastAddress());
-					
-					networks.add(network);
+					if (!address.isLoopbackAddress() && 
+							!StringUtils.contains(address.getHostAddress(), ":")) {
+						Network network = new Network();
+						network.setName(networkinterface.getName());
+						//network.setPointToPoint(networkinterface.isPointToPoint());
+						//network.setIndex(networkinterface.getIndex());
+						//network.setUp(networkinterface.isUp());
+						network.setMtu(networkinterface.getMTU());
+						//network.setVirtual(networkinterface.isVirtual());
+						network.setAddress(address.getHostAddress());
+						network.setSiteLocal(address.isSiteLocalAddress());
+						//network.setLoopback(address.isLoopbackAddress());
+						//network.setLinkLocal(address.isLinkLocalAddress());
+						//network.setAnyLocal(address.isAnyLocalAddress());
+						//network.setMulticast(address.isMulticastAddress());
+						
+						networks.add(network);
+					}
 				}
 			}
 		} catch (Exception e) {

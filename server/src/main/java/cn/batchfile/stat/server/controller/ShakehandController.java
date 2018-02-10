@@ -5,7 +5,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,17 +14,25 @@ import org.springframework.web.bind.annotation.RestController;
 import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.Proc;
 import cn.batchfile.stat.domain.RestResponse;
+import cn.batchfile.stat.server.service.NodeService;
+import cn.batchfile.stat.server.service.ProcService;
 
 @RestController
 public class ShakehandController {
+	
+	@Autowired
+	private NodeService nodeService;
+	
+	@Autowired
+	private ProcService procService;
 
-	@PutMapping("/v1/shakehand/node")
+	@PostMapping("/v1/shakehand/node")
 	public RestResponse<String> putNode(HttpServletResponse response,
 			@RequestBody Node node) throws IOException {
 		
 		RestResponse<String> resp = new RestResponse<String>();
 		try {
-			//TODO
+			nodeService.putNode(node);
 			resp.setOk(true);
 			resp.setBody(node.getId());
 		} catch (Exception e) {
@@ -34,14 +43,14 @@ public class ShakehandController {
 		return resp;
 	}
 	
-	@PutMapping("/v1/shakehand/tag")
+	@PostMapping("/v1/shakehand/tag")
 	public RestResponse<String> putTags(HttpServletResponse response, 
 			@RequestBody List<String> tags,
 			@RequestParam("id") String id) throws IOException {
 		
 		RestResponse<String> resp = new RestResponse<String>();
 		try {
-			//TODO
+			nodeService.putTags(id, tags);
 			resp.setOk(true);
 			resp.setBody(id);
 		} catch (Exception e) {
@@ -52,16 +61,14 @@ public class ShakehandController {
 		return resp;
 	}
 	
-	@PutMapping("/v1/shakehand/proc")
+	@PostMapping("/v1/shakehand/proc")
 	public RestResponse<String> putProcs(HttpServletResponse response, 
 			@RequestBody List<Proc> ps,
-			@RequestParam("id") String id,
-			@RequestParam("hostname") String hostname,
-			@RequestParam("agentAddress") String agentAddress) throws IOException {
+			@RequestParam("id") String id) throws IOException {
 		
 		RestResponse<String> resp = new RestResponse<String>();
 		try {
-			//TODO
+			procService.putProcs(id, ps);
 			resp.setOk(true);
 			resp.setBody(id);
 		} catch (Exception e) {

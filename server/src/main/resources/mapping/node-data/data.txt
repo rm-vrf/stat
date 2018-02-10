@@ -44,37 +44,13 @@
                     "name": {
                         "type": "string"
                     },
-                    "pointToPoint": {
-                        "type": "boolean"
-                    },
-                    "index": {
-                        "type": "long"
-                    },
-                    "up": {
-                        "type": "boolean"
-                    },
                     "mtu": {
                         "type": "long"
                     },
-                    "virtual": {
-                        "type": "boolean"
-                    },
                     "address": {
-                        "type": "string"
+                        "type": "ip"
                     },
                     "siteLocal": {
-                        "type": "boolean"
-                    },
-                    "loopback": {
-                        "type": "boolean"
-                    },
-                    "linkLocal": {
-                        "type": "boolean"
-                    },
-                    "anyLocal": {
-                        "type": "boolean"
-                    },
-                    "multicast": {
                         "type": "boolean"
                     }
                 }
