@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.catalina.util.URLEncoder;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import cn.batchfile.stat.domain.App;
+import cn.batchfile.stat.domain.Choreo;
 import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.Proc;
 import cn.batchfile.stat.domain.RestResponse;
@@ -43,6 +45,9 @@ public class ShakehandService {
 	@Autowired
 	private AppService appService;
 	
+	@Autowired
+	private ChoreoService choreoService;
+	
 	@Scheduled(fixedDelay = 5000)
 	public void shakehand() throws IOException {
 		if (StringUtils.isEmpty(masterAddress)) {
@@ -59,19 +64,18 @@ public class ShakehandService {
 		submitProcs();
 		
 		//同步应用信息
-		getApps();
-		
-		//同步运行计划
-		getChoreos();
+		refreshApps();
 	}
 	
-	private void getApps() throws UnsupportedEncodingException, IOException {
+	private void refreshApps() throws UnsupportedEncodingException, IOException {
 		List<String> existNames = appService.getApps();
 		
+		//抓应用数据
 		String url = String.format("%s/v1/app", masterAddress);
-		List<?> appNames = restTemplate.getForObject(url, List.class);
+		String[] ary = restTemplate.getForObject(url, String[].class);
+		List<String> appNames = Arrays.asList(ary);
 		
-		//刷新应用
+		//遍历应用数据，更新应用数据
 		for (Object appName : appNames) {
 			url = String.format("%s/v1/app/%s", masterAddress, appName);
 			App app = restTemplate.getForObject(url, App.class);
@@ -82,16 +86,19 @@ public class ShakehandService {
 			}
 		}
 		
-		//删除应用
+		//更新编排数据
+		url = String.format("%s/v1/choreo?node=%s", masterAddress, nodeService.getNode().getId());
+		Choreo[] choreos = restTemplate.getForObject(url, Choreo[].class);
+		for (Choreo choreo : choreos) {
+			choreoService.putScale(choreo.getApp(), choreo.getScale());
+		}
+		
+		//删除多余的应用
 		for (String existName : existNames) {
 			if (!appNames.contains(existName)) {
 				appService.deleteApp(existName);
 			}
 		}
-	}
-	
-	private void getChoreos() {
-		
 	}
 	
 	private void submitNode() {
