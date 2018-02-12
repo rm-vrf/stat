@@ -17,7 +17,7 @@ public class App {
 	private int killSignal = 15;
 	private List<HealthCheck> healthChecks;
 	private boolean start;
-	private ResAlloc resAlloc;
+	private Res resAlloc;
 
 	public String getName() {
 		return name;
@@ -99,11 +99,11 @@ public class App {
 		this.start = start;
 	}
 
-	public ResAlloc getResAlloc() {
+	public Res getResAlloc() {
 		return resAlloc;
 	}
 
-	public void setResAlloc(ResAlloc resAlloc) {
+	public void setResAlloc(Res resAlloc) {
 		this.resAlloc = resAlloc;
 	}
 }

@@ -1,0 +1,46 @@
+{
+    "app": {
+        "properties": {
+            "app": {
+                "type": "string"
+            },
+            "ps": {
+                "properties": {
+                    "app": {
+                        "type": "string"
+                    },
+                    "node": {
+                        "type": "string"
+                    },
+                    "pid": {
+                        "type": "long"
+                    },
+                    "ppid": {
+                        "type": "long"
+                    },
+                    "uid": {
+                        "type": "string"
+                    },
+                    "tty": {
+                        "type": "string"
+                    },
+                    "startTime": {
+                        "type": "string"
+                    },
+                    "cmd": {
+                        "type": "string"
+                    },
+                    "tree": {
+                        "type": "long"
+                    },
+                    "ports": {
+                        "type": "long"
+                    }
+                }
+            },
+            "timestamp": {
+                "type": "date"
+            }
+        }
+    }
+}

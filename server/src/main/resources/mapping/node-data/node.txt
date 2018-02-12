@@ -1,5 +1,5 @@
 {
-    "data": {
+    "node": {
         "properties": {
             "id": {
                 "type": "string"

@@ -1,9 +1,9 @@
 package cn.batchfile.stat.domain;
 
-public class ResAlloc {
+public class Res {
 	private float cpus;
-	private float mem;
-	private float disk;
+	private long mem;
+	private long disk;
 
 	public float getCpus() {
 		return cpus;
@@ -13,19 +13,19 @@ public class ResAlloc {
 		this.cpus = cpus;
 	}
 
-	public float getMem() {
+	public long getMem() {
 		return mem;
 	}
 
-	public void setMem(float mem) {
+	public void setMem(long mem) {
 		this.mem = mem;
 	}
 
-	public float getDisk() {
+	public long getDisk() {
 		return disk;
 	}
 
-	public void setDisk(float disk) {
+	public void setDisk(long disk) {
 		this.disk = disk;
 	}
 }

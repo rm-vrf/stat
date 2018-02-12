@@ -8,6 +8,27 @@
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
+            $.get('/v1/node', function(node, status, xhr) {
+                $('#hostname').text(node.hostname);
+                $('#address').text(get_hostname(node, true));
+                var os = node.os;
+                if (os) {
+                    $('#cpucore').text(os.cpus);
+                }
+                var disk_total = 0;
+                $.each(node.disks, function(i, disk) {
+                    disk_total += disk.total / 1024 / 1024 / 1024;
+                });
+                $('#diskspace').text(parseInt(disk_total));
+                var memory = node.memory;
+                if (memory) {
+                    memory = memory.total / 1024 / 1024 / 1024;
+                    $('#memory').text(parseInt(memory));
+                } else {
+                    $('#memory').text(0);
+                }
+            });
+            
             var prefer_ip_address = true;
             var app = get_param('app').app.replace('#', '');
             

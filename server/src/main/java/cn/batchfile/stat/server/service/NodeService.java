@@ -21,7 +21,7 @@ import cn.batchfile.stat.domain.Node;
 public class NodeService {
 	protected static final Logger log = LoggerFactory.getLogger(NodeService.class);
 	private static final String INDEX_NAME = "node-data";
-	private static final String TYPE_NAME = "data";
+	private static final String TYPE_NAME = "node";
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
 		protected DateFormat initialValue() {
@@ -52,4 +52,6 @@ public class NodeService {
 		log.debug("index node data, id: {}, version: {}", node.getId(), version);
 	}
 
+	//TODO 清理不可用节点，30秒以上没有握手的节点清理掉。不清理会造成任务无法正常分配
+	//清理范围包括：节点数据，进程数据，分配数据
 }

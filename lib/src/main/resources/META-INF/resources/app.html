@@ -25,6 +25,15 @@
                 }
             });
             
+            $('#resAlloc').change(function(sel) {
+                var show = parseInt(sel.target.value);
+                if (show) {
+                    $('#resAllocs').show();
+                } else {
+                    $('#resAllocs').hide();
+                }
+            });
+            
             $('#save').click(function() {
                 save_app();
             });
@@ -40,6 +49,7 @@
             var args = get_list('args', 'arg');
             var uris = get_list('uris', 'uri');
             var envs = get_map('envs', 'envName', 'envValue');
+            var resAlloc = get_res_alloc();
             var health_checks = get_health_checks();
             
             var app = {
@@ -52,6 +62,7 @@
                 ports: ports,
                 uris: uris,
                 killSignal: killSignal,
+                resAlloc: resAlloc,
                 healthChecks: health_checks
             };
             var json = JSON.stringify(app);
@@ -73,6 +84,22 @@
                     alert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message);
                 }
             });
+        }
+        
+        function get_res_alloc() {
+            var show = $('#resAlloc').val();
+            if (show == '1') {
+                var cpus = $('#resAlloc_cpus').val();
+                var mem = $('#resAlloc_mem').val();
+                var disk = $('#resAlloc_disk').val();
+                return {
+                    cpus: cpus,
+                    mem: mem,
+                    disk: disk
+                };
+            } else {
+                return null;
+            }
         }
         
         function get_health_checks() {
@@ -163,12 +190,30 @@
             }
             $('#killSignal').val(app.killSignal);
             $('#ports').val(app.ports);
+            
+            if (app.resAlloc) {
+                show_res_alloc(app.resAlloc);
+                $('#resAlloc').val('1');
+                $('#resAllocs').show();
+            } else {
+                $('#resAlloc').val('0');
+                $('#resAllocs').hide();
+            }
+            
             if (app.healthChecks && app.healthChecks.length > 0) {
                 show_health_check(app.healthChecks[0]);
+                $('#healthCheck').val('1');
+                $('#healthChecks').show();
             } else {
                 $('#healthCheck').val('0');
                 $('#healthChecks').hide();
             }
+        }
+        
+        function show_res_alloc(resAlloc) {
+            $('#resAlloc_cpus').val(resAlloc.cpus);
+            $('#resAlloc_mem').val(resAlloc.mem);
+            $('#resAlloc_disk').val(resAlloc.disk);
         }
         
         function show_health_check(healthCheck) {
@@ -179,8 +224,6 @@
             $('#healthCheck_portIndex').val(healthCheck.portIndex);
             $('#healthCheck_timeoutSeconds').val(healthCheck.timeoutSeconds);
             $('#healthCheck_maxConsecutiveFailures').val(healthCheck.maxConsecutiveFailures);
-            $('#healthCheck').val('1');
-            $('#healthChecks').show();
         }
         
         function add_arg(val) {
@@ -330,6 +373,33 @@
                             <td>
                                 <div>下载地址: <a href="javascript:void(0)" onclick="add_uri('')"><img src="images/add-16x16.gif" align="absmiddle"/></a></div>
                                 <div id="uris"></div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td width="1%" nowrap></td>
+                            <td width="49%" nowrap>
+                                <div>分配资源:</div>
+                                <div>
+                                    <select name="resAlloc" id="resAlloc" style="width:430px">
+                                        <option value="1">分配</option>
+                                        <option value="0" selected>不分配</option>
+                                    </select>
+                                </div>
+                                <div id="resAllocs" class="hidden">
+                                    <div>CPU核数量:</div>
+                                    <div>
+                                        <input type="text" name="resAlloc_cpus" size="80" maxlength="30" value="0.1" id="resAlloc_cpus"/>
+                                    </div>
+                                    <div>内存（MB）:</div>
+                                    <div>
+                                        <input type="text" name="resAlloc_mem" size="80" maxlength="30" value="1024" id="resAlloc_mem"/>
+                                    </div>
+                                    <div>磁盘空间（MB）:</div>
+                                    <div>
+                                        <input type="text" name="resAlloc_disk" size="80" maxlength="30" value="1024" id="resAlloc_disk"/>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
 
