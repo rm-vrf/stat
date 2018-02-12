@@ -24,13 +24,13 @@ public class NodeController {
 	private NodeService nodeService;
 
 	@GetMapping("/v1/node")
-	public Node getNode() {
+	public Node getNode() throws IOException {
 		return nodeService.getNode();
 	}
 	
 	@GetMapping("/v1/node/tag")
 	public List<String> getTags() throws IOException {
-		return nodeService.getTags();
+		return nodeService.getNode().getTags();
 	}
 	
 	@PutMapping("/v1/node/tag")

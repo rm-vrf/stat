@@ -11,6 +11,7 @@ public class Node {
 	private Memory memory;
 	private List<Network> networks = new ArrayList<Network>();
 	private List<Disk> disks = new ArrayList<Disk>();
+	private List<String> tags = new ArrayList<String>();
 	
 	public String getId() {
 		return id;
@@ -66,5 +67,13 @@ public class Node {
 
 	public void setDisks(List<Disk> disks) {
 		this.disks = disks;
+	}
+
+	public List<String> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<String> tags) {
+		this.tags = tags;
 	}
 }

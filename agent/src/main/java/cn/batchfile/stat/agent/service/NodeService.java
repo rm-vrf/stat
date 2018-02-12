@@ -82,20 +82,12 @@ public class NodeService {
 		}
 	}
 	
-	public Node getNode() {
-		return node;
-	}
-	
-	public List<String> getTags() throws IOException {
-		List<String> tags = new ArrayList<String>();
-		File f = new File(new File(storeDirectory), "tag");
-		if (f.exists()) {
-			String s = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(s)) {
-				tags = JSON.parseArray(s, String.class);
-			}
+	public Node getNode() throws IOException {
+		List<String> tags = getTags();
+		if (tags != null) {
+			node.setTags(tags);
 		}
-		return tags;
+		return node;
 	}
 	
 	public void putTags(List<String> tags) throws UnsupportedEncodingException, IOException {
@@ -120,6 +112,18 @@ public class NodeService {
 		String s = JSON.toJSONString(envs, SerializerFeature.PrettyFormat);
 		File f = new File(new File(storeDirectory), "env");
 		FileUtils.writeByteArrayToFile(f, s.getBytes("UTF-8"));
+	}
+	
+	private List<String> getTags() throws IOException {
+		List<String> tags = new ArrayList<String>();
+		File f = new File(new File(storeDirectory), "tag");
+		if (f.exists()) {
+			String s = FileUtils.readFileToString(f, "UTF-8");
+			if (StringUtils.isNotEmpty(s)) {
+				tags = JSON.parseArray(s, String.class);
+			}
+		}
+		return tags;
 	}
 	
 	private String getId() throws IOException {

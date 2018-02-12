@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.domain.App;
@@ -32,7 +30,7 @@ public class AppController extends cn.batchfile.stat.controller.AppController {
 		super.setAppService(appService);
 	}
 	
-	@RequestMapping(value="/v1/app", method=RequestMethod.GET)
+	@GetMapping("/v1/app")
 	public List<String> getApps() {
 		return super.getApps();
 	}

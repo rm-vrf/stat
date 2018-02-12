@@ -51,7 +51,7 @@ public class ProcService {
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat> () {
 		@Override
 		protected DateFormat initialValue() {
-			return new SimpleDateFormat("MM-dd HH:mm");
+			return new SimpleDateFormat("yyyy-MM-dd HH:mm");
 		}
 	};
 	
@@ -123,7 +123,7 @@ public class ProcService {
 	}
 
 	public Proc getProc(long pid) throws IOException {
-		Proc proc = new Proc();
+		Proc proc = null;
 		File f = new File(procDirectory, String.valueOf(pid));
 		if (f.exists()) {
 			String s = FileUtils.readFileToString(f, "UTF-8");
@@ -308,6 +308,7 @@ public class ProcService {
 
 				//补充进程的基本信息
 				proc.setApp(app.getName());
+				proc.setNode(nodeService.getNode().getId());
 				proc.setPid(pid);
 				composeProc(proc, ps);
 				proc.setStartTime(TIME_FORMAT.get().format(new Date()));

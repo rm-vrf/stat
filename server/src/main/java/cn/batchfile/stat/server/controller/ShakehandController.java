@@ -43,24 +43,6 @@ public class ShakehandController {
 		return resp;
 	}
 	
-	@PostMapping("/v1/shakehand/tag")
-	public RestResponse<String> putTags(HttpServletResponse response, 
-			@RequestBody List<String> tags,
-			@RequestParam("id") String id) throws IOException {
-		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			nodeService.putTags(id, tags);
-			resp.setOk(true);
-			resp.setBody(id);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
-	}
-	
 	@PostMapping("/v1/shakehand/proc")
 	public RestResponse<String> putProcs(HttpServletResponse response, 
 			@RequestBody List<Proc> ps,

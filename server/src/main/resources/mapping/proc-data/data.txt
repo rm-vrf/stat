@@ -9,6 +9,9 @@
                     "app": {
                         "type": "string"
                     },
+                    "node": {
+                        "type": "string"
+                    },
                     "pid": {
                         "type": "long"
                     },
@@ -35,7 +38,7 @@
                     }
                 }
             },
-            "shakehandTime": {
+            "timestamp": {
                 "type": "date"
             }
         }

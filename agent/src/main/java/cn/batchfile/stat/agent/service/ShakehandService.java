@@ -57,9 +57,6 @@ public class ShakehandService {
 		//提交节点状态
 		submitNode();
 		
-		//提交标签
-		submitTags();
-		
 		//提交进程信息
 		submitProcs();
 		
@@ -101,21 +98,11 @@ public class ShakehandService {
 		}
 	}
 	
-	private void submitNode() {
+	private void submitNode() throws IOException {
 		Node node = nodeService.getNode();
 		String url = String.format("%s/v1/shakehand/node", masterAddress);
 		RestResponse<?> resp = restTemplate.postForObject(url, node, RestResponse.class);
 		log.debug("submit node, resp: {}", resp.isOk());
-	}
-	
-	private void submitTags() throws IOException {
-		Node node = nodeService.getNode();
-		List<String> tags = nodeService.getTags();
-		String url = String.format("%s/v1/shakehand/tag?id=%s", masterAddress, 
-				new URLEncoder().encode(node.getId(), Charset.forName("UTF-8")));
-		
-		RestResponse<?> resp = restTemplate.postForObject(url, tags, RestResponse.class);
-		log.debug("submit tags, resp: {}", resp.isOk());
 	}
 	
 	private void submitProcs() throws IOException {

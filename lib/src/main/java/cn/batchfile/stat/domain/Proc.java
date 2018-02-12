@@ -18,6 +18,7 @@ public class Proc {
 	private List<Long> tree = new ArrayList<Long>();
 	private List<Integer> ports = new ArrayList<Integer>();
 	private String app;
+	private String node;
 	
 	/**
 	 * 进程ID
@@ -161,5 +162,21 @@ public class Proc {
 	 */
 	public void setPorts(List<Integer> ports) {
 		this.ports = ports;
+	}
+
+	/**
+	 * 节点
+	 * @return 节点
+	 */
+	public String getNode() {
+		return node;
+	}
+
+	/**
+	 * 节点
+	 * @param node 节点
+	 */
+	public void setNode(String node) {
+		this.node = node;
 	}
 }

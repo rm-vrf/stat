@@ -65,10 +65,7 @@
                     }
                 }
             },
-            "avail": {
-                "type": "boolean"
-            },
-            "shakehandTime": {
+            "timestamp": {
                 "type": "date"
             }
         }

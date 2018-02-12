@@ -4,10 +4,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.action.update.UpdateResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,7 @@ public class NodeService {
 
 	@Autowired
 	private ElasticService elasticService;
-
+	
 	public void putNode(Node node) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("id", node.getId());
@@ -42,26 +41,15 @@ public class NodeService {
 		map.put("memory", node.getMemory());
 		map.put("networks", node.getNetworks());
 		map.put("disks", node.getDisks());
-		map.put("avail", true);
-		map.put("shakehandTime", TIME_FORMAT.get().format(new Date()));
+		map.put("tags", node.getTags());
+		map.put("timestamp", TIME_FORMAT.get().format(new Date()));
 		String json = JSON.toJSONString(map);
 
-		UpdateResponse resp = elasticService.getNode().client().prepareUpdate().setIndex(INDEX_NAME).setType(TYPE_NAME)
-				.setId(node.getId()).setDoc(json, XContentType.JSON).setUpsert(json, XContentType.JSON).execute().actionGet();
+		IndexResponse resp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME)
+				.setId(node.getId()).setSource(json, XContentType.JSON).execute().actionGet();
 		
 		long version = resp.getVersion();
 		log.debug("index node data, id: {}, version: {}", node.getId(), version);
 	}
 
-	public void putTags(String id, List<String> tags) {
-		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("tags", tags);
-		String json = JSON.toJSONString(map);
-
-		UpdateResponse resp = elasticService.getNode().client().prepareUpdate().setIndex(INDEX_NAME).setType(TYPE_NAME)
-				.setId(id).setDoc(json, XContentType.JSON).setUpsert(json, XContentType.JSON).execute().actionGet();
-		
-		long version = resp.getVersion();
-		log.debug("index tags data, id: {}, version: {}", id, version);
-	}
 }
