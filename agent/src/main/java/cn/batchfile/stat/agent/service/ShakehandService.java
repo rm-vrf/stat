@@ -100,7 +100,7 @@ public class ShakehandService {
 	
 	private void submitNode() throws IOException {
 		Node node = nodeService.getNode();
-		String url = String.format("%s/v1/shakehand/node", masterAddress);
+		String url = String.format("%s/v1/node", masterAddress);
 		RestResponse<?> resp = restTemplate.postForObject(url, node, RestResponse.class);
 		log.debug("submit node, resp: {}", resp.isOk());
 	}
@@ -116,7 +116,7 @@ public class ShakehandService {
 			}
 		}
 
-		String url = String.format("%s/v1/shakehand/proc?id=%s", masterAddress, 
+		String url = String.format("%s/v1/proc?id=%s", masterAddress, 
 				new URLEncoder().encode(node.getId(), Charset.forName("UTF-8")));
 		
 		RestResponse<?> resp = restTemplate.postForObject(url, ps, RestResponse.class);

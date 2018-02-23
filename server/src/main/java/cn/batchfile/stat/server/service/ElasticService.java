@@ -42,7 +42,7 @@ public class ElasticService {
 	protected static final Logger log = LoggerFactory.getLogger(ElasticService.class);
 
 	@Value("${elastic.port:51027}")
-	private int elasticHttpPort;
+	public int elasticHttpPort;
 
 	@Value("${elastic.port:51028}")
 	private int elasticTcpPort;

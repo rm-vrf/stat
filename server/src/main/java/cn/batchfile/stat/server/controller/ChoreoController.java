@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,13 +36,14 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 	
 	@GetMapping("/v1/app/{name}/choreo")
 	public Choreo getChoreo(HttpServletResponse response,
-			String name) throws IOException {
+			@PathVariable("name") String name) throws IOException {
 		
 		return super.getChoreo(response, name);
 	}
 	
 	@PutMapping("/v1/app/{name}/choreo")
-	public RestResponse<String> putChoreo(HttpServletResponse response, Choreo choreo) throws IOException {
+	public RestResponse<String> putChoreo(HttpServletResponse response, 
+			@RequestBody Choreo choreo) throws IOException {
 		return super.putChoreo(response, choreo);
 	}
 	
@@ -60,4 +62,30 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 		return super.putScale(response, name, scale);
 	}
 	
+	@GetMapping("/v1/app/{name}/_query")
+	public String getQuery(HttpServletResponse response,
+			@PathVariable("name") String name) throws IOException {
+		
+		Choreo choreo = super.getChoreo(response, name);
+		return choreo.getQuery();
+	}
+	
+	@PostMapping("/v1/app/{name}/_query")
+	public RestResponse<String> putQuery(HttpServletResponse response,
+			@PathVariable("name") String name, 
+			@RequestBody String query) throws IOException {
+		
+		RestResponse<String> resp = new RestResponse<String>();
+		try {
+			Choreo choreo = super.getChoreo(response, name);
+			choreo.setQuery(query);
+			super.putChoreo(response, choreo);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.sendError(500, e.getMessage());
+		}
+		return resp;
+	}
+
 }

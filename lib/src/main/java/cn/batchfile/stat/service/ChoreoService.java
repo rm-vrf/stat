@@ -65,6 +65,23 @@ public abstract class ChoreoService {
 		return choreo;
 	}
 	
+	public List<Choreo> getChoreos() throws IOException {
+		List<Choreo> chs = new ArrayList<Choreo>();
+		File[] files = choreoDirectory.listFiles();
+		for (File file : files) {
+			if (StringUtils.startsWith(file.getName(), ".")) {
+				continue;
+			}
+			
+			String s = FileUtils.readFileToString(file, "UTF-8");
+			if (StringUtils.isNotEmpty(s)) {
+				Choreo ch = JSON.parseObject(s, Choreo.class);
+				chs.add(ch);
+			}
+		}
+		return chs;
+	}
+	
 	public List<Choreo> getChoreos(String node) throws IOException {
 		//获取原始列表
 		List<Choreo> chs = new ArrayList<Choreo>();
@@ -111,6 +128,16 @@ public abstract class ChoreoService {
 	public void putScale(String app, int scale) throws IOException {
 		Choreo choreo = getChoreo(app);
 		choreo.setScale(scale);
+		putChoreo(choreo);
+	}
+	
+	public List<String> getDistribution(String app) throws IOException {
+		return getChoreo(app).getDistribution();
+	}
+
+	public void putDistribution(String app, List<String> distribution) throws IOException {
+		Choreo choreo = getChoreo(app);
+		choreo.setDistribution(distribution);
 		putChoreo(choreo);
 	}
 	
