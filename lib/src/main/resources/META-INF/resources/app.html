@@ -90,12 +90,12 @@
             var show = $('#resAlloc').val();
             if (show == '1') {
                 var cpus = $('#resAlloc_cpus').val();
-                var mem = $('#resAlloc_mem').val();
-                var disk = $('#resAlloc_disk').val();
+                var mem = new Number($('#resAlloc_mem').val());
+                var disk = new Number($('#resAlloc_disk').val());
                 return {
                     cpus: cpus,
-                    mem: mem,
-                    disk: disk
+                    mem: mem * 1024 * 1024,
+                    disk: disk * 1024 * 1024
                 };
             } else {
                 return null;
@@ -212,8 +212,8 @@
         
         function show_res_alloc(resAlloc) {
             $('#resAlloc_cpus').val(resAlloc.cpus);
-            $('#resAlloc_mem').val(resAlloc.mem);
-            $('#resAlloc_disk').val(resAlloc.disk);
+            $('#resAlloc_mem').val(resAlloc.mem / 1024 / 1024);
+            $('#resAlloc_disk').val(resAlloc.disk / 1024 / 1024);
         }
         
         function show_health_check(healthCheck) {
