@@ -70,27 +70,12 @@
             });
         }
 
-        /*
-        function scale_app(name) {
-            $.get('/v1/app/' + name + '/_scale', function(d, status, xhr) {
-                var scale = prompt('输入应用 ' + name + ' 的进程数量：', d);
-                if (scale > '') {
-                    var url = '/v1/app/' + name + '/_scale?num=' + scale;
-                    $.post(url, function(data, status, xhr) {
-                        alert('更新应用 ' + name + ' 的进程数量成功');
-                    });
-                }
-            });
-        }
-        */
-        
         function restart_all() {
-            //TODO
             if (confirm('已经停止的应用仍然保持停止状态，需要继续吗？')) {
-                $.get('/v1/proc', function(pids, status, xhr) {
+                $.get('/v1/proc', function(ps, status, xhr) {
                     var count = 0;
-                    $.each(pids, function(i, pid) {
-                        var url = '/v1/proc/' + pid + '/_kill';
+                    $.each(ps, function(i, p) {
+                        var url = '/v1/node/' + p.node + '/proc/' + p.pid + '/_kill';
                         $.post(url, function(data, status) {
                             count ++;
                         });
@@ -121,7 +106,6 @@
         }
         
         function refresh_row(name) {
-            /*
             $.get('/v1/app/' + name, function(app, status, xhr) {
                 $.get('/v1/app/' + name + '/_scale', function(scale, status, xhr) {
                     $.get('/v1/app/' + name + '/proc', function(ps, status, xhr) {
@@ -129,7 +113,6 @@
                     });
                 });
             });
-            */
         }
         
         function refresh_list() {
@@ -245,10 +228,10 @@
     <div id="header">
         <a href="/"><img src="images/stat.png" alt="Status" /></a>
         <p id="nodestatus">
-            节点：<span id="nodes">22</span> 个 - 
-            CPU：<span id="cpucore">352</span> 核 - 
-            磁盘：<span id="diskspace">1,408</span> GB - 
-            内存：<span id="memory">22,528</span> GB
+            节点：<span id="nodes"></span> 个 - 
+            CPU：<span id="cpucore"></span> 核 - 
+            磁盘：<span id="diskspace"></span> GB - 
+            内存：<span id="memory"></span> GB
         </p>
     </div>
 

@@ -10,7 +10,9 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -59,15 +61,31 @@ public class NodeService {
 		long version = resp.getVersion();
 		log.debug("index node data, id: {}, version: {}", node.getId(), version);
 	}
+	
+	public Node getNode(String id) {
+		//获取数据
+		GetResponse resp = elasticService.getNode().client().prepareGet()
+				.setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id).execute().actionGet();
+		
+		Node node = null;
+		if (resp.isExists()) {
+			String json = resp.getSourceAsString();
+			if (StringUtils.isNotEmpty(json)) {
+				node = JSON.parseObject(json, Node.class);
+			}
+		}
+		
+		return node;
+	}
 
 	public PaginationList<Node> searchNodes(String query, int from, int size) {
 		List<Node> nodes = new ArrayList<Node>();
 		
 		//查询数据
-		SearchResponse resp = elasticService.getNode().client().prepareSearch()
-				.setIndices(INDEX_NAME).setTypes(TYPE_NAME)
-				.setQuery(QueryBuilders.queryStringQuery(query))
-				.setFrom(from).setSize(size).execute().actionGet();
+		SearchRequestBuilder search = elasticService.getNode().client().prepareSearch().setIndices(INDEX_NAME)
+				.setTypes(TYPE_NAME).setQuery(QueryBuilders.queryStringQuery(query)).setFrom(from).setSize(size);
+		
+		SearchResponse resp = search.execute().actionGet();
 		long total = resp.getHits().getTotalHits();
 		SearchHit[] hits = resp.getHits().getHits();
 

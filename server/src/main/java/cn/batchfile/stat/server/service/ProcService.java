@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
 
@@ -59,6 +61,9 @@ public class ProcService {
 	
 	@Autowired
 	private ChoreoService choreoService;
+	
+	@Autowired
+	private RestTemplate restTemplate;
 
 	public void putProcs(String id, List<Proc> ps) {
 		Map<String, Object> map = new HashMap<String, Object>();
@@ -94,6 +99,81 @@ public class ProcService {
 		scheduleProc(choreos);
 	}
 	
+	public List<Proc> getProcsByNode(String node) {
+		return getPs(INDEX_NAME, TYPE_NAME_NODE, node);
+	}
+	
+	public Proc getProcByNode(String node, long pid) {
+		List<Proc> ps = getProcsByNode(node);
+		ps = ps.stream().filter(p -> p.getPid() == pid).collect(Collectors.toList());
+		return ps.size() > 0 ? ps.get(0) : null;
+	}
+	
+	public List<Proc> getProcsByApp(String app) {
+		return getPs(INDEX_NAME, TYPE_NAME_APP, app);
+	}
+	
+	public Proc getProcByApp(String app, long pid) {
+		List<Proc> ps = getProcsByApp(app);
+		ps = ps.stream().filter(p -> p.getPid() == pid).collect(Collectors.toList());
+		return ps.size() > 0 ? ps.get(0) : null;
+	}
+	
+	private List<Proc> getPs(String indexName, String typeName, String id) {
+		List<Proc> ps = new ArrayList<Proc>();
+		GetResponse resp = elasticService.getNode().client().prepareGet()
+				.setIndex(indexName).setType(typeName).setId(id).execute().actionGet();
+		if (resp.isExists()) {
+			Map<String, Object> map = resp.getSourceAsMap();
+			Object obj = map.get("ps");
+			String json = JSON.toJSONString(obj);
+			if (StringUtils.isNotEmpty(json)) {
+				ps = JSON.parseArray(json, Proc.class);
+			}
+		}
+		return ps;
+	}
+	
+	public List<Proc> getProcs() {
+		List<Proc> ps = new ArrayList<Proc>();
+		
+		int size = 100;
+		long total = size;
+		for (int from = 0; from + size <= total; from += size) {
+			//查询数据
+			SearchResponse resp = elasticService.getNode().client().prepareSearch()
+					.setIndices(INDEX_NAME).setTypes(TYPE_NAME_NODE)
+					.setQuery(QueryBuilders.matchAllQuery())
+					.setFrom(from).setSize(size).execute().actionGet();
+			total = resp.getHits().getTotalHits();
+			SearchHit[] hits = resp.getHits().getHits();
+			
+			//解析查询结果
+			for (SearchHit hit : hits) {
+				Map<String, Object> map = hit.getSourceAsMap();
+				Object obj = map.get("ps");
+				String json = JSON.toJSONString(obj);
+				if (StringUtils.isNotEmpty(json)) {
+					List<Proc> list = JSON.parseArray(json, Proc.class);
+					if (list != null) {
+						ps.addAll(list);
+					}
+				}
+			}
+		}
+		return ps;
+	}
+	
+	public void killProcs(String node, List<Long> pids) {
+		Node n = nodeService.getNode(node);
+		if (n != null) {
+			for (Long pid : pids) {
+				String url = String.format("%s/v1/proc/%s/_kill", n.getAgentAddress(), pid);
+				restTemplate.postForLocation(url, null);
+			}
+		}
+	}
+
 	private void scheduleProc(List<Choreo> choreos) throws IOException {
 		for (Choreo choreo : choreos) {
 			//实际分配的进程数量
@@ -142,36 +222,6 @@ public class ProcService {
 		return dist;
 	}
 
-	private List<Proc> getProcs() {
-		List<Proc> ps = new ArrayList<Proc>();
-		
-		int size = 100;
-		long total = size;
-		for (int from = 0; from + size <= total; from += size) {
-			//查询数据
-			SearchResponse resp = elasticService.getNode().client().prepareSearch()
-					.setIndices(INDEX_NAME).setTypes(TYPE_NAME_NODE)
-					.setQuery(QueryBuilders.matchAllQuery())
-					.setFrom(from).setSize(size).execute().actionGet();
-			total = resp.getHits().getTotalHits();
-			SearchHit[] hits = resp.getHits().getHits();
-			
-			//解析查询结果
-			for (SearchHit hit : hits) {
-				Map<String, Object> map = hit.getSourceAsMap();
-				Object obj = map.get("ps");
-				String json = JSON.toJSONString(obj);
-				if (StringUtils.isNotEmpty(json)) {
-					List<Proc> list = JSON.parseArray(json, Proc.class);
-					if (list != null) {
-						ps.addAll(list);
-					}
-				}
-			}
-		}
-		return ps;
-	}
-	
 	private void delUnavailNodes(Map<Node, Date> nodes, List<Proc> ps, List<Choreo> choreos) throws IOException {
 		//清理不可用节点，30秒以上没有握手的节点清理掉。不清理会造成任务无法正常分配
 		//清理范围包括：节点数据，进程数据，分配数据
