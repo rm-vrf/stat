@@ -86,6 +86,20 @@ public class ProcController {
 		return resp;
 	}
 	
+	@GetMapping("/v1/node/{id}/proc/{pid}/_stdout")
+	public String[] getSystemOut(@PathVariable("id") String node, 
+			@PathVariable("pid") long pid) {
+		
+		return procService.getSystemOut(node, pid);
+	}
+	
+	@GetMapping("/v1/node/{id}/proc/{pid}/_stderr")
+	public String[] getSystemErr(@PathVariable("id") String node, 
+			@PathVariable("pid") long pid) {
+		
+		return procService.getSystemErr(node, pid);
+	}
+	
 	@PostMapping("/v1/proc")
 	public RestResponse<String> putProcs(HttpServletResponse response, 
 			@RequestBody List<Proc> ps,

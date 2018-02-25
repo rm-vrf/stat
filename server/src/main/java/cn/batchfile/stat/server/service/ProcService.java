@@ -173,7 +173,19 @@ public class ProcService {
 			}
 		}
 	}
+	
+	public String[] getSystemOut(String node, long pid) {
+		Node n = nodeService.getNode(node);
+		String url = String.format("%s/v1/proc/%s/_stdout", n.getAgentAddress(), pid);
+		return restTemplate.getForObject(url, String[].class);
+	}
 
+	public String[] getSystemErr(String node, long pid) {
+		Node n = nodeService.getNode(node);
+		String url = String.format("%s/v1/proc/%s/_stderr", n.getAgentAddress(), pid);
+		return restTemplate.getForObject(url, String[].class);
+	}
+	
 	private void scheduleProc(List<Choreo> choreos) throws IOException {
 		for (Choreo choreo : choreos) {
 			//实际分配的进程数量
