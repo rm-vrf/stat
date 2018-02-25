@@ -51,7 +51,7 @@ public class ProcService {
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat> () {
 		@Override
 		protected DateFormat initialValue() {
-			return new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			return new SimpleDateFormat("MM-dd HH:mm");
 		}
 	};
 	

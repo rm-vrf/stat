@@ -88,7 +88,7 @@
                 });
             
                 $('#ppid_' + p.pid + '_' + p.node).text(p.ppid);
-                $('#node_' + p.pid + '_' + p.node).html('<a href="' + node.agentAddress + '">' + node.hostname + '</a>');
+                $('#node_' + p.pid + '_' + p.node).html('<a href="' + node.agentAddress + '" target="_blank">' + node.hostname + '</a>');
                 $('#stime_' + p.pid + '_' + p.node).text(p.startTime);
                 $('#cmd_' + p.pid + '_' + p.node).text(p.cmd);
                 $('#port_' + p.pid + '_' + p.node).html(text.join(', '));
