@@ -21,8 +21,4 @@ public class HealthCheckController {
 		return healthCheckService.getResults(pid);
 	}
 
-	@GetMapping("/v1/node/_health")
-	public List<HealthCheckResult> getHealthCheck() {
-		return healthCheckService.getResults();
-	}
 }

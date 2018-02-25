@@ -72,14 +72,6 @@ public class HealthCheckService {
 		return list;
 	}
 	
-	public List<HealthCheckResult> getResults() {
-		List<HealthCheckResult> list = new ArrayList<HealthCheckResult>();
-		for (long pid : handlers.keySet()) {
-			list.addAll(getResults(pid));
-		}
-		return list;
-	}
-	
 	public void register(App app, Proc p) throws IOException {
 		
 		HealthCheck hc = app.getHealthChecks() == null || app.getHealthChecks().size() == 0 ? 
