@@ -231,9 +231,9 @@ public class ProcService {
 	
 	private void killProcTree(Proc proc, int signal) {
 		//杀子进程
-		for (int i = proc.getTree().size() - 1; i >= 0; i --) {
+		for (int i = proc.getChildren().size() - 1; i >= 0; i --) {
 			try {
-				sysService.kill(proc.getTree().get(i), signal);
+				sysService.kill(proc.getChildren().get(i), signal);
 			} catch (Exception e) {}
 		}
 		
@@ -303,8 +303,8 @@ public class ProcService {
 
 				//获取子进程编号
 				List<Proc> ps = sysService.ps();
-				getTree(proc.getTree(), pid, ps);
-				log.info("started, pid: {}, tree: {}", pid, proc.getTree().toString());
+				getTree(proc.getChildren(), pid, ps);
+				log.info("started, pid: {}, tree: {}", pid, proc.getChildren().toString());
 
 				//补充进程的基本信息
 				proc.setApp(app.getName());

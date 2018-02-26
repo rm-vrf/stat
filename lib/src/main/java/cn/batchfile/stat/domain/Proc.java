@@ -15,7 +15,7 @@ public class Proc {
 	private String tty;
 	private String startTime;
 	private String cmd;
-	private List<Long> tree = new ArrayList<Long>();
+	private List<Long> children = new ArrayList<Long>();
 	private List<Integer> ports = new ArrayList<Integer>();
 	private String app;
 	private String node;
@@ -56,16 +56,16 @@ public class Proc {
 	 * 子进程ID
 	 * @return 子进程ID
 	 */
-	public List<Long> getTree() {
-		return tree;
+	public List<Long> getChildren() {
+		return children;
 	}
 
 	/**
 	 * 子进程ID
-	 * @param tree 子进程ID
+	 * @param children 子进程ID
 	 */
-	public void setTree(List<Long> tree) {
-		this.tree = tree;
+	public void setChildren(List<Long> children) {
+		this.children = children;
 	}
 
 	/**
