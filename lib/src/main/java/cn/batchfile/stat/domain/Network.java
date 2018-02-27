@@ -1,18 +1,17 @@
 package cn.batchfile.stat.domain;
 
 public class Network {
-	private String name;
-	//private boolean pointToPoint;
-	//private int index;
-	//private boolean up;
-	private int mtu;
-	//private boolean virtual;
 	private String address;
-	private boolean siteLocal;
-	//private boolean loopback;
-	//private boolean linkLocal;
-	//private boolean anyLocal;
-	//private boolean multicast;
+	private String name;
+	private long mtu;
+	private String broadcast;
+	private String description;
+	private String distination;
+	private long flags;
+	private String hwaddr;
+	private long metric;
+	private String netmask;
+	private String type;
 
 	public String getName() {
 		return name;
@@ -22,45 +21,13 @@ public class Network {
 		this.name = name;
 	}
 
-//	public boolean isPointToPoint() {
-//		return pointToPoint;
-//	}
-//
-//	public void setPointToPoint(boolean pointToPoint) {
-//		this.pointToPoint = pointToPoint;
-//	}
-//
-//	public int getIndex() {
-//		return index;
-//	}
-//
-//	public void setIndex(int index) {
-//		this.index = index;
-//	}
-//
-//	public boolean isUp() {
-//		return up;
-//	}
-//
-//	public void setUp(boolean up) {
-//		this.up = up;
-//	}
-
-	public int getMtu() {
+	public long getMtu() {
 		return mtu;
 	}
 
-	public void setMtu(int mtu) {
+	public void setMtu(long mtu) {
 		this.mtu = mtu;
 	}
-
-//	public boolean isVirtual() {
-//		return virtual;
-//	}
-//
-//	public void setVirtual(boolean virtual) {
-//		this.virtual = virtual;
-//	}
 
 	public String getAddress() {
 		return address;
@@ -70,43 +37,67 @@ public class Network {
 		this.address = address;
 	}
 
-	public boolean isSiteLocal() {
-		return siteLocal;
+	public String getBroadcast() {
+		return broadcast;
 	}
 
-	public void setSiteLocal(boolean siteLocal) {
-		this.siteLocal = siteLocal;
+	public void setBroadcast(String broadcast) {
+		this.broadcast = broadcast;
 	}
 
-//	public boolean isLoopback() {
-//		return loopback;
-//	}
-//
-//	public void setLoopback(boolean loopback) {
-//		this.loopback = loopback;
-//	}
-//
-//	public boolean isLinkLocal() {
-//		return linkLocal;
-//	}
-//
-//	public void setLinkLocal(boolean linkLocal) {
-//		this.linkLocal = linkLocal;
-//	}
-//
-//	public boolean isAnyLocal() {
-//		return anyLocal;
-//	}
-//
-//	public void setAnyLocal(boolean anyLocal) {
-//		this.anyLocal = anyLocal;
-//	}
-//
-//	public boolean isMulticast() {
-//		return multicast;
-//	}
-//
-//	public void setMulticast(boolean multicast) {
-//		this.multicast = multicast;
-//	}
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getDistination() {
+		return distination;
+	}
+
+	public void setDistination(String distination) {
+		this.distination = distination;
+	}
+
+	public long getFlags() {
+		return flags;
+	}
+
+	public void setFlags(long flags) {
+		this.flags = flags;
+	}
+
+	public String getHwaddr() {
+		return hwaddr;
+	}
+
+	public void setHwaddr(String hwaddr) {
+		this.hwaddr = hwaddr;
+	}
+
+	public long getMetric() {
+		return metric;
+	}
+
+	public void setMetric(long metric) {
+		this.metric = metric;
+	}
+
+	public String getNetmask() {
+		return netmask;
+	}
+
+	public void setNetmask(String netmask) {
+		this.netmask = netmask;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
 }

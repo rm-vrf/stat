@@ -13,6 +13,7 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +48,7 @@ public class NodeService {
 	private int serverPort;
 	
 	@PostConstruct
-	public void init() throws IOException {
+	public void init() throws IOException, SigarException {
 		node = new Node();
 		node.setId(getId());
 		node.setHostname(sysService.getHostname());
@@ -61,10 +62,8 @@ public class NodeService {
 			String host = StringUtils.EMPTY;
 			if (preferIpAddress) {
 				for (Network n : node.getNetworks()) {
-					if (n.isSiteLocal()) {
-						host = n.getAddress();
-						break;
-					}
+					host = n.getAddress();
+					break;
 				}
 			} else {
 				host = node.getHostname();

@@ -12,7 +12,6 @@ public class Proc {
 	private long pid;
 	private long ppid;
 	private String uid;
-	private String tty;
 	private String startTime;
 	private String cmd;
 	private List<Long> children = new ArrayList<Long>();
@@ -98,22 +97,6 @@ public class Proc {
 	 */
 	public void setUid(String uid) {
 		this.uid = uid;
-	}
-
-	/**
-	 * 与进程相关的终端
-	 * @return 与进程相关的终端
-	 */
-	public String getTty() {
-		return tty;
-	}
-
-	/**
-	 * 与进程相关的终端
-	 * @param tty 与进程相关的终端
-	 */
-	public void setTty(String tty) {
-		this.tty = tty;
 	}
 
 	/**

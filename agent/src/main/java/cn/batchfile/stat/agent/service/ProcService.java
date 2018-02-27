@@ -23,6 +23,7 @@ import org.codehaus.plexus.util.cli.Arg;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
+import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class ProcService {
 	private File procDirectory;
 	private Map<Long, LinkedBlockingQueue<String>> systemOuts = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
 	private Map<Long, LinkedBlockingQueue<String>> systemErrs = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
-	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat> () {
+	public static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat> () {
 		@Override
 		protected DateFormat initialValue() {
 			return new SimpleDateFormat("MM-dd HH:mm");
@@ -93,7 +94,7 @@ public class ProcService {
 	}
 	
 	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws IOException, CommandLineException, InterruptedException {
+	public void refresh() throws IOException, CommandLineException, InterruptedException, SigarException {
 		synchronized (this) {
 			//检查文件存储，把废弃的进程号清理掉
 			checkFileStore();
@@ -261,7 +262,7 @@ public class ProcService {
 		return list;
 	}
 	
-	private void startScheduleProc() throws IOException, CommandLineException, InterruptedException {
+	private void startScheduleProc() throws IOException, CommandLineException, InterruptedException, SigarException {
 		//登记应用
 		List<App> apps = new ArrayList<App>();
 		List<String> appNames = appService.getApps();
@@ -296,12 +297,13 @@ public class ProcService {
 				//下载程序包
 				downloadService.downloadArtifacts(app);
 				
-				//启动进程，得到端口号
+				//启动进程，得到端口号&进程命令
 				Proc proc = new Proc();
 				log.info("start proc of app: {}, #{}", app.getName(), i);
-				long pid = startProc(app, proc.getPorts());
+				long pid = startProc(app, proc);
 
 				//获取子进程编号
+				Thread.sleep(1000);
 				List<Proc> ps = sysService.ps();
 				getTree(proc.getChildren(), pid, ps);
 				log.info("started, pid: {}, tree: {}", pid, proc.getChildren().toString());
@@ -334,20 +336,17 @@ public class ProcService {
 
 		//一定要有，没有就不正常了
 		if (p != null) {
-			proc.setCmd(p.getCmd());
 			proc.setPpid(p.getPpid());
 			proc.setStartTime(p.getStartTime());
-			proc.setTty(p.getTty());
 			proc.setUid(p.getUid());
 		}
 	}
 
-	private long startProc(App app, List<Integer> ports) throws CommandLineException, IOException {
+	private long startProc(App app, Proc proc) throws CommandLineException, IOException {
 		//构建命令行
-		Commandline commandline = composeCommandLine(app, ports);
-		
-		//执行命令，记录输出
-		log.info("cmd: " + commandline.toString());
+		Commandline commandline = composeCommandLine(app, proc.getPorts());
+		proc.setCmd(commandline.toString());
+		log.info("CMD: " + commandline.toString());
 		
 		//构建输出存储器
 		LinkedBlockingQueue<String> systemOut = new LinkedBlockingQueue<String>(outCacheLineCount);

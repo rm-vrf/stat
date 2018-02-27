@@ -10,7 +10,7 @@
         $(document).ready(function () {
             $.get('/v1/node', function(node, status, xhr) {
                 $('#hostname').text(node.hostname);
-                $('#address').text(get_hostname(node, true));
+                $('#address').text(get_hostname(node));
                 var os = node.os;
                 if (os) {
                     $('#cpucore').text(os.cpus);
@@ -29,11 +29,10 @@
                 }
             });
             
-            var prefer_ip_address = true;
             var app = get_param('app').app.replace('#', '');
             
             $.get('/v1/node', function(node, status, xhr) {
-                var hostname = get_hostname(node, prefer_ip_address);
+                var hostname = get_hostname(node);
                 refresh_list(app, hostname);
                 setInterval(function() {
                     refresh_list(app, hostname);

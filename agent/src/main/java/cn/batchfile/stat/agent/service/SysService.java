@@ -6,18 +6,27 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.hyperic.sigar.FileSystem;
+import org.hyperic.sigar.FileSystemUsage;
+import org.hyperic.sigar.Mem;
+import org.hyperic.sigar.NetInterfaceConfig;
+import org.hyperic.sigar.ProcCpu;
+import org.hyperic.sigar.ProcCredName;
+import org.hyperic.sigar.ProcState;
+import org.hyperic.sigar.Sigar;
+import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,41 +41,82 @@ import cn.batchfile.stat.domain.Proc;
 @Service
 public class SysService {
 	protected static final Logger log = LoggerFactory.getLogger(SysService.class);
+	private Sigar sigar;
 	
-	@Value("${ps.cmd:ps -ef {pid}}")
-	private String psCmd;
-
-	@Value("${kill.cmd:kill -{signal} {pid}}")
-	private String killCmd;
+	@Value("${store.directory}")
+	private String storeDirectory;
 	
 	@PostConstruct
-	public void init() {
+	public void init() throws Exception {
+		//TODO copy lib into data path
+		String libPath = System.getProperty("java.library.path");
+		log.info("lib path: {}", libPath);
+		
+		//TODO append path, not change
+		File sigarPath = new File(new File(storeDirectory), "sigar");
+		System.setProperty("java.library.path", sigarPath.getAbsolutePath());
+		
+		//set sys_paths to null
+		final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+		sysPathsField.setAccessible(true);
+		sysPathsField.set(null, null);
+		
+		sigar = new Sigar();
 	}
 	
-	public List<Proc> ps() {
-		String cmd = StringUtils.replaceEach(psCmd, 
-				new String[] {"{pid}"}, 
-				new String[] {StringUtils.EMPTY});
-		List<String> lines = exec(cmd);
-		List<Proc> ps = composeProcs(lines);
+	public List<Proc> ps() throws SigarException {
+		List<Proc> ps = new ArrayList<Proc>();
+		long[] pids = sigar.getProcList();
+		for (long pid : pids) {
+			Proc p = ps(pid);
+			if (p != null) {
+				ps.add(p);
+			}
+		}
 		return ps;
 	}
 	
 	public Proc ps(long pid) {
-		String cmd = StringUtils.replaceEach(psCmd, 
-				new String[] {"{pid}"}, 
-				new String[] {String.valueOf(pid)});
-		List<String> lines = exec(cmd);
-		List<Proc> ps = composeProcs(lines);
-		return ps == null || ps.size() == 0 ? null : ps.get(0);
+		//ppid
+		long ppid = 0;
+		try {
+			ProcState state = sigar.getProcState(pid);
+			ppid = state.getPpid();
+		} catch (Exception e) {
+			//pass
+		}
+		
+		//start time
+		String startTime = StringUtils.EMPTY;
+		try {
+			ProcCpu cpu = sigar.getProcCpu(pid);
+			startTime = ProcService.TIME_FORMAT.get().format(new Date(cpu.getStartTime()));
+		} catch (Exception e) {
+			//pass
+		}
+		
+		//user
+		String uid = StringUtils.EMPTY;
+		try {
+			ProcCredName credName = sigar.getProcCredName(pid);
+			uid = credName.getUser();
+		} catch (Exception e) {
+			//pass
+		}
+		
+		Proc p = new Proc();
+		p.setPid(pid);
+		p.setPpid(ppid);
+		p.setStartTime(startTime);
+		p.setUid(uid);
+		
+		return p.getPpid() > 0 
+				&& StringUtils.isNotEmpty(startTime) 
+				&& StringUtils.isNotEmpty(uid) ? p : null;
 	}
 	
-	public void kill(long pid, int signal) {
-		String cmd = StringUtils.replaceEach(killCmd, 
-				new String[] {"{signal}", "{pid}"}, 
-				new String[] {String.valueOf(signal), String.valueOf(pid)});
-		
-		exec(cmd);
+	public void kill(long pid, int signal) throws SigarException {
+		sigar.kill(pid, signal);
 	}
 
 	public int randomPort() {
@@ -116,107 +166,75 @@ public class SysService {
 		return os;
 	}
 
-	private List<Proc> composeProcs(List<String> lines) {
-		//Line: UID   PID  PPID   C STIME   TTY           TIME CMD
-		List<Proc> ps = new ArrayList<Proc>();
-		for (String line : lines) {
-			String[] ary = StringUtils.split(line);
-			if (ary == null || ary.length < 2 || !StringUtils.isNumeric(ary[1])) {
-				continue;
-			}
-			
-			Proc p = new Proc();
-			String uid = ary[0];
-			String pid = ary[1];
-			String ppid = ary[2];
-			//String c = ary[3];
-			String stime = ary[4];
-			String tty = ary[5];
-			//String time = ary[6];
-			List<String> cmd = new ArrayList<String>();
-			for (int i = 7; i < ary.length; i ++) {
-				cmd.add(ary[i]);
-			}
-			p.setUid(uid);
-			p.setPid(Long.valueOf(pid));
-			p.setPpid(Long.valueOf(ppid));
-			p.setStartTime(stime);
-			p.setTty(tty);
-			p.setCmd(StringUtils.join(cmd, " "));
-			
-			ps.add(p);
-		}
-		return ps;
-	}
-
-	public List<Disk> getDisks() {
-		List<Disk> list = new ArrayList<Disk>();
-		File[] roots = File.listRoots();
-		for (File root : roots) {
+	public List<Disk> getDisks() throws SigarException {
+		List<Disk> disks = new ArrayList<Disk>();
+		
+		FileSystem[] fss = sigar.getFileSystemList();
+		for (FileSystem fs : fss) {
 			Disk disk = new Disk();
-			disk.setDirName(root.getAbsolutePath());
-			disk.setTotal(root.getTotalSpace());
-			list.add(disk);
+			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
+			
+			disk.setDevName(fs.getDevName());
+			disk.setDirName(fs.getDirName());
+			disk.setFlags(fs.getFlags());
+			disk.setOption(fs.getOptions());
+			disk.setSysTypeName(fs.getSysTypeName());
+			disk.setTotal(fsu.getTotal() * 1024);
+			disk.setType(fs.getType());
+			disk.setTypeName(fs.getTypeName());
+			
+			if (disk.getTotal() > 0 
+					&& containsAny(disk.getSysTypeName(), new String[] {"ext", "apfs", "xfs", "fat", "ntfs"})) {
+				disks.add(disk);
+			}
 		}
-		return list;
+		return disks;
 	}
 
-	public Memory getMemory() {
+	public Memory getMemory() throws SigarException {
 		Memory memory = new Memory();
-		try {
-			List<String> lines = exec("free -k");
-			for (String line : lines) {
-				String[] ary = StringUtils.split(line, " ");
-				if (ary == null || ary.length < 2 || !StringUtils.isNumeric(ary[1])) {
-					continue;
-				}
-				
-				if (StringUtils.equalsIgnoreCase(ary[0], "mem:")) {
-					memory.setRam(Long.valueOf(ary[1]) * 1024);
-					memory.setTotal(memory.getRam());
-					break;
-				}
-			}
-		} catch (Exception e) {
-			log.error("error when get memeory info", e);
-		}
+		Mem mem = sigar.getMem();
+		memory.setRam(mem.getRam() * 1024 * 1024);
+		memory.setTotal(mem.getTotal());
 		return memory;
 	}
 
-	public List<Network> getNetworks() {
+	public List<Network> getNetworks() throws SigarException {
 		List<Network> networks = new ArrayList<Network>();
-		try {
-			Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
-			Enumeration<InetAddress> addresses;
-			while (en.hasMoreElements()) {
-				NetworkInterface networkinterface = en.nextElement();
-				addresses = networkinterface.getInetAddresses();
-				while (addresses.hasMoreElements()) {
-					InetAddress address = addresses.nextElement(); 
-					
-					if (!address.isLoopbackAddress() && 
-							!StringUtils.contains(address.getHostAddress(), ":")) {
-						Network network = new Network();
-						network.setName(networkinterface.getName());
-						//network.setPointToPoint(networkinterface.isPointToPoint());
-						//network.setIndex(networkinterface.getIndex());
-						//network.setUp(networkinterface.isUp());
-						network.setMtu(networkinterface.getMTU());
-						//network.setVirtual(networkinterface.isVirtual());
-						network.setAddress(address.getHostAddress());
-						network.setSiteLocal(address.isSiteLocalAddress());
-						//network.setLoopback(address.isLoopbackAddress());
-						//network.setLinkLocal(address.isLinkLocalAddress());
-						//network.setAnyLocal(address.isAnyLocalAddress());
-						//network.setMulticast(address.isMulticastAddress());
-						
-						networks.add(network);
-					}
-				}
+		
+		String[] netIfs = sigar.getNetInterfaceList();
+		for (String netIf : netIfs) {
+			NetInterfaceConfig config = sigar.getNetInterfaceConfig(netIf);
+			//NetInterfaceStat stat = sigar.getNetInterfaceStat(netIf);
+			Network network = new Network();
+			network.setAddress(config.getAddress());
+			network.setName(config.getName());
+			network.setMtu(config.getMtu());
+			network.setBroadcast(config.getBroadcast());
+			network.setDescription(config.getDescription());
+			network.setDistination(config.getDestination());
+			network.setFlags(config.getFlags());
+			network.setHwaddr(config.getHwaddr());
+			network.setMetric(config.getMetric());
+			network.setNetmask(config.getNetmask());
+			network.setType(config.getType());
+				
+			if (!network.getAddress().equals("127.0.0.1") 
+						&& !network.getAddress().equals("0.0.0.0")) {
+				networks.add(network);
 			}
-		} catch (Exception e) {
-			log.error("error when get network info", e);
 		}
+		
 		return networks;
 	}
+
+	private boolean containsAny(String s, String[] searchStrs) {
+		for (String con : searchStrs) {
+			if (StringUtils.containsIgnoreCase(s, con)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

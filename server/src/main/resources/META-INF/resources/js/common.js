@@ -1,16 +1,9 @@
-$(document).ready(function () {
-});
-
-function get_hostname(node, prefer_ip_address) {
-    var hostname = '';
-    if (!prefer_ip_address) {
-        hostname = node.hostname;
-    } else {
-        $.each(node.networks, function(i, network) {
-            if (network.siteLocal) {
-                hostname = network.address;
-            }
-        });
+function get_hostname(node) {
+    var hostname = node.hostname;
+    var add = node.agentAddress;
+    var ary = add.split(':');
+    if (ary && ary.length > 1) {
+        hostname = ary[1].replace('//', '');
     }
     
     if (hostname == '') {
