@@ -1,5 +1,5 @@
 {
-    "node": {
+    "down": {
         "properties": {
             "id": {
                 "type": "string"
@@ -41,23 +41,62 @@
             },
             "networks": {
                 "properties": {
+                    "address": {
+                        "type": "ip"
+                    },
                     "name": {
                         "type": "string"
                     },
                     "mtu": {
                         "type": "long"
                     },
-                    "address": {
+                    "broadcast": {
                         "type": "ip"
                     },
-                    "siteLocal": {
-                        "type": "boolean"
+                    "description": {
+                        "type": "string"
+                    },
+                    "distination": {
+                        "type": "ip"
+                    },
+                    "flags": {
+                        "type": "long"
+                    },
+                    "hwaddr": {
+                        "type": "string"
+                    },
+                    "metric": {
+                        "type": "long"
+                    },
+                    "netmask": {
+                        "type": "ip"
+                    },
+                    "type": {
+                        "type": "string"
                     }
                 }
             },
             "disks": {
                 "properties": {
                     "dirName": {
+                        "type": "string"
+                    },
+                    "devName": {
+                        "type": "string"
+                    },
+                    "flags": {
+                        "type": "long"
+                    },
+                    "option": {
+                        "type": "string"
+                    },
+                    "sysTypeName": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "long"
+                    },
+                    "typeName": {
                         "type": "string"
                     },
                     "total": {

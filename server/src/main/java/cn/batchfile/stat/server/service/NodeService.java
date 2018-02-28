@@ -15,6 +15,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
@@ -31,7 +32,8 @@ import cn.batchfile.stat.domain.PaginationList;
 public class NodeService {
 	protected static final Logger log = LoggerFactory.getLogger(NodeService.class);
 	public static final String INDEX_NAME = "node-data";
-	public static final String TYPE_NAME = "node";
+	public static final String TYPE_NAME_UP = "up";
+	public static final String TYPE_NAME_DOWN = "down";
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
 		protected DateFormat initialValue() {
@@ -55,55 +57,98 @@ public class NodeService {
 		map.put("timestamp", TIME_FORMAT.get().format(new Date()));
 		String json = JSON.toJSONString(map);
 
-		IndexResponse resp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME)
+		//插入在线节点
+		IndexResponse indexResp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
 				.setId(node.getId()).setSource(json, XContentType.JSON).execute().actionGet();
-		
-		long version = resp.getVersion();
+		long version = indexResp.getVersion();
 		log.debug("index node data, id: {}, version: {}", node.getId(), version);
+		
+		//删除离线节点
+		try {
+			DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete()
+					.setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
+					.setId(node.getId()).execute().actionGet();
+			log.debug("delete node from down type: {}", deleteResp.getId());
+		} catch (IndexNotFoundException e) {
+			//pass
+		}
 	}
 	
 	public Node getNode(String id) {
-		//获取数据
-		GetResponse resp = elasticService.getNode().client().prepareGet()
-				.setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id).execute().actionGet();
-		
-		Node node = null;
-		if (resp.isExists()) {
-			String json = resp.getSourceAsString();
-			if (StringUtils.isNotEmpty(json)) {
-				node = JSON.parseObject(json, Node.class);
+		try {
+			//获取数据
+			GetResponse resp = elasticService.getNode().client().prepareGet()
+					.setIndex(INDEX_NAME).setId(id).execute().actionGet();
+			
+			Node node = null;
+			if (resp.isExists()) {
+				String json = resp.getSourceAsString();
+				if (StringUtils.isNotEmpty(json)) {
+					node = JSON.parseObject(json, Node.class);
+				}
 			}
+			
+			return node;
+		} catch (IndexNotFoundException e) {
+			return null;
 		}
-		
-		return node;
 	}
 
-	public PaginationList<Node> searchNodes(String query, int from, int size) {
+	public PaginationList<Node> searchNodes(String query, int from, int size, boolean includeDownNode) {
 		List<Node> nodes = new ArrayList<Node>();
 		
 		//查询数据
 		SearchRequestBuilder search = elasticService.getNode().client().prepareSearch().setIndices(INDEX_NAME)
-				.setTypes(TYPE_NAME).setQuery(QueryBuilders.queryStringQuery(query)).setFrom(from).setSize(size);
-		
-		SearchResponse resp = search.execute().actionGet();
-		long total = resp.getHits().getTotalHits();
-		SearchHit[] hits = resp.getHits().getHits();
-
-		//解析查询结果
-		for (SearchHit hit : hits) {
-			String json = hit.getSourceAsString();
-			if (StringUtils.isNotEmpty(json)) {
-				Node node = JSON.parseObject(json, Node.class);
-				nodes.add(node);
-			}
+				.setQuery(QueryBuilders.queryStringQuery(query))
+				.setFrom(from).setSize(size);
+		if (includeDownNode) {
+			search.setTypes(TYPE_NAME_UP, TYPE_NAME_DOWN);
+		} else {
+			search.setTypes(TYPE_NAME_UP);
 		}
 		
-		return new PaginationList<Node>(total, nodes);
+		try {
+			SearchResponse resp = search.execute().actionGet();
+			long total = resp.getHits().getTotalHits();
+			SearchHit[] hits = resp.getHits().getHits();
+	
+			//解析查询结果
+			for (SearchHit hit : hits) {
+				String json = hit.getSourceAsString();
+				if (StringUtils.isNotEmpty(json)) {
+					Node node = JSON.parseObject(json, Node.class);
+					nodes.add(node);
+				}
+			}
+			
+			return new PaginationList<Node>(total, nodes);
+		} catch (IndexNotFoundException e) {
+			return new PaginationList<Node>(0, nodes);
+		}
 	}
 
-	public void deleteNode(String id) {
-		DeleteResponse resp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME)
-				.setId(id).execute().actionGet();
-		log.debug("delete node: {}", resp.getId());
+	public void downNode(String id) {
+		//获取节点数据
+		GetResponse getResp = elasticService.getNode().client().prepareGet()
+				.setIndex(INDEX_NAME).setType(TYPE_NAME_UP).setId(id).execute().actionGet();
+		
+		if (getResp.isExists()) {
+			//把agent地址去掉，用这个属性标注节点的在线状态
+			Map<String, Object> node = getResp.getSourceAsMap();
+			node.remove("agentAddress");
+			
+			//删除在线节点
+			DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
+					.setId(id).execute().actionGet();
+			log.debug("delete node: {}", deleteResp.getId());
+			
+			//插入离线节点
+			String json = JSON.toJSONString(node);
+			IndexResponse indexResp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
+					.setId(id).setSource(json, XContentType.JSON).execute().actionGet();
+			
+			long version = indexResp.getVersion();
+			log.debug("index node data to down type, id: {}, version: {}", id, version);
+		}
 	}
 }

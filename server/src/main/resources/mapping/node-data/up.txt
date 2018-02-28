@@ -1,0 +1,112 @@
+{
+    "up": {
+        "properties": {
+            "id": {
+                "type": "string"
+            },
+            "hostname": {
+                "type": "string"
+            },
+            "agentAddress": {
+                "type": "string"
+            },
+            "tags": {
+                "type": "string"
+            },
+            "os": {
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "string"
+                    },
+                    "cpus": {
+                        "type": "long"
+                    },
+                    "architecture": {
+                        "type": "string"
+                    }
+                }
+            },
+            "memory": {
+                "properties": {
+                    "total": {
+                        "type": "long"
+                    },
+                    "ram": {
+                        "type": "long"
+                    }
+                }
+            },
+            "networks": {
+                "properties": {
+                    "address": {
+                        "type": "ip"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "mtu": {
+                        "type": "long"
+                    },
+                    "broadcast": {
+                        "type": "ip"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "distination": {
+                        "type": "ip"
+                    },
+                    "flags": {
+                        "type": "long"
+                    },
+                    "hwaddr": {
+                        "type": "string"
+                    },
+                    "metric": {
+                        "type": "long"
+                    },
+                    "netmask": {
+                        "type": "ip"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                }
+            },
+            "disks": {
+                "properties": {
+                    "dirName": {
+                        "type": "string"
+                    },
+                    "devName": {
+                        "type": "string"
+                    },
+                    "flags": {
+                        "type": "long"
+                    },
+                    "option": {
+                        "type": "string"
+                    },
+                    "sysTypeName": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "long"
+                    },
+                    "typeName": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "long"
+                    }
+                }
+            },
+            "timestamp": {
+                "type": "date"
+            }
+        }
+    }
+}

@@ -54,9 +54,10 @@ public class NodeController {
 	@PostMapping("/v1/node/_search")
 	public PaginationList<Node> searchNodes(@RequestBody String query, 
 			@RequestParam(name="from", defaultValue="0") int from, 
-			@RequestParam(name="size", defaultValue="20") int size) {
+			@RequestParam(name="size", defaultValue="20") int size,
+			@RequestParam(name="includeDownNode", defaultValue="true") boolean includeDownNode) {
 		
-		return nodeService.searchNodes(query, from, size);
+		return nodeService.searchNodes(query, from, size, includeDownNode);
 	}
 
 }

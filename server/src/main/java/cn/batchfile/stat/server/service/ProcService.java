@@ -19,6 +19,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public class ProcService {
 	
 	@Scheduled(fixedDelay = 5000)
 	public void refresh() throws ParseException, IOException {
-		//从汇报数据里得到节点和进程
+		//从汇报数据里得到可用节点和进程
 		Map<Node, Date> nodes = getNodes();
 		List<Proc> ps = getProcs();
 		List<Choreo> choreos = choreoService.getChoreos();
@@ -121,45 +122,53 @@ public class ProcService {
 	
 	private List<Proc> getPs(String indexName, String typeName, String id) {
 		List<Proc> ps = new ArrayList<Proc>();
-		GetResponse resp = elasticService.getNode().client().prepareGet()
-				.setIndex(indexName).setType(typeName).setId(id).execute().actionGet();
-		if (resp.isExists()) {
-			Map<String, Object> map = resp.getSourceAsMap();
-			Object obj = map.get("ps");
-			String json = JSON.toJSONString(obj);
-			if (StringUtils.isNotEmpty(json)) {
-				ps = JSON.parseArray(json, Proc.class);
+		try {
+			GetResponse resp = elasticService.getNode().client().prepareGet()
+					.setIndex(indexName).setType(typeName).setId(id).execute().actionGet();
+			if (resp.isExists()) {
+				Map<String, Object> map = resp.getSourceAsMap();
+				Object obj = map.get("ps");
+				String json = JSON.toJSONString(obj);
+				if (StringUtils.isNotEmpty(json)) {
+					ps = JSON.parseArray(json, Proc.class);
+				}
 			}
+		} catch (IndexNotFoundException e) {
+			//
 		}
 		return ps;
 	}
 	
 	public List<Proc> getProcs() {
 		List<Proc> ps = new ArrayList<Proc>();
-		
-		int size = 100;
-		long total = size;
-		for (int from = 0; from + size <= total; from += size) {
-			//查询数据
-			SearchResponse resp = elasticService.getNode().client().prepareSearch()
-					.setIndices(INDEX_NAME).setTypes(TYPE_NAME_NODE)
-					.setQuery(QueryBuilders.matchAllQuery())
-					.setFrom(from).setSize(size).execute().actionGet();
-			total = resp.getHits().getTotalHits();
-			SearchHit[] hits = resp.getHits().getHits();
-			
-			//解析查询结果
-			for (SearchHit hit : hits) {
-				Map<String, Object> map = hit.getSourceAsMap();
-				Object obj = map.get("ps");
-				String json = JSON.toJSONString(obj);
-				if (StringUtils.isNotEmpty(json)) {
-					List<Proc> list = JSON.parseArray(json, Proc.class);
-					if (list != null) {
-						ps.addAll(list);
+
+		try {
+			int size = 100;
+			long total = size;
+			for (int from = 0; from + size <= total; from += size) {
+				//查询数据
+				SearchResponse resp = elasticService.getNode().client().prepareSearch()
+						.setIndices(INDEX_NAME).setTypes(TYPE_NAME_NODE)
+						.setQuery(QueryBuilders.matchAllQuery())
+						.setFrom(from).setSize(size).execute().actionGet();
+				total = resp.getHits().getTotalHits();
+				SearchHit[] hits = resp.getHits().getHits();
+				
+				//解析查询结果
+				for (SearchHit hit : hits) {
+					Map<String, Object> map = hit.getSourceAsMap();
+					Object obj = map.get("ps");
+					String json = JSON.toJSONString(obj);
+					if (StringUtils.isNotEmpty(json)) {
+						List<Proc> list = JSON.parseArray(json, Proc.class);
+						if (list != null) {
+							ps.addAll(list);
+						}
 					}
 				}
 			}
+		} catch (IndexNotFoundException e) {
+			//pass
 		}
 		return ps;
 	}
@@ -221,7 +230,7 @@ public class ProcService {
 
 	private List<String> distribute(String query, List<String> exists, int count) {
 		List<String> dist = new ArrayList<String>();
-		PaginationList<Node> nodes = nodeService.searchNodes(query, 0, 4096);
+		PaginationList<Node> nodes = nodeService.searchNodes(query, 0, 4096, false);
 		//TODO 考虑资源占用，排除资源不足的节点
 		//TODO 按照进程数排序，尽量平衡分配进程
 		if (nodes.getTotal() > 0) {
@@ -245,8 +254,8 @@ public class ProcService {
 			Date ts = entry.getValue();
 			Node n = entry.getKey();
 			if (now - ts.getTime() > EXP_TIME) {
-				//超时，删除节点数据
-				nodeService.deleteNode(n.getId());
+				//超时，把节点设置成宕机状态
+				nodeService.downNode(n.getId());
 				deleteProcs(n.getId());
 				
 				//删除进程数据
@@ -287,26 +296,30 @@ public class ProcService {
 	private Map<Node, Date> getNodes() throws ParseException {
 		Map<Node, Date> nodes = new HashMap<Node, Date>();
 		
-		int size = 100;
-		long total = size;
-		for (int from = 0; from + size <=total; from += size) {
-			//查询数据
-			SearchResponse resp = elasticService.getNode().client().prepareSearch()
-					.setIndices(NodeService.INDEX_NAME).setTypes(NodeService.TYPE_NAME)
-					.setQuery(QueryBuilders.matchAllQuery())
-					.setFrom(from).setSize(size).execute().actionGet();
-			total = resp.getHits().getTotalHits();
-			SearchHit[] hits = resp.getHits().getHits();
-			
-			//解析查询结果
-			for (SearchHit hit : hits) {
-				String ts = hit.getSourceAsMap().get("timestamp").toString();
-				String json = hit.getSourceAsString();
+		try {
+			int size = 100;
+			long total = size;
+			for (int from = 0; from + size <=total; from += size) {
+				//查询数据
+				SearchResponse resp = elasticService.getNode().client().prepareSearch()
+						.setIndices(NodeService.INDEX_NAME).setTypes(NodeService.TYPE_NAME_UP)
+						.setQuery(QueryBuilders.matchAllQuery())
+						.setFrom(from).setSize(size).execute().actionGet();
+				total = resp.getHits().getTotalHits();
+				SearchHit[] hits = resp.getHits().getHits();
 				
-				Date date = TIME_FORMAT.get().parse(ts);
-				Node n = JSON.parseObject(json, Node.class);
-				nodes.put(n, date);
+				//解析查询结果
+				for (SearchHit hit : hits) {
+					String ts = hit.getSourceAsMap().get("timestamp").toString();
+					String json = hit.getSourceAsString();
+					
+					Date date = TIME_FORMAT.get().parse(ts);
+					Node n = JSON.parseObject(json, Node.class);
+					nodes.put(n, date);
+				}
 			}
+		} catch (IndexNotFoundException e) {
+			//pass
 		}
 		
 		return nodes;
@@ -348,41 +361,53 @@ public class ProcService {
 	}
 	
 	private void deleteProcs(String node) {
-		DeleteResponse resp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_NODE)
-				.setId(node).execute().actionGet();
-		log.debug("delete node: {}", resp.getId());
+		try {
+			DeleteResponse resp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_NODE)
+					.setId(node).execute().actionGet();
+			log.debug("delete node: {}", resp.getId());
+		} catch (IndexNotFoundException e) {
+			//pass
+		}
 	}
 
 	private void delApps() {
 		//查询进程缓存
 		List<String> names = new ArrayList<String>();
-		int size = 100;
-		long total = size;
-		for (int from = 0; from + size <= total; from += size) {
-			//查询数据
-			SearchResponse resp = elasticService.getNode().client().prepareSearch()
-					.setIndices(INDEX_NAME).setTypes(TYPE_NAME_APP)
-					.setQuery(QueryBuilders.matchAllQuery())
-					.setFrom(from).setSize(size).execute().actionGet();
-			total = resp.getHits().getTotalHits();
-			SearchHit[] hits = resp.getHits().getHits();
-			
-			//得到查询结果
-			for (SearchHit hit : hits) {
-				names.add(hit.getId());
+		try {
+			int size = 100;
+			long total = size;
+			for (int from = 0; from + size <= total; from += size) {
+				//查询数据
+				SearchResponse resp = elasticService.getNode().client().prepareSearch()
+						.setIndices(INDEX_NAME).setTypes(TYPE_NAME_APP)
+						.setQuery(QueryBuilders.matchAllQuery())
+						.setFrom(from).setSize(size).execute().actionGet();
+				total = resp.getHits().getTotalHits();
+				SearchHit[] hits = resp.getHits().getHits();
+				
+				//得到查询结果
+				for (SearchHit hit : hits) {
+					names.add(hit.getId());
+				}
 			}
+		} catch (IndexNotFoundException e) {
+			//pass
 		}
 		
 		//循环判断缓存应用名是否已经被删除了
 		List<String> apps = appService.getApps();
-		for (String name : names) {
-			if (!apps.contains(name)) {
-				//这个应用已经不存在了
-				DeleteResponse resp = elasticService.getNode().client().prepareDelete()
-						.setIndex(INDEX_NAME).setType(TYPE_NAME_APP)
-						.setId(name).execute().actionGet();
-				log.debug("delete app: {}", resp.getId());
+		try {
+			for (String name : names) {
+				if (!apps.contains(name)) {
+					//这个应用已经不存在了
+					DeleteResponse resp = elasticService.getNode().client().prepareDelete()
+							.setIndex(INDEX_NAME).setType(TYPE_NAME_APP)
+							.setId(name).execute().actionGet();
+					log.debug("delete app: {}", resp.getId());
+				}
 			}
+		} catch (IndexNotFoundException e) {
+			//pass
 		}
 	}
 

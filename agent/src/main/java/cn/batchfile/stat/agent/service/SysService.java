@@ -42,6 +42,14 @@ import cn.batchfile.stat.domain.Proc;
 public class SysService {
 	protected static final Logger log = LoggerFactory.getLogger(SysService.class);
 	private Sigar sigar;
+	private String[] FSS = new String[] {
+			"btrfs", "f2fs", "ext3", "ext4", "hfs", "jfs", "nilfs", 
+			"reiser4", "reiserfs", "udf", "xfs", "zfs", 
+			"ntfs", "refs", "exfat", "fat", "vfat", 
+			"apfs",
+			"adbfs", "encfs", "fuseiso", "gitfs", "gocryptfs", "sshfs", "vdfuse", "bfuse", "xmlfs", 
+			"aufs", "ecryptfs", "mergerfs", "mhddfs", "overlayfs", "unionfs", "squashfs", 
+			"ceph", "glusterfs", "go-ipfs", "moosefs", "openafs", "orangefs", "sheepdog", "tahoe-lafs"};
 	
 	@Value("${store.directory}")
 	private String storeDirectory;
@@ -184,7 +192,7 @@ public class SysService {
 			disk.setTypeName(fs.getTypeName());
 			
 			if (disk.getTotal() > 0 
-					&& containsAny(disk.getSysTypeName(), new String[] {"ext", "apfs", "xfs", "fat", "ntfs"})) {
+					&& isAnyFs(disk.getSysTypeName(), FSS)) {
 				disks.add(disk);
 			}
 		}
@@ -228,9 +236,9 @@ public class SysService {
 		return networks;
 	}
 
-	private boolean containsAny(String s, String[] searchStrs) {
+	private boolean isAnyFs(String s, String[] searchStrs) {
 		for (String con : searchStrs) {
-			if (StringUtils.containsIgnoreCase(s, con)) {
+			if (StringUtils.startsWithIgnoreCase(s, con)) {
 				return true;
 			}
 		}
