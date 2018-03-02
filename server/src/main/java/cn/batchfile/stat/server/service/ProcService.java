@@ -198,10 +198,10 @@ public class ProcService {
 	private void scheduleProc(List<Choreo> choreos) throws IOException {
 		for (Choreo choreo : choreos) {
 			//实际分配的进程数量
-			if (choreo.getDistribution() == null) {
-				choreo.setDistribution(new ArrayList<String>());
+			if (choreo.getDist() == null) {
+				choreo.setDist(new ArrayList<String>());
 			}
-			int dist = choreo.getDistribution().size();
+			int dist = choreo.getDist().size();
 
 			//计划中的进程数量
 			App app = appService.getApp(choreo.getApp());
@@ -211,19 +211,19 @@ public class ProcService {
 			if (dist > scale) {
 				//实际数量大，需要撤销
 				for (int i = 0; i < dist - scale; i ++) {
-					choreo.getDistribution().remove(0);
+					choreo.getDist().remove(0);
 				}
 			} else if (dist < scale) {
 				//实际数量小，需要分配
-				List<String> nodes = distribute(choreo.getQuery(), choreo.getDistribution(), scale - dist);
+				List<String> nodes = distribute(choreo.getQuery(), choreo.getDist(), scale - dist);
 				if (nodes != null) {
-					choreo.getDistribution().addAll(nodes);
+					choreo.getDist().addAll(nodes);
 				}
 			}
 			
 			//保存新的分配方案
-			if (choreo.getDistribution().size() != dist) {
-				choreoService.putDistribution(choreo.getApp(), choreo.getDistribution());
+			if (choreo.getDist().size() != dist) {
+				choreoService.putDist(choreo.getApp(), choreo.getDist());
 			}
 		}
 	}
@@ -278,8 +278,8 @@ public class ProcService {
 		
 		//清理分配数据
 		for (Choreo choreo : choreos) {
-			int len = choreo.getDistribution().size();
-			Iterator<String> i = choreo.getDistribution().iterator();
+			int len = choreo.getDist().size();
+			Iterator<String> i = choreo.getDist().iterator();
 			while (i.hasNext()) {
 				String e = i.next();
 				if (!validNodeIds.contains(e)) {
@@ -287,8 +287,8 @@ public class ProcService {
 				}
 			}
 			
-			if (len != choreo.getDistribution().size()) {
-				choreoService.putDistribution(choreo.getApp(), choreo.getDistribution());
+			if (len != choreo.getDist().size()) {
+				choreoService.putDist(choreo.getApp(), choreo.getDist());
 			}
 		}
 	}

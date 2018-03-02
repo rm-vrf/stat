@@ -45,6 +45,9 @@ public class HealthCheckService {
 	@Autowired
 	private ProcService procService;
 	
+	@Autowired
+	private EventService eventService;
+	
 	@Scheduled(fixedDelay = 5000)
 	public void refresh() throws IOException {
 		synchronized (this) {
@@ -105,12 +108,12 @@ public class HealthCheckService {
 	}
 	
 	private void check(App app, HealthCheck hc, Proc p) throws Exception {
-		log.debug("health check app: {}, pid: {}", app.getName(), p.getPid());
-		HealthCheckHandler handler = handlers.get(p.getPid());
-		
 		if (p == null || hc == null || app == null) {
 			return;
 		}
+		
+		log.debug("health check app: {}, pid: {}", app.getName(), p.getPid());
+		HealthCheckHandler handler = handlers.get(p.getPid());
 
 		//执行检查
 		String protocal = hc.getProtocol();
@@ -132,6 +135,9 @@ public class HealthCheckService {
 		} else {
 			//累加计数器
 			handler.consecutiveFailures ++;
+			
+			//报告事件
+			eventService.putHealthCheckFailEvent(ret);
 			
 			//超过失败次数，杀进程
 			if (handler.consecutiveFailures > hc.getMaxConsecutiveFailures()) {

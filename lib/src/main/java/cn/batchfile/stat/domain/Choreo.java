@@ -8,7 +8,7 @@ public class Choreo {
 	private String app;
 	private int scale;
 	private String query;
-	private List<String> distribution = new ArrayList<String>();
+	private List<String> dist = new ArrayList<String>();
 
 	public String getApp() {
 		return app;
@@ -33,12 +33,12 @@ public class Choreo {
 		this.query = query;
 	}
 
-	public List<String> getDistribution() {
-		return distribution;
+	public List<String> getDist() {
+		return dist;
 	}
 
-	public void setDistribution(List<String> distribution) {
-		this.distribution = distribution;
+	public void setDist(List<String> dist) {
+		this.dist = dist;
 	}
 
 }

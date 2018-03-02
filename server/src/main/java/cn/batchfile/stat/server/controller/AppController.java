@@ -3,9 +3,11 @@ package cn.batchfile.stat.server.controller;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.domain.App;
@@ -31,8 +34,9 @@ public class AppController extends cn.batchfile.stat.controller.AppController {
 	}
 	
 	@GetMapping("/v1/app")
-	public List<String> getApps() {
-		return super.getApps();
+	public List<String> getApps(@RequestParam(name="query", defaultValue="") String query) {
+		List<String> names = super.getApps();
+		return names.stream().filter(app -> StringUtils.containsIgnoreCase(app, query)).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/v1/app/{name}")

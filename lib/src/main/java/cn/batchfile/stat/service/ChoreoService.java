@@ -101,15 +101,15 @@ public abstract class ChoreoService {
 		//按照节点过滤实例数量
 		for (Choreo ch : chs) {
 			int scale = 0;
-			if (ch.getDistribution() != null) {
-				for (String nodeId : ch.getDistribution()) {
+			if (ch.getDist() != null) {
+				for (String nodeId : ch.getDist()) {
 					if (StringUtils.equals(nodeId, node)) {
 						scale ++;
 					}
 				}
 			}
 			ch.setScale(scale);
-			ch.getDistribution().clear();
+			ch.getDist().clear();
 		}
 		
 		return chs;
@@ -131,13 +131,13 @@ public abstract class ChoreoService {
 		putChoreo(choreo);
 	}
 	
-	public List<String> getDistribution(String app) throws IOException {
-		return getChoreo(app).getDistribution();
+	public List<String> getDist(String app) throws IOException {
+		return getChoreo(app).getDist();
 	}
 
-	public void putDistribution(String app, List<String> distribution) throws IOException {
+	public void putDist(String app, List<String> distribution) throws IOException {
 		Choreo choreo = getChoreo(app);
-		choreo.setDistribution(distribution);
+		choreo.setDist(distribution);
 		putChoreo(choreo);
 	}
 	

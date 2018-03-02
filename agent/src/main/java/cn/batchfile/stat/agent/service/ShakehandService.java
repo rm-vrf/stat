@@ -19,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 
 import cn.batchfile.stat.domain.App;
 import cn.batchfile.stat.domain.Choreo;
+import cn.batchfile.stat.domain.Event;
 import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.Proc;
 import cn.batchfile.stat.domain.RestResponse;
@@ -48,6 +49,9 @@ public class ShakehandService {
 	@Autowired
 	private ChoreoService choreoService;
 	
+	@Autowired
+	private EventService eventService;
+	
 	@Scheduled(fixedDelay = 5000)
 	public void shakehand() throws IOException {
 		if (StringUtils.isEmpty(masterAddress)) {
@@ -62,8 +66,18 @@ public class ShakehandService {
 		
 		//同步应用信息
 		refreshApps();
+		
+		//报告事件
+		reportEvents();
 	}
 	
+	private void reportEvents() {
+		List<Event> events = eventService.getEvents();
+		String url = String.format("%s/v1/event", masterAddress);
+		RestResponse<?> resp = restTemplate.postForObject(url, events, RestResponse.class);
+		log.debug("report events, resp: {}", resp.isOk());
+	}
+
 	private void refreshApps() throws UnsupportedEncodingException, IOException {
 		List<String> existNames = appService.getApps();
 		

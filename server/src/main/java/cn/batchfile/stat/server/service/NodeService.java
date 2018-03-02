@@ -44,6 +44,9 @@ public class NodeService {
 	@Autowired
 	private ElasticService elasticService;
 	
+	@Autowired
+	private EventService eventService;
+	
 	public void putNode(Node node) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("id", node.getId());
@@ -63,12 +66,22 @@ public class NodeService {
 		long version = indexResp.getVersion();
 		log.debug("index node data, id: {}, version: {}", node.getId(), version);
 		
-		//删除离线节点
+		//判断是否存在离线节点
 		try {
-			DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete()
+			GetResponse getResponse = elasticService.getNode().client().prepareGet()
 					.setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
 					.setId(node.getId()).execute().actionGet();
-			log.debug("delete node from down type: {}", deleteResp.getId());
+			
+			if (getResponse.isExists()) {
+				//删除离线节点
+				DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete()
+						.setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
+						.setId(node.getId()).execute().actionGet();
+				log.debug("delete node from down type: {}", deleteResp.getId());
+				
+				//报告事件
+				eventService.putNodeUpEvent(node);
+			}
 		} catch (IndexNotFoundException e) {
 			//pass
 		}
@@ -135,7 +148,7 @@ public class NodeService {
 		if (getResp.isExists()) {
 			//把agent地址去掉，用这个属性标注节点的在线状态
 			Map<String, Object> node = getResp.getSourceAsMap();
-			node.remove("agentAddress");
+			Object agentAddress = node.remove("agentAddress");
 			
 			//删除在线节点
 			DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
@@ -149,6 +162,10 @@ public class NodeService {
 			
 			long version = indexResp.getVersion();
 			log.debug("index node data to down type, id: {}, version: {}", id, version);
+			
+			//报告事件
+			node.put("agentAddress", agentAddress);
+			eventService.putNodeDownEvent(node);
 		}
 	}
 }

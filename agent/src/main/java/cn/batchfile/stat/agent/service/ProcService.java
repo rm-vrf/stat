@@ -78,6 +78,9 @@ public class ProcService {
 	private HealthCheckService healthCheckService;
 	
 	@Autowired
+	private EventService eventService;
+	
+	@Autowired
 	private DownloadService downloadService;
 	
 	@PostConstruct
@@ -171,6 +174,9 @@ public class ProcService {
 			//删除登记信息
 			deleteProc(proc.getPid());
 			log.info("stop process, pid: {}, app name: {}", proc.getPid(), proc.getApp());
+			
+			//报告事件
+			eventService.putKillProcessEvent(app.getName(), proc.getPid());
 		}
 	}
 	
@@ -226,6 +232,9 @@ public class ProcService {
 				//删除登记信息
 				deleteProc(proc.getPid());
 				log.info("stop process, pid: {}, app name: {}", proc.getPid(), proc.getApp());
+				
+				//报告事件
+				eventService.putKillProcessEvent(app.getName(), proc.getPid());
 			}
 		}
 	}
@@ -320,6 +329,9 @@ public class ProcService {
 				
 				//注册健康检查
 				healthCheckService.register(app, proc);
+				
+				//报告事件
+				eventService.putStartProcessEvent(app.getName(), proc.getPid());
 			}
 		}
 	}
@@ -478,6 +490,9 @@ public class ProcService {
 				
 				//删除进程信息
 				deleteProc(pid);
+				
+				//报告事件
+				eventService.putStopProcessEvent(app.getName(), pid);
 			}
 		}
 	}
