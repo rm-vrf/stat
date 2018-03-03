@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>所有应用 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="active item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="item" href="./new_app.html">
+								<i class="rocket icon"></i> 部署新应用
+							</a>
+							<a class="active teal item" href="app_list.html">
+								<i class="cloud icon"></i> 所有应用
+							</a>
+							<a class="item" href="app_stat.html">
+								<i class="bar chart icon"></i> 应用统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large cloud icon"></i>
+								<div class="content">
+									所有应用
+									<div class="sub header">所有应用都在这里</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<div class="ui vertical segment">
+						<a class="ui red small labeled icon add button" href="./new_app.html"><i class="add icon"></i>添加新应用</a>
+						<div class="ui small icon input right">
+							<input id="app_name" type="text" placeholder="输入应用名称搜索">
+							<i id="search_button" class="search icon"></i>
+						</div>
+					</div>
+					<div id="appList"></div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/framework.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.zclip.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/alert.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<script>
+	$(document).ready(function() {
+		$('#search_button').click(function() {
+			$("#appList").empty();
+			show_apps($('#app_name').val());
+		});
+		show_apps($('#app_name').val());
+		setInterval(function() {
+			show_stats();
+		}, 5000);
+	});
+	
+	function show_apps(query) {
+		$.get('/v1/app?query=' + encodeURIComponent(query), function(app_names, status, xhr) {
+			for (i = 0; i < app_names.length; i++) {
+				$("#appList").append(get_app_html(app_names[i]));
+			}
+			$.each(app_names, function(i, app_name) {
+				show_app(app_name);
+			});
+			show_stats();
+		});
+	}
+	
+	function show_stats() {
+		var app_names = get_keys();
+		$.each(app_names, function(i, app_name) {
+			show_stat(app_name);
+		});
+	}
+	
+	function show_stat(app_name) {
+		$.get('/v1/app/' + app_name, function(app, status, xhr) {
+			$.get('/v1/app/' + app_name + '/choreo', function(choreo, status, xhr) {
+				$.get('/v1/app/' + app_name + '/proc', function(ps, status, xhr) {
+					//app status
+					if (app.start) {
+						$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
+						$('#oper_button_' + app.name).removeClass("green");
+						$('#oper_button_' + app.name).addClass("red");
+						$('#oper_i_' + app.name).removeClass("play");
+						$('#oper_i_' + app.name).addClass("stop");
+						$('#oper_s_' + app.name).text("停 止");
+						$('#oper_button_' + app.name).attr('onclick', "stop_app('" + app.name + "')");
+					} else {
+						$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+						$('#oper_button_' + app.name).addClass("green");
+						$('#oper_button_' + app.name).removeClass("red");
+						$('#oper_i_' + app.name).addClass("play");
+						$('#oper_i_' + app.name).removeClass("stop");
+						$('#oper_s_' + app.name).text("启 动");
+						$('#oper_button_' + app.name).attr('onclick', "start_app('" + app.name + "')");
+					}
+					//process status
+					var scale = app.start ? choreo.scale : 0;
+					$('#stat_' + app_name).empty();
+					if (scale == 0) {
+						$('#stat_' + app_name).append('无');
+					} else {
+						for (var i = 0; i < scale; i ++) {
+							if (i < ps.length) {
+								$('#stat_' + app_name).append('<span class="ui green ok label" ></span> ');
+							} else if (i < choreo.dist.length) {
+								$('#stat_' + app_name).append('<span class="ui orange error label" ></span> ');
+							} else {
+								$('#stat_' + app_name).append('<span class="ui red error label" ></span> ');
+							}
+						}
+					}
+					//instance desc
+					var inst = "";
+					if (scale == 0) {
+						inst += '没有计划';
+					} else {
+						inst += '计划 ' + scale + ' 个';
+						if (choreo.dist.length > 0) {
+							var distinct = new Array();
+							for (var i=0; i<choreo.dist.length; i++) {
+								if ($.inArray(choreo.dist[i], distinct) < 0)
+									distinct.push(choreo.dist[i]);
+							}
+							inst += ', 在 ' + distinct.length + ' 个节点上分配 ' + choreo.dist.length + ' 个';
+							if (ps.length > 0) {
+								inst += ', 运行 ' + ps.length + ' 个';
+							} else {
+								inst += ', 没有运行';
+							}
+						} else {
+							inst += ', 没有分配';
+						}
+					}
+					$('#stat_' + app_name).text(inst);
+					//error
+					if (ps.length < scale) {
+						$('#error_' + app_name).show();
+						$('#error_' + app_name).removeClass('hidden');
+					} else {
+						$('#error_' + app_name).hide();
+					}
+				});
+			});
+		});
+	}
+	
+	function get_keys() {
+		var keys = new Array();
+		var ctls = $('.app_key');
+		if (ctls) {
+			for (var i = 0; i < ctls.length; i++) {
+				var ctl = ctls[i];
+				keys.push(ctl.innerHTML);
+			}
+		}
+		return keys;
+	}
+	
+	function get_app_html(app_name) {
+		var html = '<div class="ui app two column middle aligned vertical grid segment">';
+		html += '<div class="ui message hidden app_key">' + app_name + '</div>';
+		html += '<div class="column verborder">';
+		html += '<div id="error_' + app_name + '" class="ui left corner label error hidden"><div class="text">异常</div></div>';
+		html += '<div class="ui info segment">';
+		html += '<h5 class="ui header">' + app_name + ' <span id="status_' + app_name + '"></span></h5>';
+		html += '<p>状态：<span id="stat_' + app_name + '" class="stress"></span></p>';
+		html += '<p>资源：<span id="res_' + app_name + '"></span></p>';
+		html += '<p>描述：<span id="desc_' + app_name + '"></span></p>';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="center aligned column">';
+		html += '<div class="ui buttons">';
+		html += '<a id="oper_button_' + app_name + '" class="ui tiny button"><i id="oper_i_' + app_name + '" class="icon"></i><span id="oper_s_' + app_name + '">启 动</span></a>';
+		html += '<a class="ui tiny blue button" href="./app.html?name=' + app_name + '"><i class="setting icon"></i>管 理</a>';
+		html += '<a class="ui tiny basic button" onclick="delete_app(\'' + app_name + '\')"><i class="trash icon"></i>删 除</a>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		return html;
+	}
+	
+	function show_app(app_name) {
+		$.get('/v1/app/' + app_name, function(app, status, xhr) {
+			if (app) {
+				if (app.start) {
+					$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
+				} else {
+					$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+				}
+				if (app.resAlloc) {
+					var text = 'CPU ' + app.resAlloc.cpus + ' 核，内存 ' + byteCountToDisplaySize(app.resAlloc.mem) + '，磁盘空间 ' + byteCountToDisplaySize(app.resAlloc.disk);
+					$('#res_' + app.name).html(text);
+				} else {
+					$('#res_' + app.name).text('不分配');
+				}
+				var cmd = '';
+				if (app.toProcess) {
+					cmd = app.toProcess + ' ';
+				}
+				if (app.args) {
+					cmd += app.args.join(' ');
+				}
+				$('#desc_' + app.name).text(cmd);
+			}
+		});
+	}
+	
+	function start_app(name) {
+		alert('start: ' + name);
+	}
+	
+	function stop_app(name) {
+		alert('stop: ' + name);
+	}
+	
+	function delete_app(name) {
+		alert('delete: ' + name);
+	}
+	</script>
+</body>
+</html>

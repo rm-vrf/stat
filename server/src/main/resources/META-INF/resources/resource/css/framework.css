@@ -1165,7 +1165,7 @@ body > .ui.grid {
 }
 
 /*----------------------
-     Only (Device)
+     Only (App)
 -----------------------*/
 
 /* Mobile Only */
@@ -11197,7 +11197,7 @@ a.ui.teal.label:hover:before {
        Colors
 --------------------*/
 
-.ui.device.segment, .ui.blue.segment ,.ui.info.segment{
+.ui.app.segment, .ui.blue.segment ,.ui.info.segment{
   -webkit-box-shadow:none;
   box-shadow:none;
   -webkit-box-shadow:none;
