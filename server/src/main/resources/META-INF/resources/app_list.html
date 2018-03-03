@@ -5,6 +5,11 @@
 	<title>所有应用 | STAT HUB</title>
 	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
 </head>
 <body>
 	<div class="page">
@@ -100,11 +105,6 @@
 			</div>
 		</div>
 	</footer>
-	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
-	<script type="text/javascript" src="resource/javascript/framework.js"></script>
-	<script type="text/javascript" src="resource/javascript/jquery.zclip.min.js"></script>
-	<script type="text/javascript" src="resource/javascript/alert.js"></script>
-	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
 	<script>
 	$(document).ready(function() {
 		$('#search_button').click(function() {
@@ -144,37 +144,22 @@
 					if (app.start) {
 						$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
 						$('#oper_button_' + app.name).removeClass("green");
-						$('#oper_button_' + app.name).addClass("red");
+						$('#oper_button_' + app.name).addClass("black");
 						$('#oper_i_' + app.name).removeClass("play");
 						$('#oper_i_' + app.name).addClass("stop");
 						$('#oper_s_' + app.name).text("停 止");
 						$('#oper_button_' + app.name).attr('onclick', "stop_app('" + app.name + "')");
 					} else {
-						$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+						$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
 						$('#oper_button_' + app.name).addClass("green");
-						$('#oper_button_' + app.name).removeClass("red");
+						$('#oper_button_' + app.name).removeClass("black");
 						$('#oper_i_' + app.name).addClass("play");
 						$('#oper_i_' + app.name).removeClass("stop");
 						$('#oper_s_' + app.name).text("启 动");
 						$('#oper_button_' + app.name).attr('onclick', "start_app('" + app.name + "')");
 					}
-					//process status
-					var scale = app.start ? choreo.scale : 0;
-					$('#stat_' + app_name).empty();
-					if (scale == 0) {
-						$('#stat_' + app_name).append('无');
-					} else {
-						for (var i = 0; i < scale; i ++) {
-							if (i < ps.length) {
-								$('#stat_' + app_name).append('<span class="ui green ok label" ></span> ');
-							} else if (i < choreo.dist.length) {
-								$('#stat_' + app_name).append('<span class="ui orange error label" ></span> ');
-							} else {
-								$('#stat_' + app_name).append('<span class="ui red error label" ></span> ');
-							}
-						}
-					}
 					//instance desc
+					var scale = app.start ? choreo.scale : 0;
 					var inst = "";
 					if (scale == 0) {
 						inst += '没有计划';
@@ -222,13 +207,13 @@
 	}
 	
 	function get_app_html(app_name) {
-		var html = '<div class="ui app two column middle aligned vertical grid segment">';
+		var html = '<div id="app_div_' + app_name + '" class="ui app two column middle aligned vertical grid segment">';
 		html += '<div class="ui message hidden app_key">' + app_name + '</div>';
 		html += '<div class="column verborder">';
 		html += '<div id="error_' + app_name + '" class="ui left corner label error hidden"><div class="text">异常</div></div>';
 		html += '<div class="ui info segment">';
 		html += '<h5 class="ui header">' + app_name + ' <span id="status_' + app_name + '"></span></h5>';
-		html += '<p>状态：<span id="stat_' + app_name + '" class="stress"></span></p>';
+		html += '<p>进程：<span id="stat_' + app_name + '" class="stress"></span></p>';
 		html += '<p>资源：<span id="res_' + app_name + '"></span></p>';
 		html += '<p>描述：<span id="desc_' + app_name + '"></span></p>';
 		html += '</div>';
@@ -250,7 +235,7 @@
 				if (app.start) {
 					$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
 				} else {
-					$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+					$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
 				}
 				if (app.resAlloc) {
 					var text = 'CPU ' + app.resAlloc.cpus + ' 核，内存 ' + byteCountToDisplaySize(app.resAlloc.mem) + '，磁盘空间 ' + byteCountToDisplaySize(app.resAlloc.disk);
@@ -271,15 +256,39 @@
 	}
 	
 	function start_app(name) {
-		alert('start: ' + name);
+		$.post('/v1/app/' + name + '/_start', function(data, status, xhr) {
+			jAlert('已经对应用 ' + name + ' 发出启动指令', '提示');
+		});
 	}
 	
 	function stop_app(name) {
-		alert('stop: ' + name);
+		jConfirm('是否要停止应用 ' + name + ' ？', '确认', function(r) {
+			if (r) {
+				$.post('/v1/app/' + name + '/_stop', function(data, status, xhr) {
+					jAlert('已经对应用 ' + name + ' 发出停止指令', '提示');
+				});
+			}
+		});
 	}
 	
 	function delete_app(name) {
-		alert('delete: ' + name);
+		jConfirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？', '确认', function(r) {
+			if (r) {
+				$.ajax({
+					url: '/v1/app/' + name,
+					type: 'DELETE',
+					contentType: 'application/json',
+					dataType: 'json',
+					success: function(data, status, xhr) {
+						$('#app_div_' + name).remove();
+						jAlert('已经删除应用 ' + name, '提示');
+					},
+					error: function(xhr, status, error) {
+						jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '提示');
+					}
+				});
+			}
+		});
 	}
 	</script>
 </body>

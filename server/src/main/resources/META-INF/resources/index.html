@@ -5,6 +5,8 @@
 	<title>管理首页 | STAT HUB</title>
 	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
 </head>
 <body>
 	<div class="page">
@@ -101,11 +103,6 @@
 			</div>
 		</div>
 	</footer>
-	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
-	<script type="text/javascript" src="resource/javascript/framework.js"></script>
-	<script type="text/javascript" src="resource/javascript/jquery.zclip.min.js"></script>
-	<script type="text/javascript" src="resource/javascript/alert.js"></script>
-	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
 	<script>
 	$(document).ready(function() {
 		$.ajax({
@@ -184,7 +181,7 @@
 					if (app.start) {
 						$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
 					} else {
-						$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+						$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
 					}
 					//process status
 					var scale = app.start ? choreo.scale : 0;
@@ -254,7 +251,7 @@
 				if (app.start) {
 					$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
 				} else {
-					$('#status_' + app.name).html('<span class="ui type label teal">停止</span>');
+					$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
 				}
 				if (app.resAlloc) {
 					var text = 'CPU ' + app.resAlloc.cpus + ' 核，内存 ' + byteCountToDisplaySize(app.resAlloc.mem) + '，磁盘空间 ' + byteCountToDisplaySize(app.resAlloc.disk);
