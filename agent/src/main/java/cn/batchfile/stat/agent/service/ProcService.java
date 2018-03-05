@@ -271,7 +271,7 @@ public class ProcService {
 		return list;
 	}
 	
-	private void startScheduleProc() throws IOException, CommandLineException, InterruptedException, SigarException {
+	private void startScheduleProc() throws IOException, CommandLineException, InterruptedException {
 		//登记应用
 		List<App> apps = new ArrayList<App>();
 		List<String> appNames = appService.getApps();
@@ -311,17 +311,10 @@ public class ProcService {
 				log.info("start proc of app: {}, #{}", app.getName(), i);
 				long pid = startProc(app, proc);
 
-				//获取子进程编号
-				Thread.sleep(1000);
-				List<Proc> ps = sysService.ps();
-				getTree(proc.getChildren(), pid, ps);
-				log.info("started, pid: {}, tree: {}", pid, proc.getChildren().toString());
-
 				//补充进程的基本信息
 				proc.setApp(app.getName());
 				proc.setNode(nodeService.getNode().getId());
 				proc.setPid(pid);
-				composeProc(proc, ps);
 				proc.setStartTime(TIME_FORMAT.get().format(new Date()));
 				
 				//保存进程信息
@@ -338,19 +331,20 @@ public class ProcService {
 	
 	private void composeProc(Proc proc, List<Proc> ps) {
 		//在列表中寻找进程
-		Proc p = null;
-		for (Proc e : ps) {
-			if (e.getPid() == proc.getPid()) {
-				p = e;
-				break;
-			}
-		}
+		List<Proc> list = ps.stream().filter(p -> p.getPid() == proc.getPid()).collect(Collectors.toList());
+		Proc p = list != null && list.size() > 0 ? list.get(0) : null;
 
 		//一定要有，没有就不正常了
 		if (p != null) {
-			proc.setPpid(p.getPpid());
-			proc.setStartTime(p.getStartTime());
-			proc.setUid(p.getUid());
+			if (proc.getPpid() == 0) {
+				proc.setPpid(p.getPpid());
+			}
+			if (StringUtils.isEmpty(proc.getStartTime())) {
+				proc.setStartTime(p.getStartTime());
+			}
+			if (StringUtils.isEmpty(proc.getUid())) {
+				proc.setUid(p.getUid());
+			}
 		}
 	}
 
@@ -476,13 +470,14 @@ public class ProcService {
 		return ret;
 	}
 	
-	private void checkFileStore() throws IOException {
+	private void checkFileStore() throws IOException, SigarException {
+		List<Proc> ps = sysService.ps();
 		List<Long> list = getProcs();
 		for (long pid : list) {
 			Proc proc = getProc(pid);
 
 			//有一种异常的情况：主进程已经没了，孩子进程还在。全部重启，也可以等到健康检查
-			if (!runningProc(proc)) {
+			if (!runningProc(proc, ps)) {
 				//为了保险，把进程杀干净
 				App app = appService.getApp(proc.getApp());
 				int signal = app == null ? 9 : app.getKillSignal();
@@ -493,18 +488,30 @@ public class ProcService {
 				
 				//报告事件
 				eventService.putStopProcessEvent(app.getName(), pid);
+				
+			} else if (proc.getPpid() == 0) {
+				//没有ppid，补充进程信息
+				composeProc(proc, ps);
+				
+				//补充子进程信息
+				getTree(proc.getChildren(), proc.getPid(), ps);
+				log.info("compose ppid, pid: {}, ppid: {}, children: {}", 
+						proc.getPid(), proc.getPpid(), proc.getChildren().toString());
+				
+				//保存进程信息
+				putProc(proc);
 			}
 		}
 	}
 	
-	private boolean runningProc(Proc proc) {
+	private boolean runningProc(Proc proc, List<Proc> ps) {
 		List<Long> pids = new ArrayList<Long>();
 		pids.add(proc.getPid());
 		//判断进程状态的时候，以主进程为准，子进程不算
 		//pids.addAll(proc.getTree());
 		
 		for (long pid : pids) {
-			if (runningProc(pid)) {
+			if (runningProc(pid, ps)) {
 				return true;
 			}
 		}
@@ -512,9 +519,9 @@ public class ProcService {
 		return false;
 	}
 	
-	private boolean runningProc(long pid) {
-		Proc p = sysService.ps(pid);
-		return p != null;
+	private boolean runningProc(long pid, List<Proc> ps) {
+		List<Proc> list = ps.stream().filter(p -> p.getPid() == pid).collect(Collectors.toList());
+		return list != null && list.size() > 0;
 	}
 	
 	private void cleanSystemOut(Map<Long, LinkedBlockingQueue<String>> map) {

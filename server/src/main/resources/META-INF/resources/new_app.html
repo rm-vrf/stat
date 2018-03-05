@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>所有应用 | STAT HUB</title>
+	<title>部署应用 | STAT HUB</title>
 	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
@@ -55,10 +55,10 @@
 				<div class="four wide column">
 					<div class="verticalMenu">
 						<div class="ui vertical pointing menu fluid">
-							<a class="item" href="./new_app.html">
+							<a class="active teal  item" href="./new_app.html">
 								<i class="rocket icon"></i> 部署新应用
 							</a>
-							<a class="active teal item" href="app_list.html">
+							<a class="item" href="app_list.html">
 								<i class="cloud icon"></i> 所有应用
 							</a>
 							<a class="item" href="app_stat.html">
@@ -72,14 +72,114 @@
 					<div class="pageHeader">
 						<div class="segment">
 							<h3 class="ui dividing header">
-								<i class="large cloud icon"></i>
+								<i class="large rocket icon"></i>
 								<div class="content">
-									所有应用
-									<div class="sub header">所有应用都在这里</div>
+									部署应用
+									<div class="sub header">输入应用设置在节点上运行</div>
 								</div>
 							</h3>
 						</div>
 					</div>
+					<div class="ui form fluid vertical segment">
+						<form name="form" action="/user/deploy" method="post">
+							<!-- element -->
+							<div class="two fields">
+								<div class="field">
+									<label>应用名称</label>
+									<div class="ui small left icon input">
+										<input type="text" style="width:404px" placeholder="应用名称包含中文、英文、数字字符，不能包含'.'、'*'等特殊字符">
+										<i class="cloud icon"></i>
+									</div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>进程</label>
+									<div class="ui small left icon input">
+										<input type="text" style="width:404px" placeholder="必须填写">
+										<i class="code icon"></i>
+									</div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>工作目录</label>
+									<div class="ui small left icon input">
+										<input type="text" style="width:404px">
+										<i class="folder icon"></i>
+									</div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>运行参数</label>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>环境变量</label>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:184px"> = <input type="text" style="width:204px"> <img src="images/11-16.png" align="absmiddle"></div>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:184px"> = <input type="text" style="width:204px"> <img src="images/11-16.png" align="absmiddle"></div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>退出信号</label>
+									<div class="ui small left input">
+										<select name="killSignal" id="killSignal" style="width:404px">
+											<option value="1"> 1 - HUP (hang up)</option>
+											<option value="2"> 2 - INT (interrupt)</option>
+											<option value="3"> 3 - QUIT (quit)</option>
+											<option value="6"> 6 - ABRT (abort)</option>
+											<option value="9"> 9 - KILL (non-catchable, non-ignorable kill)</option>
+											<option value="14">14 - ALRM (alarm clock)</option>
+											<option value="15" selected>15 - TERM (software termination signal)</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>端口</label>
+									<div class="ui small left input"><input type="text" style="width:404px" placeholder="必须填写" value="0,0"></div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>下载地址</label>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
+									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>分配资源</label>
+									<div class="ui small left input">
+										<select name="killSignal" id="killSignal" style="width:404px">
+											<option value="1">分配</option>
+											<option value="0" selected>不分配</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<div class="two fields">
+								<div class="field">
+									<label>健康检查</label>
+									<div class="ui small left input">
+										<select name="killSignal" id="killSignal" style="width:404px">
+											<option value="1">开启</option>
+											<option value="0" selected>关闭</option>
+										</select>
+									</div>
+								</div>
+							</div>
+							<input class="ui small blue submit button" type="submit" value="立即保存">
+							<input class="ui small basic button" type="reset" value="取消">
+						</form>
+					</div>
+					<!-- 
 					<div class="ui vertical segment">
 						<a class="ui red small labeled icon add button" href="./new_app.html"><i class="add icon"></i>添加新应用</a>
 						<div class="ui small icon input right">
@@ -88,6 +188,7 @@
 						</div>
 					</div>
 					<div id="appList"></div>
+					-->
 				</div>
 			</div>
 		</div>	
@@ -107,14 +208,6 @@
 	</footer>
 	<script>
 	$(document).ready(function() {
-		$('#search_button').click(function() {
-			$("#appList").empty();
-			show_apps($('#app_name').val());
-		});
-		show_apps($('#app_name').val());
-		setInterval(function() {
-			show_stats();
-		}, 5000);
 	});
 	
 	function show_apps(query) {
@@ -136,32 +229,28 @@
 		});
 	}
 	
-	function set_button_status(app_name, start) {
-		if (start) {
-			$('#status_' + app_name).html('<span class="ui type label green">启动</span>');
-			$('#oper_button_' + app_name).removeClass("green");
-			$('#oper_button_' + app_name).addClass("black");
-			$('#oper_i_' + app_name).removeClass("play");
-			$('#oper_i_' + app_name).addClass("stop");
-			$('#oper_s_' + app_name).text("停 止");
-			$('#oper_button_' + app_name).attr('onclick', "stop_app('" + app_name + "')");
-		} else {
-			$('#status_' + app_name).html('<span class="ui type label black">停止</span>');
-			$('#oper_button_' + app_name).addClass("green");
-			$('#oper_button_' + app_name).removeClass("black");
-			$('#oper_i_' + app_name).addClass("play");
-			$('#oper_i_' + app_name).removeClass("stop");
-			$('#oper_s_' + app_name).text("启 动");
-			$('#oper_button_' + app_name).attr('onclick', "start_app('" + app_name + "')");
-		}
-	}
-	
 	function show_stat(app_name) {
 		$.get('/v1/app/' + app_name, function(app, status, xhr) {
 			$.get('/v1/app/' + app_name + '/choreo', function(choreo, status, xhr) {
 				$.get('/v1/app/' + app_name + '/proc', function(ps, status, xhr) {
 					//app status
-					set_button_status(app_name, app.start);
+					if (app.start) {
+						$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
+						$('#oper_button_' + app.name).removeClass("green");
+						$('#oper_button_' + app.name).addClass("black");
+						$('#oper_i_' + app.name).removeClass("play");
+						$('#oper_i_' + app.name).addClass("stop");
+						$('#oper_s_' + app.name).text("停 止");
+						$('#oper_button_' + app.name).attr('onclick', "stop_app('" + app.name + "')");
+					} else {
+						$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
+						$('#oper_button_' + app.name).addClass("green");
+						$('#oper_button_' + app.name).removeClass("black");
+						$('#oper_i_' + app.name).addClass("play");
+						$('#oper_i_' + app.name).removeClass("stop");
+						$('#oper_s_' + app.name).text("启 动");
+						$('#oper_button_' + app.name).attr('onclick', "start_app('" + app.name + "')");
+					}
 					//instance desc
 					var scale = app.start ? choreo.scale : 0;
 					var inst = "";
@@ -185,22 +274,7 @@
 							inst += ', 没有分配';
 						}
 					}
-					$('#proc_' + app_name).text(inst);
-					//status desc
-					$('#stat_' + app_name).empty();
-					if (scale == 0) {
-						$('#stat_' + app_name).append('无');
-					} else {
-						for (var i = 0; i < scale; i ++) {
-							if (i < ps.length) {
-								$('#stat_' + app_name).append('<span class="ui green ok label" ></span> ');
-							} else if (i < choreo.dist.length) {
-								$('#stat_' + app_name).append('<span class="ui orange error label" ></span> ');
-							} else {
-								$('#stat_' + app_name).append('<span class="ui red error label" ></span> ');
-							}
-						}
-					}
+					$('#stat_' + app_name).text(inst);
 					//error
 					if (ps.length < scale) {
 						$('#error_' + app_name).show();
@@ -232,10 +306,9 @@
 		html += '<div id="error_' + app_name + '" class="ui left corner label error hidden"><div class="text">异常</div></div>';
 		html += '<div class="ui info segment">';
 		html += '<h5 class="ui header">' + app_name + ' <span id="status_' + app_name + '"></span></h5>';
-		html += '<p>进程：<span id="proc_' + app_name + '" class="stress"></span></p>';
+		html += '<p>进程：<span id="stat_' + app_name + '" class="stress"></span></p>';
 		html += '<p>资源：<span id="res_' + app_name + '"></span></p>';
 		html += '<p>描述：<span id="desc_' + app_name + '"></span></p>';
-		html += '<p>状态：<span id="stat_' + app_name + '" class="procStatus"></span></p>';
 		html += '</div>';
 		html += '</div>';
 		html += '<div class="center aligned column">';
@@ -252,7 +325,6 @@
 	function show_app(app_name) {
 		$.get('/v1/app/' + app_name, function(app, status, xhr) {
 			if (app) {
-				set_button_status(app_name, app.start);
 				if (app.start) {
 					$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
 				} else {
