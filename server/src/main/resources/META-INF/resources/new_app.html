@@ -10,6 +10,24 @@
 	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
 	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<style type="text/css">
+		.repeat {
+			height:48px;
+		}
+		.ui.form .ui.input .full-width {
+			width:450px;
+		}
+		.ui.form .ui.input .part-width {
+			width:430px;
+		}
+		.ui.form .ui.input .half-width {
+			width:207px;
+		}
+		.ui.form .ui.input {
+			width:550px;
+		}
+	</style>
+	
 </head>
 <body>
 	<div class="page">
@@ -81,114 +99,169 @@
 						</div>
 					</div>
 					<div class="ui form fluid vertical segment">
-						<form name="form" action="/user/deploy" method="post">
+						<form id="f" name="f" method="post">
+							<input type="hidden" name="start" value="true" id="start"/>
 							<!-- element -->
-							<div class="two fields">
-								<div class="field">
-									<label>应用名称</label>
-									<div class="ui small left icon input">
-										<input type="text" style="width:404px" placeholder="应用名称包含中文、英文、数字字符，不能包含'.'、'*'等特殊字符">
-										<i class="cloud icon"></i>
-									</div>
+							<div class="field">
+								<label>应用名称</label>
+								<div class="ui small left icon input">
+									<input type="text" name="name" id="name" class="full-width" placeholder="应用名称包含中文、英文、数字字符，不能包含'.'、'*'等特殊字符">
+									<i class="cloud icon"></i>
 								</div>
 							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>进程</label>
-									<div class="ui small left icon input">
-										<input type="text" style="width:404px" placeholder="必须填写">
-										<i class="code icon"></i>
-									</div>
+							<div class="field">
+								<label>进程</label>
+								<div class="ui small left icon input">
+									<input type="text" name="toProcess" id="toProcess" class="full-width" placeholder="必须填写">
+									<i class="code icon"></i>
 								</div>
 							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>工作目录</label>
-									<div class="ui small left icon input">
-										<input type="text" style="width:404px">
-										<i class="folder icon"></i>
-									</div>
+							<div class="field">
+								<label>工作目录</label>
+								<div class="ui small left icon input">
+									<input type="text" name="workingDirectory" id="workingDirectory" class="full-width">
+									<i class="folder icon"></i>
 								</div>
 							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>运行参数</label>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
+							<div class="field">
+								<label>运行参数 <a href="javascript:void(0)" onclick="add_arg('')"><img src="images/add-16X16.gif" align="absmiddle"></a></label>
+								<div id="args"></div>
+							</div>
+							<div class="field">
+								<label>环境变量 <a href="javascript:void(0)" onclick="add_env('', '')"><img src="images/add-16X16.gif" align="absmiddle"></a></label>
+								<div id="envs"></div>
+							</div>
+							<div class="field">
+								<label>退出信号</label>
+								<div class="ui small left input">
+									<select name="killSignal" id="killSignal" class="form-control full-width">
+										<option value="1"> 1 - HUP (hang up)</option>
+										<option value="2"> 2 - INT (interrupt)</option>
+										<option value="3"> 3 - QUIT (quit)</option>
+										<option value="6"> 6 - ABRT (abort)</option>
+										<option value="9"> 9 - KILL (non-catchable, non-ignorable kill)</option>
+										<option value="14">14 - ALRM (alarm clock)</option>
+										<option value="15" selected>15 - TERM (software termination signal)</option>
+									</select>
 								</div>
 							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>环境变量</label>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:184px"> = <input type="text" style="width:204px"> <img src="images/11-16.png" align="absmiddle"></div>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:184px"> = <input type="text" style="width:204px"> <img src="images/11-16.png" align="absmiddle"></div>
+							<div class="field">
+								<label>端口</label>
+								<div class="ui small left input">
+									<input type="text" name="ports" id="ports" class="full-width" placeholder="逗号分隔，'0'表示随机端口" value="0,0">
 								</div>
 							</div>
-							<div class="two fields">
+							<div class="field">
+								<label>下载地址 <a href="javascript:void(0)" onclick="add_uri('')"><img src="images/add-16X16.gif" align="absmiddle"></a></label>
+								<div id="uris"></div>
+							</div>
+							<div class="field">
+								<label>分配资源</label>
+								<div class="ui small left input">
+									<select name="resAlloc" id="resAlloc" class="form-control full-width">
+										<option value="1">分配</option>
+										<option value="0" selected>不分配</option>
+									</select>
+								</div>
+							</div>
+							<div id="resAllocs" class="hidden">
 								<div class="field">
-									<label>退出信号</label>
+									<label>CPU核数量</label>
 									<div class="ui small left input">
-										<select name="killSignal" id="killSignal" style="width:404px">
-											<option value="1"> 1 - HUP (hang up)</option>
-											<option value="2"> 2 - INT (interrupt)</option>
-											<option value="3"> 3 - QUIT (quit)</option>
-											<option value="6"> 6 - ABRT (abort)</option>
-											<option value="9"> 9 - KILL (non-catchable, non-ignorable kill)</option>
-											<option value="14">14 - ALRM (alarm clock)</option>
-											<option value="15" selected>15 - TERM (software termination signal)</option>
+										<div class="ui small left input">
+											<input name="resAlloc_cpus" id="resAlloc_cpus" class="full-width" type="text" value="0.1">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>内存（MB）</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="resAlloc_mem" id="resAlloc_mem" class="full-width" type="text" value="512">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>磁盘空间（MB）</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="resAlloc_disk" id="resAlloc_disk" class="full-width" type="text" value="1024">
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="field">
+								<label>健康检查</label>
+								<div class="ui small left input">
+									<select name="healthCheck" id="healthCheck" class="form-control full-width">
+										<option value="1">开启</option>
+										<option value="0" selected>关闭</option>
+									</select>
+								</div>
+							</div>
+							<div id="healthChecks" class="hidden">
+								<div class="field">
+									<label>初始延时（秒）</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="healthCheck_initialDelaySeconds" id="healthCheck_initialDelaySeconds" class="full-width" type="text" value="60">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>检查间隔（秒）</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="healthCheck_intervalSeconds" id="healthCheck_intervalSeconds" class="full-width" type="text" value="20">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>协议</label>
+									<div class="ui small left input">
+										<select name="healthCheck_protocol" id="healthCheck_protocol" class="form-control full-width">
+											<option value="HTTP" selected>HTTP</option>
+											<option value="HTTPS">HTTPS</option>
 										</select>
 									</div>
 								</div>
-							</div>
-							<div class="two fields">
 								<div class="field">
-									<label>端口</label>
-									<div class="ui small left input"><input type="text" style="width:404px" placeholder="必须填写" value="0,0"></div>
-								</div>
-							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>下载地址</label>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
-									<div class="ui small left input" style="height:48px"><input type="text" style="width:404px"> <img src="images/11-16.png" align="absmiddle"></div>
-								</div>
-							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>分配资源</label>
+									<label>访问路径</label>
 									<div class="ui small left input">
-										<select name="killSignal" id="killSignal" style="width:404px">
-											<option value="1">分配</option>
-											<option value="0" selected>不分配</option>
-										</select>
+										<div class="ui small left input">
+											<input name="healthCheck_path" id="healthCheck_path" class="full-width" type="text" value="/">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>端口序号</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="healthCheck_portIndex" id="healthCheck_portIndex" class="full-width" type="text" value="0">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>超时时间（秒）</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="healthCheck_timeoutSeconds" id="healthCheck_timeoutSeconds" class="full-width" type="text" value="20">
+										</div>
+									</div>
+								</div>
+								<div class="field">
+									<label>允许的连续失败次数</label>
+									<div class="ui small left input">
+										<div class="ui small left input">
+											<input name="healthCheck_maxConsecutiveFailures" id="healthCheck_maxConsecutiveFailures" class="full-width" type="text" value="3">
+										</div>
 									</div>
 								</div>
 							</div>
-							<div class="two fields">
-								<div class="field">
-									<label>健康检查</label>
-									<div class="ui small left input">
-										<select name="killSignal" id="killSignal" style="width:404px">
-											<option value="1">开启</option>
-											<option value="0" selected>关闭</option>
-										</select>
-									</div>
-								</div>
-							</div>
-							<input class="ui small blue submit button" type="submit" value="立即保存">
+							<input name="save" id="save" class="ui small blue submit button" type="button" value="立即保存">
 							<input class="ui small basic button" type="reset" value="取消">
 						</form>
 					</div>
-					<!-- 
-					<div class="ui vertical segment">
-						<a class="ui red small labeled icon add button" href="./new_app.html"><i class="add icon"></i>添加新应用</a>
-						<div class="ui small icon input right">
-							<input id="app_name" type="text" placeholder="输入应用名称搜索">
-							<i id="search_button" class="search icon"></i>
-						</div>
-					</div>
-					<div id="appList"></div>
-					-->
 				</div>
 			</div>
 		</div>	
@@ -208,180 +281,209 @@
 	</footer>
 	<script>
 	$(document).ready(function() {
+		$('#healthCheck').change(function(sel) {
+			var show = parseInt(sel.target.value);
+			if (show) {
+				$('#healthChecks').show();
+			} else {
+				$('#healthChecks').hide();
+			}
+		});
+		$('#healthChecks').hide();
+		
+		$('#resAlloc').change(function(sel) {
+			var show = parseInt(sel.target.value);
+			if (show) {
+				$('#resAllocs').show();
+			} else {
+				$('#resAllocs').hide();
+			}
+		});
+		$('#resAllocs').hide();
+		
+		$('#save').click(function() {
+			save_app();
+		});
 	});
 	
-	function show_apps(query) {
-		$.get('/v1/app?query=' + encodeURIComponent(query), function(app_names, status, xhr) {
-			for (i = 0; i < app_names.length; i++) {
-				$("#appList").append(get_app_html(app_names[i]));
-			}
-			$.each(app_names, function(i, app_name) {
-				show_app(app_name);
-			});
-			show_stats();
-		});
-	}
-	
-	function show_stats() {
-		var app_names = get_keys();
-		$.each(app_names, function(i, app_name) {
-			show_stat(app_name);
-		});
-	}
-	
-	function show_stat(app_name) {
-		$.get('/v1/app/' + app_name, function(app, status, xhr) {
-			$.get('/v1/app/' + app_name + '/choreo', function(choreo, status, xhr) {
-				$.get('/v1/app/' + app_name + '/proc', function(ps, status, xhr) {
-					//app status
-					if (app.start) {
-						$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
-						$('#oper_button_' + app.name).removeClass("green");
-						$('#oper_button_' + app.name).addClass("black");
-						$('#oper_i_' + app.name).removeClass("play");
-						$('#oper_i_' + app.name).addClass("stop");
-						$('#oper_s_' + app.name).text("停 止");
-						$('#oper_button_' + app.name).attr('onclick', "stop_app('" + app.name + "')");
-					} else {
-						$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
-						$('#oper_button_' + app.name).addClass("green");
-						$('#oper_button_' + app.name).removeClass("black");
-						$('#oper_i_' + app.name).addClass("play");
-						$('#oper_i_' + app.name).removeClass("stop");
-						$('#oper_s_' + app.name).text("启 动");
-						$('#oper_button_' + app.name).attr('onclick', "start_app('" + app.name + "')");
-					}
-					//instance desc
-					var scale = app.start ? choreo.scale : 0;
-					var inst = "";
-					if (scale == 0) {
-						inst += '没有计划';
-					} else {
-						inst += '计划 ' + scale + ' 个';
-						if (choreo.dist.length > 0) {
-							var distinct = new Array();
-							for (var i=0; i<choreo.dist.length; i++) {
-								if ($.inArray(choreo.dist[i], distinct) < 0)
-									distinct.push(choreo.dist[i]);
-							}
-							inst += ', 在 ' + distinct.length + ' 个节点上分配 ' + choreo.dist.length + ' 个';
-							if (ps.length > 0) {
-								inst += ', 运行 ' + ps.length + ' 个';
-							} else {
-								inst += ', 没有运行';
-							}
-						} else {
-							inst += ', 没有分配';
-						}
-					}
-					$('#stat_' + app_name).text(inst);
-					//error
-					if (ps.length < scale) {
-						$('#error_' + app_name).show();
-						$('#error_' + app_name).removeClass('hidden');
-					} else {
-						$('#error_' + app_name).hide();
-					}
+	function save_app() {
+		var name = $('#name').val();
+		var start = $('#start').val() == 'true';
+		var toProcess = $('#toProcess').val();
+		var workingDirectory = $('#workingDirectory').val();
+		var killSignal = parseInt($('#killSignal').val());
+		var ports = get_ports($('#ports').val());
+		var args = get_list('args', 'arg');
+		var uris = get_list('uris', 'uri');
+		var envs = get_map('envs', 'envName', 'envValue');
+		var resAlloc = get_res_alloc();
+		var health_checks = get_health_checks();
+		var app = {
+		name: name,
+		start: start,
+		toProcess: toProcess,
+		workingDirectory: workingDirectory,
+		envs: envs,
+		args: args,
+		ports: ports,
+		uris: uris,
+		killSignal: killSignal,
+		resAlloc: resAlloc,
+		healthChecks: health_checks
+		};
+		var json = JSON.stringify(app);
+		var method = $('#stat').val() == 'edit' ? 'PUT' : 'POST';
+		var url = $('#stat').val() == 'edit' ? '/v1/app/' + app.name : '/v1/app';
+		$.ajax({
+			url: url,
+			type: method,
+			contentType: 'application/json',
+			data: json,
+			dataType: 'json',
+			success: function(data, status, xhr) {
+				jAlert('已经保存', '提示');
+				$('#popup_ok').click(function() {
+					window.location.href = 'app.html?name=' + name;
 				});
-			});
+			},
+			error: function(xhr, status, error) {
+				jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
+			}
 		});
 	}
-	
-	function get_keys() {
-		var keys = new Array();
-		var ctls = $('.app_key');
-		if (ctls) {
-			for (var i = 0; i < ctls.length; i++) {
-				var ctl = ctls[i];
-				keys.push(ctl.innerHTML);
+
+	function get_res_alloc() {
+		var show = $('#resAlloc').val();
+		if (show == '1') {
+			var cpus = $('#resAlloc_cpus').val();
+			var mem = new Number($('#resAlloc_mem').val());
+			var disk = new Number($('#resAlloc_disk').val());
+			return {
+				cpus: cpus,
+				mem: mem * 1024 * 1024,
+				disk: disk * 1024 * 1024
+			};
+		} else {
+			return null;
+		}
+	}
+
+	function get_health_checks() {
+		var r = new Array();
+		var show = $('#healthCheck').val();
+		if (show == '1') {
+			var initialDelaySeconds = $('#healthCheck_initialDelaySeconds').val();
+			var intervalSeconds = $('#healthCheck_intervalSeconds').val();
+			var protocol = $('#healthCheck_protocol').val();
+			var path = $('#healthCheck_path').val();
+			var portIndex = $('#healthCheck_portIndex').val();
+			var timeoutSeconds = $('#healthCheck_timeoutSeconds').val();
+			var maxConsecutiveFailures = $('#healthCheck_maxConsecutiveFailures').val();
+			
+			r.push({
+				initialDelaySeconds: initialDelaySeconds,
+				intervalSeconds: intervalSeconds,
+				protocol: protocol,
+				path: path,
+				portIndex: portIndex,
+				timeoutSeconds: timeoutSeconds,
+				maxConsecutiveFailures: maxConsecutiveFailures
+			});
+		}
+		return r;
+	}
+
+	function get_map(panelId, keyId, valueId) {
+		var map = new Object();
+		var keys = get_list(panelId, keyId);
+		var values = get_list(panelId, valueId);
+		if (keys) {
+			for (var i=0; i<keys.length; i++) {
+				map[keys[i]] = values[i];
 			}
 		}
-		return keys;
+		return map;
 	}
 	
-	function get_app_html(app_name) {
-		var html = '<div id="app_div_' + app_name + '" class="ui app two column middle aligned vertical grid segment">';
-		html += '<div class="ui message hidden app_key">' + app_name + '</div>';
-		html += '<div class="column verborder">';
-		html += '<div id="error_' + app_name + '" class="ui left corner label error hidden"><div class="text">异常</div></div>';
-		html += '<div class="ui info segment">';
-		html += '<h5 class="ui header">' + app_name + ' <span id="status_' + app_name + '"></span></h5>';
-		html += '<p>进程：<span id="stat_' + app_name + '" class="stress"></span></p>';
-		html += '<p>资源：<span id="res_' + app_name + '"></span></p>';
-		html += '<p>描述：<span id="desc_' + app_name + '"></span></p>';
-		html += '</div>';
-		html += '</div>';
-		html += '<div class="center aligned column">';
-		html += '<div class="ui buttons">';
-		html += '<a id="oper_button_' + app_name + '" class="ui tiny button"><i id="oper_i_' + app_name + '" class="icon"></i><span id="oper_s_' + app_name + '">启 动</span></a>';
-		html += '<a class="ui tiny blue button" href="./app.html?name=' + app_name + '"><i class="setting icon"></i>管 理</a>';
-		html += '<a class="ui tiny basic button" onclick="delete_app(\'' + app_name + '\')"><i class="trash icon"></i>删 除</a>';
-		html += '</div>';
-		html += '</div>';
-		html += '</div>';
-		return html;
-	}
-	
-	function show_app(app_name) {
-		$.get('/v1/app/' + app_name, function(app, status, xhr) {
-			if (app) {
-				if (app.start) {
-					$('#status_' + app.name).html('<span class="ui type label green">启动</span>');
-				} else {
-					$('#status_' + app.name).html('<span class="ui type label black">停止</span>');
-				}
-				if (app.resAlloc) {
-					var text = 'CPU ' + app.resAlloc.cpus + ' 核，内存 ' + byteCountToDisplaySize(app.resAlloc.mem) + '，磁盘空间 ' + byteCountToDisplaySize(app.resAlloc.disk);
-					$('#res_' + app.name).html(text);
-				} else {
-					$('#res_' + app.name).text('不分配');
-				}
-				var cmd = '';
-				if (app.toProcess) {
-					cmd = app.toProcess + ' ';
-				}
-				if (app.args) {
-					cmd += app.args.join(' ');
-				}
-				$('#desc_' + app.name).text(cmd);
+	function get_list(panelId, ctlId) {
+		var list = $('#' + panelId + ' input[type="text"]');
+		var r = new Array();
+		for (var i=0; i<list.length; i++) {
+			if (list[i].id == ctlId) {
+				r.push(list[i].value);
 			}
-		});
+		}
+		return r;
 	}
 	
-	function start_app(name) {
-		$.post('/v1/app/' + name + '/_start', function(data, status, xhr) {
-			jAlert('已经对应用 ' + name + ' 发出启动指令', '提示');
-		});
-	}
-	
-	function stop_app(name) {
-		jConfirm('是否要停止应用 ' + name + ' ？', '确认', function(r) {
-			if (r) {
-				$.post('/v1/app/' + name + '/_stop', function(data, status, xhr) {
-					jAlert('已经对应用 ' + name + ' 发出停止指令', '提示');
-				});
+	function get_ports(s) {
+		var p = new Array();
+		if (s) {
+			var ary = s.split(',');
+			if (ary != null) {
+				for (var i=0; i<ary.length; i++) {
+					p.push(parseInt(ary[i]));
+				}
 			}
-		});
+		}
+		return p;
 	}
 	
-	function delete_app(name) {
-		jConfirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？', '确认', function(r) {
-			if (r) {
-				$.ajax({
-					url: '/v1/app/' + name,
-					type: 'DELETE',
-					contentType: 'application/json',
-					dataType: 'json',
-					success: function(data, status, xhr) {
-						$('#app_div_' + name).remove();
-						jAlert('已经删除应用 ' + name, '提示');
-					},
-					error: function(xhr, status, error) {
-						jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '提示');
-					}
-				});
+	function add_arg(val) {
+		var max = 0;
+		var es = $('#args').children();
+		for (var i = 0; i < es.length; i ++) {
+			var id = parseInt(es[i].id.split('_')[1]);
+			if (id > max) {
+			max = id;
 			}
-		});
+		}
+		var id = "arg_" + (max+1);
+		var div = '<div id="' + id + '" class="ui small left input repeat">'
+		div += '<input type="text" name="arg" id="arg" class="part-width" value="' + val + '"/> ';
+		div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+		div += '</div>';
+		$('#args').append(div);
+	}
+	
+	function add_env(name, val) {
+		var max = 0;
+		var es = $('#envs').children();
+		for (var i = 0; i < es.length; i ++) {
+		var id = parseInt(es[i].id.split('_')[1]);
+		if (id > max) {
+			max = id;
+		}
+		}
+		var id = "env_" + (max+1);
+		var div = '<div id="' + id + '" class="ui small left input repeat">';
+		div += '<input type="text" name="envName" id="envName" class="half-width" value="' + name + '"/>';
+		div += ' = ';
+		div += '<input type="text" name="envValue" id="envValue" class="half-width" value="' + val + '"/> ';
+		div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+		div += '</div>';
+		$('#envs').append(div);
+	}
+	
+	function add_uri(val) {
+		var max = 0;
+		var es = $('#uris').children();
+		for (var i = 0; i < es.length; i ++) {
+			var id = parseInt(es[i].id.split('_')[1]);
+			if (id > max) {
+				max = id;
+			}
+		}
+		var id = "uri_" + (max+1);
+		var div = '<div id="' + id + '" class="ui small left input repeat">'
+		div += '<input type="text" name="uri" class="part-width" id="uri" value="' + val + '"/> ';
+		div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+		div += '</div>';
+		$('#uris').append(div);
+	}
+	
+	function remove(id) {
+		$('#' + id).remove();
 	}
 	</script>
 </body>
