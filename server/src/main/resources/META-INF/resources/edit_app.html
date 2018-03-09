@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>部署应用 | STAT HUB</title>
+	<title>修改应用 | STAT HUB</title>
 	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
 	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
@@ -72,10 +72,10 @@
 				<div class="four wide column">
 					<div class="verticalMenu">
 						<div class="ui vertical pointing menu fluid">
-							<a class="active teal  item" href="./new_app.html">
+							<a class="item" href="./new_app.html">
 								<i class="rocket icon"></i> 部署新应用
 							</a>
-							<a class="item" href="app_list.html">
+							<a class="active teal item" href="app_list.html">
 								<i class="cloud icon"></i> 所有应用
 							</a>
 							<a class="item" href="app_stat.html">
@@ -89,10 +89,10 @@
 					<div class="pageHeader">
 						<div class="segment">
 							<h3 class="ui dividing header">
-								<i class="large rocket icon"></i>
+								<i class="large edit icon"></i>
 								<div class="content">
-									部署应用
-									<div class="sub header">输入应用设置在节点上运行</div>
+									修改应用
+									<div class="sub header">输入新的应用信息</div>
 								</div>
 							</h3>
 						</div>
@@ -280,6 +280,11 @@
 	</footer>
 	<script>
 	$(document).ready(function() {
+		var name = requestParameter('name').name.replace('#', '');
+		$.get('/v1/app/' + name, function(app, status, xhr) {
+			show_app(app);
+		});
+		
 		$('#healthCheck').change(function(sel) {
 			var show = parseInt(sel.target.value);
 			if (show) {
@@ -288,7 +293,6 @@
 				$('#healthChecks').hide();
 			}
 		});
-		$('#healthChecks').hide();
 		
 		$('#resAlloc').change(function(sel) {
 			var show = parseInt(sel.target.value);
@@ -298,12 +302,73 @@
 				$('#resAllocs').hide();
 			}
 		});
-		$('#resAllocs').hide();
 		
 		$('#save').click(function() {
 			save_app();
 		});
 	});
+	
+	function show_app(app) {
+		//edit satatus
+		$('#name').attr("disabled","disabled")
+		
+		//display data
+		$('#start').val(app.start);
+		$('#name').val(app.name);
+		$('#toProcess').val(app.toProcess);
+		$('#workingDirectory').val(app.workingDirectory);
+		if (app.args) {
+			$.each(app.args, function(i, arg) {
+				add_arg(arg);
+			});
+		}
+		if (app.envs) {
+			$.each(app.envs, function(k, v) {
+				add_env(k, v);
+			});
+		}
+		if (app.uris) {
+			$.each(app.uris, function(i, uri) {
+				add_uri(uri);
+			});
+		}
+		$('#killSignal').val(app.killSignal);
+		$('#ports').val(app.ports);
+		
+		if (app.resAlloc) {
+			show_res_alloc(app.resAlloc);
+			$('#resAlloc').val('1');
+			$('#resAllocs').show();
+		} else {
+			$('#resAlloc').val('0');
+			$('#resAllocs').hide();
+		}
+		
+		if (app.healthChecks && app.healthChecks.length > 0) {
+			show_health_check(app.healthChecks[0]);
+			$('#healthCheck').val('1');
+			$('#healthChecks').show();
+		} else {
+			$('#healthCheck').val('0');
+			$('#healthChecks').hide();
+		}
+	}
+	
+	function show_res_alloc(resAlloc) {
+		$('#resAlloc_cpus').val(resAlloc.cpus);
+		$('#resAlloc_mem').val(resAlloc.mem / 1024 / 1024);
+		$('#resAlloc_disk').val(resAlloc.disk / 1024 / 1024);
+	}
+	
+	function show_health_check(healthCheck) {
+		$('#healthCheck_initialDelaySeconds').val(healthCheck.initialDelaySeconds);
+		$('#healthCheck_intervalSeconds').val(healthCheck.intervalSeconds);
+		$('#healthCheck_protocol').val(healthCheck.protocol);
+		$('#healthCheck_path').val(healthCheck.path);
+		$('#healthCheck_portIndex').val(healthCheck.portIndex);
+		$('#healthCheck_timeoutSeconds').val(healthCheck.timeoutSeconds);
+		$('#healthCheck_maxConsecutiveFailures').val(healthCheck.maxConsecutiveFailures);
+	}
 	
 	function save_app() {
 		var name = $('#name').val();
@@ -332,8 +397,8 @@
 		};
 		var json = JSON.stringify(app);
 		$.ajax({
-			url: '/v1/app',
-			type: 'POST',
+			url: '/v1/app/' + app.name,
+			type: 'PUT',
 			contentType: 'application/json',
 			data: json,
 			dataType: 'json',

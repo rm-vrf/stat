@@ -1,3 +1,15 @@
+
+function requestParameter(name) {
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+};
+
 function byteCountToDisplaySize(size) {
 	var ONE_KB = 1024;
 	var ONE_MB = ONE_KB * ONE_KB;
@@ -22,7 +34,7 @@ function byteCountToDisplaySize(size) {
 		displaySize = parseInt(size) + " bytes";
 	}
 	return displaySize;
-}
+};
 
 $(document).ready(function() {
 	function refreshMessageCount() {
