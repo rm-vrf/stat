@@ -1,136 +1,209 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>STAT HUB - 应用列表</title>
-    <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
-    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
-    <script src="js/common.js" type="text/javascript"></script>
-    <script>
-        $(document).ready(function () {
-            var app = get_param('app').app;
-            if (app) {
-                app = app.replace('#', '');
-                $.get('/v1/app/' + app + '/choreo', function(choreo, status, xhr) {
-                    show_choreo(choreo);
-                });
-            }
-            
-            $('#save').click(function() {
-                save_choreo();
-            });
-        });
-        
-        function save_choreo() {
-            var app = $('#app').val();
-            var query = $('#query').val();
-            var scale = $('#scale').val();
-            
-            var choreo = {
-                app: app,
-                query: query,
-                scale: scale
-            };
-            var json = JSON.stringify(choreo);
-            
-            $.post('/v1/app/' + app + '/_scale?num=' + scale, function(data, status, xhr) {
-                if (data && data.ok) {
-                    $.ajax({
-                        url: '/v1/app/' + app + '/_query',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: query,
-                        dataType: 'json',
-                        success: function(data, status, xhr) {
-                            alert('已经保存');
-                            window.location.href = '/';
-                        },
-                        error: function(xhr, status, error) {
-                            alert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message);
-                        }
-                    });
-                } else {
-                    alert('保存失败, 信息: ' + data.message);
-                }
-            });
-        }
-        
-        function show_choreo(choreo) {
-            //status
-            $('#app').attr("disabled","disabled")
-            
-            //display data
-            $('#app').val(choreo.app);
-            $('#query').val(choreo.query);
-            $('#scale').val(choreo.scale);
-        }
-        
-    </script>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>编排应用 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<style type="text/css">
+		.repeat {
+			height:48px;
+		}
+		.ui.form .ui.input .full-width {
+			width:450px;
+		}
+		.ui.form .ui.input .part-width {
+			width:430px;
+		}
+		.ui.form .ui.input .half-width {
+			width:207px;
+		}
+		.ui.form .ui.input {
+			width:450px;
+		}
+	</style>
 </head>
 <body>
-<div id="wrapper">
-
-    <div id="header">
-        <a href="/"><img src="images/stat.png" alt="Status" /></a>
-    </div>
-
-    <div id="content">
-        <div class="hidden" id="statusmessage">&nbsp;</div>
-        <p>请使用下面的表单调整应用计划。</p>
-        <form id="f" name="f" method="post">
-            <div class="jive-contentBox">
-                <table cellpadding="3" cellspacing="0" border="0">
-                    <tbody>
-                        <tr>
-                            <td width="1%" nowrap></td>
-                            <td width="49%" nowrap>
-                                <div>应用名称: </div>
-                                <div>
-                                    <input type="text" name="app" size="80" maxlength="30" id="app"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td nowrap></td>
-                            <td>
-                                <div>节点: </div>
-                                <div>
-                                    <input type="text" name="query" size="80" maxlength="200" id="query"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td nowrap></td>
-                            <td nowrap>
-                                <div>计划进程数:</div>
-                                <div>
-                                    <input type="text" name="scale" size="80" maxlength="200" id="scale"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="2" style="padding-top: 10px;">
-                                <input type="button" name="save" id="save" value=" 保存 ">
-                            </td>
-                        </tr>
-                        
-                    </tbody>
-                </table>
-            </div>
-        </form>
-    </div>
-    <br/>
-    <div class="push">
-    </div>
-</div>
-
-<div id="footer" class="clr">
-    <div class="left">
-        <a href="/">STAT HUB</a> <span id="supervisor_version">#</span>
-    </div>
-    <div class="right">
-        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
-    </div>
-</div>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="active item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="item" href="./new_app.html">
+								<i class="rocket icon"></i> 部署新应用
+							</a>
+							<a class="active teal item" href="app_list.html">
+								<i class="cloud icon"></i> 所有应用
+							</a>
+							<a class="item" href="app_stat.html">
+								<i class="bar chart icon"></i> 应用统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large tasks icon"></i>
+								<div class="content">
+									编排应用
+									<div class="sub header">输入编排信息</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<div class="ui form fluid vertical segment">
+						<form id="f" name="f" method="post">
+							<!-- element -->
+							<div class="field">
+								<label>应用名称</label>
+								<div class="ui small left icon input">
+									<input type="text" name="app" id="app" class="full-width">
+									<i class="cloud icon"></i>
+								</div>
+							</div>
+							<div class="field">
+								<label>节点</label>
+								<div class="ui small left icon input">
+									<input type="text" name="query" id="query" class="full-width">
+									<i class="search icon"></i>
+								</div>
+								<div class="ui pointing left label">
+									<a href="help.html#query" target="blank">点击这里了解节点检索语法</a>
+								</div>
+							</div>
+							<div class="field">
+								<label>计划进程数</label>
+								<div class="ui small left icon input">
+									<input type="number" name="scale" id="scale" class="full-width">
+									<i class="truck icon"></i>
+								</div>
+							</div>
+							<input name="save" id="save" class="ui small blue submit button" type="button" value="立即保存">
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+    $(document).ready(function () {
+        var app = requestParameter('app').app;
+        if (app) {
+            app = app.replace('#', '');
+            $.get('/v1/app/' + app + '/choreo', function(choreo, status, xhr) {
+                show_choreo(choreo);
+            });
+        }
+        
+        $('#save').click(function() {
+            save_choreo();
+        });
+    });
+    
+    function save_choreo() {
+        var app = $('#app').val();
+        var query = $('#query').val();
+        var scale = $('#scale').val();
+        
+        var choreo = {
+            app: app,
+            query: query,
+            scale: scale
+        };
+        var json = JSON.stringify(choreo);
+        
+        $.post('/v1/app/' + app + '/_scale?num=' + scale, function(data, status, xhr) {
+            if (data && data.ok) {
+                $.ajax({
+                    url: '/v1/app/' + app + '/_query',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: query,
+                    dataType: 'json',
+                    success: function(data, status, xhr) {
+	        				jAlert('已经保存', '提示');
+        					$('#popup_ok').click(function() {
+        						window.location.href = 'app.html?name=' + app;
+        					});
+                    },
+                    error: function(xhr, status, error) {
+                        jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
+                    }
+                });
+            } else {
+                jAlert('保存失败, 信息: ' + data.message, '错误 ');
+            }
+        });
+    }
+    
+    function show_choreo(choreo) {
+        //status
+        $('#app').attr("disabled","disabled")
+        
+        //display data
+        $('#app').val(choreo.app);
+        $('#query').val(choreo.query);
+        $('#scale').val(choreo.scale);
+    }
+	</script>
 </body>
 </html>
