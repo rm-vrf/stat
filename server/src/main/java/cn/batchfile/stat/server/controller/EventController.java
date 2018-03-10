@@ -46,7 +46,7 @@ public class EventController {
 	}
 	
 	@GetMapping("/v1/event/_count")
-	public long countEvents() {
+	public long countEvents() throws IOException {
 		return eventService.searchEvent(eventService.getTimestamp(), 0).getTotal();
 	}
 	

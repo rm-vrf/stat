@@ -1,5 +1,7 @@
 package cn.batchfile.stat.server.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -8,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -21,6 +26,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
@@ -34,6 +40,7 @@ public class EventService {
 	protected static final Logger log = LoggerFactory.getLogger(EventService.class);
 	private static final String INDEX_PREFIX = "event-data-";
 	private static final String TYPE_NAME = "event";
+	private static final String TS_FILE = "event_time";
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
 		protected DateFormat initialValue() {
@@ -46,9 +53,26 @@ public class EventService {
 			return new SimpleDateFormat("yyyy-MM-dd");
 		}
 	};
+	private File eventTimeFile;
+	
+	@Value("${store.directory}")
+	private String storeDirectory;
 	
 	@Autowired
 	private ElasticService elasticService;
+	
+	@PostConstruct
+	public void init() throws IOException {
+		File f = new File(storeDirectory);
+		if (!f.exists()) {
+			FileUtils.forceMkdir(f);
+		}
+		
+		eventTimeFile = new File(f, TS_FILE);
+		if (!eventTimeFile.exists()) {
+			FileUtils.writeByteArrayToFile(eventTimeFile, "0".getBytes());
+		}
+	}
 
 	public void postEvents(List<Event> events) {
 		events.stream().forEach(event -> {
@@ -72,13 +96,13 @@ public class EventService {
 		postEvent(e);
 	}
 	
-	private Date t = new Date(0);
-	public Date getTimestamp() {
-		return t;
+	public Date getTimestamp() throws IOException {
+		String s = FileUtils.readFileToString(eventTimeFile, "UTF-8");
+		return new Date(Long.valueOf(s));
 	}
 	
-	public void setTimestamp(Date date) {
-		t = date;
+	public void setTimestamp(Date date) throws IOException {
+		FileUtils.writeByteArrayToFile(eventTimeFile, String.valueOf(date.getTime()).getBytes());
 	}
 	
 	public PaginationList<Event> searchEvent(Date beginTime, int size) {
