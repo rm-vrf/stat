@@ -2,13 +2,22 @@ package cn.batchfile.stat.server.service;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +27,7 @@ import com.alibaba.fastjson.JSON;
 
 import cn.batchfile.stat.domain.Event;
 import cn.batchfile.stat.domain.Node;
+import cn.batchfile.stat.domain.PaginationList;
 
 @Service
 public class EventService {
@@ -60,6 +70,49 @@ public class EventService {
 		e.setTimestamp(new Date());
 		e.setDesc(String.format("节点下线，主机名：%s，地址：%s", node.get("hostname"), node.get("agentAddress")));
 		postEvent(e);
+	}
+	
+	private Date t = new Date(0);
+	public Date getTimestamp() {
+		return t;
+	}
+	
+	public void setTimestamp(Date date) {
+		t = date;
+	}
+	
+	public PaginationList<Event> searchEvent(Date beginTime, int size) {
+		List<Event> events = new ArrayList<Event>();
+		Date to = new Date(System.currentTimeMillis() - 1000);
+		QueryBuilder query = QueryBuilders.rangeQuery("timestamp")
+				.from(TIME_FORMAT.get().format(beginTime))
+				.to(TIME_FORMAT.get().format(to))
+				.includeLower(false).includeUpper(true);
+		
+		SearchRequestBuilder search = elasticService.getNode().client().prepareSearch()
+				.setIndices("event-data-*").setTypes(TYPE_NAME).setQuery(query)
+				.setFrom(0).setSize(size);
+		
+		if (size > 0) {
+			search.addSort("timestamp", SortOrder.DESC);
+		}
+		
+		try {
+			SearchResponse resp = search.execute().actionGet();
+			long total = resp.getHits().getTotalHits();
+			SearchHit[] hits = resp.getHits().getHits();
+			for (int i = hits.length - 1; i >= 0; i --) {
+				SearchHit hit = hits[i];
+				String json = hit.getSourceAsString();
+				if (StringUtils.isNotEmpty(json)) {
+					Event event = JSON.parseObject(json, Event.class);
+					events.add(event);
+				}
+			}
+			return new PaginationList<Event>(total, events);
+		} catch (IndexNotFoundException e) {
+			return new PaginationList<Event>(0, new ArrayList<Event>());
+		}
 	}
 
 	private void postEvent(Event event) {

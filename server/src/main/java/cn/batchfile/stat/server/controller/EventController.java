@@ -1,7 +1,7 @@
 package cn.batchfile.stat.server.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +23,7 @@ import cn.batchfile.stat.server.service.EventService;
 @RestController
 public class EventController {
 	protected static final Logger log = LoggerFactory.getLogger(EventController.class);
+	private static final int SIZE = 256;
 	
 	@Autowired
 	private EventService eventService;
@@ -45,15 +46,15 @@ public class EventController {
 	}
 	
 	@GetMapping("/v1/event/_count")
-	public int countEvents() {
-		return i ++;
+	public long countEvents() {
+		return eventService.searchEvent(eventService.getTimestamp(), 0).getTotal();
 	}
-	int i = 0;
 	
 	@GetMapping("/v1/event/_search")
-	public PaginationList<Event> searchEvents() {
-
-		return new PaginationList<Event>(0, new ArrayList<Event>());
+	public PaginationList<Event> searchEvents(
+			@RequestParam(name="timestamp", defaultValue="0") long timestamp) {
+		
+		return eventService.searchEvent(new Date(timestamp), SIZE);
 	}
 	
 	@PostMapping("/v1/event/_lastTime")
@@ -62,6 +63,7 @@ public class EventController {
 		
 		RestResponse<Long> resp = new RestResponse<Long>();
 		try {
+			eventService.setTimestamp(new Date(timestamp));
 			resp.setBody(timestamp);
 			resp.setOk(true);
 		} catch (Exception e) {

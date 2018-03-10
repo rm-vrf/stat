@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>所有消息 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="item" href="user_profile.html">
+								<i class="edit icon"></i> 账户设置
+							</a>
+							<a class="item" href="change_password.html">
+								<i class="lock icon"></i> 修改密码
+							</a>
+							<a class="active teal item" href="notifications.html">
+								<i class="chat icon"></i> 所有消息
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large chat icon"></i>
+								<div class="content">
+									所有消息
+									<div class="sub header">来自所有节点的消息</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<!--notifications feed-->
+					<div id="eventList" class="ui vertical feed segment">
+					</div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+	var ts = 0;
+	$(document).ready(function() {
+		show_events();
+		setInterval(function() {
+			show_events();
+		}, 5000);
+	});
+	
+	function show_events() {
+		$.get('/v1/event/_search?timestamp=' + ts, function(result, status, xhr) {
+			for (var i=0; i<result.rows.length; i++) {
+				var event = result.rows[i];
+				if (event.timestamp > ts) {
+					ts = event.timestamp;
+				}
+				
+				var time = new Date(event.timestamp);
+				
+				var html = '<div class="event">';
+				html += '<div class="label">';
+				html += '<img src="./resource/images/avatar-default.gif">';
+				html += '</div>';
+				html += '<div class="content">';
+				html += '<div class="date">';
+				html += (time.getMonth() + 1) + '月' + time.getDate() + '日 ' + time.getHours() + ':' + time.getMinutes();
+				html += '</div>';
+				html += '<div class="summary">';
+				if (event.hostname) {
+					html += '来自 <a href="' + event.address + '" target="_blank">' + event.hostname + '</a> 的消息';
+				} else {
+					html += '来自 主节点 的消息';
+				}
+				html += '</div>';
+				html += '<div class="extra text">';
+				html += event.desc;
+				html += '</div>';
+				html += '</div>';
+				html += '</div>';
+				$('#eventList').prepend(html);
+			}
+			if (ts > 0) {
+				$.post('/v1/event/_lastTime?timestamp=' + ts, function(data, status, xhr) {});
+			}
+		});
+	}
+	</script>
+</body>
+</html>
