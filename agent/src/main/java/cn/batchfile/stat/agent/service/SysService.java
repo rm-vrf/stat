@@ -2,6 +2,7 @@ package cn.batchfile.stat.agent.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.lang.management.ManagementFactory;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.hyperic.sigar.FileSystem;
@@ -30,6 +32,10 @@ import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import cn.batchfile.stat.domain.Disk;
@@ -56,11 +62,12 @@ public class SysService {
 	
 	@PostConstruct
 	public void init() throws Exception {
-		//TODO copy lib into data path
+		//copy lib into data path
+		copyResources();
+
+		//change lib path
 		String libPath = System.getProperty("java.library.path");
 		log.info("lib path: {}", libPath);
-		
-		//TODO append path, not change
 		File sigarPath = new File(new File(storeDirectory), "sigar");
 		System.setProperty("java.library.path", sigarPath.getAbsolutePath());
 		
@@ -68,8 +75,53 @@ public class SysService {
 		final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
 		sysPathsField.setAccessible(true);
 		sysPathsField.set(null, null);
-		
+
+		//init sigar object
 		sigar = new Sigar();
+	}
+	
+	private void copyResources() throws IOException {
+		File store = new File(storeDirectory);
+		if (!store.exists()) {
+			FileUtils.forceMkdir(store);
+		}
+		File sigarPath = new File(store, "sigar");
+		if (!sigarPath.exists()) {
+			FileUtils.forceMkdir(sigarPath);
+		}
+		
+		log.info("cp lib file to {}", sigarPath.getAbsolutePath());
+		PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
+		Resource[] resources = resourcePatternResolver.getResources("sigar/*");
+		
+		for (Resource resource : resources) {
+			log.info("find so file: {}, [{}]", resource.toString(), resource.getClass().getName());
+			
+			//get file name
+			String path = getPathOfResource(resource);
+			File file = new File(path);
+			String fileName = file.getName();
+			
+			//write file
+			File dist = new File(sigarPath, fileName);
+			if (!dist.exists()) {
+				//get file content
+				byte[] content = getContentOfResource(resource);
+				log.info("get so: {}, length: {}", fileName, content.length);
+				
+				FileUtils.writeByteArrayToFile(dist, content);
+			}
+		}
+	}
+	
+	private String getPathOfResource(Resource resource) {
+		if (resource instanceof ClassPathResource) {
+			return ((ClassPathResource) resource).getPath();
+		} else if (resource instanceof FileSystemResource) {
+			return ((FileSystemResource) resource).getPath();
+		} else {
+			throw new RuntimeException("error when get resouece path");
+		}
 	}
 	
 	public List<Proc> ps() throws SigarException {
@@ -245,4 +297,21 @@ public class SysService {
 		return false;
 	}
 
+	private byte[] getContentOfResource(Resource resource) throws IOException {
+		if (resource instanceof ClassPathResource) {
+			String path = ((ClassPathResource) resource).getPath();
+			InputStream stream = getClass().getClassLoader().getResource(path).openStream();
+			try {
+				return IOUtils.toByteArray(stream);
+			} finally {
+				IOUtils.closeQuietly(stream);
+			}
+		} else if (resource instanceof FileSystemResource) {
+			String path = ((FileSystemResource) resource).getPath();
+			File file = new File(path);
+			return FileUtils.readFileToByteArray(file);
+		} else {
+			throw new RuntimeException("error when get resouece content");
+		}
+	}
 }
