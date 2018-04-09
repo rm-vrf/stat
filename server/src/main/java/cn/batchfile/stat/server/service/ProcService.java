@@ -110,12 +110,27 @@ public class ProcService {
 		return ps.size() > 0 ? ps.get(0) : null;
 	}
 	
-	public List<Proc> getProcsByApp(String app) {
-		return getPs(INDEX_NAME, TYPE_NAME_APP, app);
+	public List<Proc> getProcsByApp(String app, final String query) {
+		List<Proc> ps = getPs(INDEX_NAME, TYPE_NAME_APP, app);
+		if (StringUtils.isNotEmpty(query)) {
+			ps = ps.stream().filter(p -> {
+				if (StringUtils.containsIgnoreCase(p.getApp(), query)) {
+					return true;
+				} else {
+					Node n = nodeService.getNode(p.getNode());
+					if (StringUtils.containsIgnoreCase(n.getHostname(), query) 
+							|| StringUtils.containsIgnoreCase(n.getAgentAddress(), query)) {
+						return true;
+					}
+				}
+				return false;
+			}).collect(Collectors.toList());
+		}
+		return ps;
 	}
 	
 	public Proc getProcByApp(String app, long pid) {
-		List<Proc> ps = getProcsByApp(app);
+		List<Proc> ps = getProcsByApp(app, StringUtils.EMPTY);
 		ps = ps.stream().filter(p -> p.getPid() == pid).collect(Collectors.toList());
 		return ps.size() > 0 ? ps.get(0) : null;
 	}

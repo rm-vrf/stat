@@ -113,10 +113,11 @@
 					</div>
 					<div class="ui vertical segment">
 						<div class="ui small left icon input">
-							<input type="text" style="width:150px" placeholder="输入主机名...">
+							<input id="queryDisplay" type="text" style="width:150px" placeholder="输入主机名...">
+							<input type="hidden" id="query" value="">
 							<i class="search icon"></i>
-							<a class="circular ui mini button" title="过滤">过滤</a>
-							<a class="circular ui mini button active" title="全部">全部</a>
+							<a id="queryFilter" class="circular ui mini button" title="过滤">过滤</a>
+							<a id="queryAll" class="circular ui mini button active" title="全部">全部</a>
 						</div>
 					</div>
 					<!-- the proc table-->
@@ -160,10 +161,24 @@
 			show_stat(name);
 			refresh_list(name);
 		}, 5000);
+		$('#queryFilter').click(function() {
+			$('#queryFilter').addClass('active');
+			$('#queryAll').removeClass('active');
+			$('#query').val($('#queryDisplay').val());
+			refresh_list(name);
+		});
+		$('#queryAll').click(function() {
+			$('#queryAll').addClass('active');
+			$('#queryFilter').removeClass('active');
+			$('#queryDisplay').val('');
+			$('#query').val($('#queryDisplay').val());
+			refresh_list(name);
+		});
 	});
 	
 	function refresh_list(app) {
-		$.get('/v1/app/' + app + '/proc', function(ps, status, xhr) {
+		var query = $('#query').val();
+		$.get('/v1/app/' + app + '/proc?query=' + query, function(ps, status, xhr) {
 			var signs = new Array();
 			for (var i=0; i<ps.length; i++) {
 				signs[i] = ps[i].pid + '@' + ps[i].node;
