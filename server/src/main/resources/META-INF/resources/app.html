@@ -130,29 +130,6 @@
 							<th>命令</th>
 							<th>端口</th>
 						</tr>
-						<!--
-						<tbody>
-							<tr>
-								<td>
-									<div id="jq-dropdown-1" class="jq-dropdown jq-dropdown-tip">
-										<ul class="jq-dropdown-menu">
-											<li><a href="#1"><i class="basic icon"></i>查看健康检查日志</a></li>
-											<li><a href="#2"><i class="basic icon"></i>查看标准输出</a></li>
-											<li><a href="#3"><i class="basic icon"></i>查看错误输出</a></li>
-											<li class="jq-dropdown-divider"></li>
-											<li><a href="#3"><i class="trash icon"></i>杀死进程</a></li>
-										</ul>
-									</div>
-									<a href="javascript:void(0)" data-jq-dropdown="#jq-dropdown-1"><i class="setting icon"></i></a>
-								</td>
-								<td>htlu-macbook</td>
-								<td>358</td>
-								<td>03-09 22:15</td>
-								<td>/bin/sh -c cd /Users/htlu && python http_server.py 54023</td>
-								<td><a href="#">54023</a></td>
-							</tr>
-						</tbody>
-						-->
 					</table>
 				</div>
 			</div>
@@ -195,111 +172,111 @@
 			//remove deleted row
 			var keys = get_table_keys();
 			$.each(keys, function(i, key) {
-                if ($.inArray(key, signs) < 0) {
-                    remove_row(key);
-                }
-            });
+				if ($.inArray(key, signs) < 0) {
+					remove_row(key);
+				}
+			});
 			
 			//add new row
 			$.each(ps, function(i, p) {
-                var sign = p.pid + '@' + p.node;
-                if ($.inArray(sign, keys) < 0) {
-                    add_row(p.pid, p.node);
-                    refresh_row(p.pid, p.node);
-                }
-            });
+				var sign = p.pid + '@' + p.node;
+				if ($.inArray(sign, keys) < 0) {
+					add_row(p.pid, p.node);
+					refresh_row(p.pid, p.node);
+				}
+			});
 		});
 	}
 	
-    function refresh_row(pid, node) {
-        $.get('/v1/node/' + node + '/proc/' + pid, function(p, status, xhr) {
-            update_row(p);
-        });
-    }
-    
-    function update_row(p) {
-        $.get('/v1/node/' + p.node, function(node, status, xhr) {
-            var address = node.agentAddress;
-            var ary = address.split(':');
-            address = ary[0] + ':' + ary[1];
-            var text = new Array();
-            $.each(p.ports, function(i, port) {
-                text.push('<a href="' + address + ':' + port + '" target="_blank">' + port + '</a>');
-            });
-        
-            $('#ppid_' + p.pid + '_' + p.node).text(p.ppid);
-            $('#node_' + p.pid + '_' + p.node).html('<a href="' + node.agentAddress + '" target="_blank">' + node.hostname + '</a>');
-            $('#stime_' + p.pid + '_' + p.node).text(p.startTime);
-            $('#cmd_' + p.pid + '_' + p.node).text(p.cmd);
-            $('#port_' + p.pid + '_' + p.node).html(text.join(', '));
-        });
-    }
-    
-    function add_row(pid, node) {
-        var row = '<tr id="tr_' + pid + '_' + node + '" class="">';
-        row += '<td class="hidden">' + pid + '@' + node + '</td>';
-        row += '<td class="action">';
-        row += '<div id="jq-dropdown-1_' + pid + '_' + node + '" class="jq-dropdown jq-dropdown-tip">';
-        row += '<ul class="jq-dropdown-menu">';
-        row += '<li><a href="health.html?node=' + node + '&pid=' + pid + '" target="_blank"><i class="basic icon"></i>查看健康检查日志</a></li>';
-        row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stdout" target="_blank"><i class="basic icon"></i>查看标准输出</a></li>';
-        row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stderr" target="_blank"><i class="basic icon"></i>查看错误输出</a></li>';
-        row += '<li class="jq-dropdown-divider"></li>';
-        row += '<li><a href="javascript:void(0)" onclick="kill(\'' + node + '\', ' + pid + ')"><i class="trash icon"></i>杀死进程</a></li>';
-        row += '</ul>';
-        row += '</div>';
-        row += '<a href="javascript:void(0)" data-jq-dropdown="#jq-dropdown-1_' + pid + '_' + node + '"><i class="setting icon"></i></a>';
-        row += '</td>';
-        row += '<td><span id="node_' + pid + '_' + node + '"></span></td>';
-        row += '<td><span id="pid_' + pid + '_' + node + '">' + pid + '</span></td>';
-        row += '<td><span id="stime_' + pid + '_' + node + '"></span></td>';
-        row += '<td><span id="cmd_' + pid + '_' + node + '"></span></td>';
-        row += '<td><span id="port_' + pid + '_' + node + '"></span></td>';
-        row += '</tr>';
-        $("#statustable tr:last").after(row);
-    }
+	function refresh_row(pid, node) {
+		$.get('/v1/node/' + node + '/proc/' + pid, function(p, status, xhr) {
+			update_row(p);
+		});
+	}
 	
-    function kill(node, pid) {
-    		jConfirm('停止进程，需要继续吗？', '确认', function(r) {
-    			if (r) {
-    	            $.post('/v1/node/' + node + '/proc/' + pid + '/_kill', function(data, status, xhr) {});
-    	            jAlert('已经发出停止指令', '提示');
-    			}
-    		});
-    }
-    
+	function update_row(p) {
+		$.get('/v1/node/' + p.node, function(node, status, xhr) {
+			var address = node.agentAddress;
+			var ary = address.split(':');
+			address = ary[0] + ':' + ary[1];
+			var text = new Array();
+			$.each(p.ports, function(i, port) {
+				text.push('<a href="' + address + ':' + port + '" target="_blank">' + port + '</a>');
+			});
+			
+			$('#ppid_' + p.pid + '_' + p.node).text(p.ppid);
+			$('#node_' + p.pid + '_' + p.node).html('<a href="' + node.agentAddress + '" target="_blank">' + node.hostname + '</a>');
+			$('#stime_' + p.pid + '_' + p.node).text(p.startTime);
+			$('#cmd_' + p.pid + '_' + p.node).text(p.cmd);
+			$('#port_' + p.pid + '_' + p.node).html(text.join(', '));
+		});
+	}
+	
+	function add_row(pid, node) {
+		var row = '<tr id="tr_' + pid + '_' + node + '" class="">';
+		row += '<td class="hidden">' + pid + '@' + node + '</td>';
+		row += '<td class="action">';
+		row += '<div id="jq-dropdown-1_' + pid + '_' + node + '" class="jq-dropdown jq-dropdown-tip">';
+		row += '<ul class="jq-dropdown-menu">';
+		row += '<li><a href="health.html?node=' + node + '&pid=' + pid + '" target="_blank"><i class="basic icon"></i>查看健康检查日志</a></li>';
+		row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stdout" target="_blank"><i class="basic icon"></i>查看标准输出</a></li>';
+		row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stderr" target="_blank"><i class="basic icon"></i>查看错误输出</a></li>';
+		row += '<li class="jq-dropdown-divider"></li>';
+		row += '<li><a href="javascript:void(0)" onclick="kill(\'' + node + '\', ' + pid + ')"><i class="trash icon"></i>杀死进程</a></li>';
+		row += '</ul>';
+		row += '</div>';
+		row += '<a href="javascript:void(0)" data-jq-dropdown="#jq-dropdown-1_' + pid + '_' + node + '"><i class="setting icon"></i></a>';
+		row += '</td>';
+		row += '<td><span id="node_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="pid_' + pid + '_' + node + '">' + pid + '</span></td>';
+		row += '<td><span id="stime_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="cmd_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="port_' + pid + '_' + node + '"></span></td>';
+		row += '</tr>';
+		$("#statustable tr:last").after(row);
+	}
+	
+	function kill(node, pid) {
+		jConfirm('停止进程，需要继续吗？', '确认', function(r) {
+			if (r) {
+				$.post('/v1/node/' + node + '/proc/' + pid + '/_kill', function(data, status, xhr) {});
+				jAlert('已经发出停止指令', '提示');
+			}
+		});
+	}
+	
 	function remove_row(name) {
-        var keys = get_table_keys();
-        var pos = $.inArray(name, keys);
-        if (pos >= 0) {
-            $("#statustable tr:gt(0):eq(" + pos + ")").remove();
-        }
-    }
+		var keys = get_table_keys();
+		var pos = $.inArray(name, keys);
+		if (pos >= 0) {
+			$("#statustable tr:gt(0):eq(" + pos + ")").remove();
+		}
+	}
 	
-    function get_table_keys() {
-        var keys = new Array();
-        var key = '';
-        $("#statustable tr td:nth-child(1)").each(function () {
-            key = $(this).text();
-            if (key) {
-                keys.push(key);
-            }
-        });
-        return keys;
-    }
-    
-    function get_table_keys() {
-        var keys = new Array();
-        var key = '';
-        $("#statustable tr td:nth-child(1)").each(function () {
-            key = $(this).text();
-            if (key) {
-                keys.push(key);
-            }
-        });
-        return keys;
-    }
-    
+	function get_table_keys() {
+		var keys = new Array();
+		var key = '';
+		$("#statustable tr td:nth-child(1)").each(function () {
+			key = $(this).text();
+			if (key) {
+				keys.push(key);
+			}
+		});
+		return keys;
+	}
+	
+	function get_table_keys() {
+		var keys = new Array();
+		var key = '';
+		$("#statustable tr td:nth-child(1)").each(function () {
+			key = $(this).text();
+			if (key) {
+				keys.push(key);
+			}
+		});
+		return keys;
+	}
+	
 	function show_app(app) {
 		$('#app_name_title').text(app.name);
 		$('#app_name').text(app.name);

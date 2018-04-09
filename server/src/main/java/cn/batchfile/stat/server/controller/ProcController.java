@@ -29,13 +29,13 @@ public class ProcController {
 	@GetMapping("/v1/proc")
 	public List<P> getProcs() {
 		List<Proc> ps = procService.getProcs();
-		return ps.stream().map(p -> new P(p.getPid(), p.getNode())).collect(Collectors.toList());
+		return ps.stream().map(p -> new P(p.getPid(), p.getNode(), p.getApp())).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/v1/app/{name}/proc")
 	public List<P> getProcsByApp(@PathVariable("name") String app) {
 		List<Proc> ps = procService.getProcsByApp(app);
-		return ps.stream().map(p -> new P(p.getPid(), p.getNode())).collect(Collectors.toList());
+		return ps.stream().map(p -> new P(p.getPid(), p.getNode(), p.getApp())).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/v1/app/{name}/proc/{pid}")
@@ -53,7 +53,7 @@ public class ProcController {
 	@GetMapping("/v1/node/{id}/proc")
 	public List<P> getProcsByNode(@PathVariable("id") String node) {
 		List<Proc> ps = procService.getProcsByNode(node);
-		return ps.stream().map(p -> new P(p.getPid(), p.getNode())).collect(Collectors.toList());
+		return ps.stream().map(p -> new P(p.getPid(), p.getNode(), p.getApp())).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/v1/node/{id}/proc/{pid}")
@@ -75,9 +75,10 @@ public class ProcController {
 		
 		RestResponse<P> resp = new RestResponse<P>();
 		try {
+			Proc p = procService.getProcByNode(node, pid);
 			procService.killProcs(node, Arrays.asList(new Long[] {pid}));
 			resp.setOk(true);
-			resp.setBody(new P(pid, node));
+			resp.setBody(new P(pid, node, p == null ? null : p.getApp()));
 		} catch (Exception e) {
 			resp.setOk(false);
 			resp.setMessage(e.getMessage());

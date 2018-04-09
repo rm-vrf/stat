@@ -67,9 +67,14 @@ public class SysService {
 
 		//change lib path
 		String libPath = System.getProperty("java.library.path");
-		log.info("lib path: {}", libPath);
 		File sigarPath = new File(new File(storeDirectory), "sigar");
-		System.setProperty("java.library.path", sigarPath.getAbsolutePath());
+		if (StringUtils.isEmpty(libPath)) {
+			libPath = sigarPath.getAbsolutePath();
+		} else {
+			libPath = String.format("%s%s%s", sigarPath.getAbsolutePath(), File.pathSeparatorChar, libPath);
+		}
+		log.info("lib path: {}", libPath);
+		System.setProperty("java.library.path", libPath);
 		
 		//set sys_paths to null
 		final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
