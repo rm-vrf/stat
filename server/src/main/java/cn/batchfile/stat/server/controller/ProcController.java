@@ -51,8 +51,8 @@ public class ProcController {
 	}
 	
 	@GetMapping("/v1/node/{id}/proc")
-	public List<P> getProcsByNode(@PathVariable("id") String node) {
-		List<Proc> ps = procService.getProcsByNode(node);
+	public List<P> getProcsByNode(@PathVariable("id") String node, @RequestParam(name="query", defaultValue="") String query) {
+		List<Proc> ps = procService.getProcsByNode(node, query);
 		return ps.stream().map(p -> new P(p.getPid(), p.getNode(), p.getApp())).collect(Collectors.toList());
 	}
 	

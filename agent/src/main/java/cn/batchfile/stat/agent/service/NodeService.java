@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,7 @@ public class NodeService {
 		if (tags != null) {
 			node.setTags(tags);
 		}
+		node.setTimestamp(new Date());
 		return node;
 	}
 	

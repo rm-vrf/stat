@@ -48,6 +48,11 @@ public class NodeService {
 	private EventService eventService;
 	
 	public void putNode(Node node) {
+		
+		//更新时间戳
+		node.setTimestamp(new Date());
+		//TODO 检查时间戳的差值，不能太大。时差太大有隐患
+		
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("id", node.getId());
 		map.put("hostname", node.getHostname());
@@ -57,7 +62,7 @@ public class NodeService {
 		map.put("networks", node.getNetworks());
 		map.put("disks", node.getDisks());
 		map.put("tags", node.getTags());
-		map.put("timestamp", TIME_FORMAT.get().format(new Date()));
+		map.put("timestamp", TIME_FORMAT.get().format(node.getTimestamp()));
 		String json = JSON.toJSONString(map);
 
 		//插入在线节点

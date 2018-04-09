@@ -1,6 +1,7 @@
 package cn.batchfile.stat.domain;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Node {
@@ -12,6 +13,7 @@ public class Node {
 	private List<Network> networks = new ArrayList<Network>();
 	private List<Disk> disks = new ArrayList<Disk>();
 	private List<String> tags = new ArrayList<String>();
+	private Date timestamp;
 	
 	public String getId() {
 		return id;
@@ -75,5 +77,13 @@ public class Node {
 
 	public void setTags(List<String> tags) {
 		this.tags = tags;
+	}
+
+	public Date getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Date timestamp) {
+		this.timestamp = timestamp;
 	}
 }

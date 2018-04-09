@@ -100,12 +100,27 @@ public class ProcService {
 		scheduleProc(choreos);
 	}
 	
-	public List<Proc> getProcsByNode(String node) {
-		return getPs(INDEX_NAME, TYPE_NAME_NODE, node);
+	public List<Proc> getProcsByNode(String node, String query) {
+		List<Proc> ps = getPs(INDEX_NAME, TYPE_NAME_NODE, node);
+		final Node n = nodeService.getNode(node);
+		if (StringUtils.isNotEmpty(query)) {
+			ps = ps.stream().filter(p -> {
+				if (StringUtils.containsIgnoreCase(p.getApp(), query)) {
+					return true;
+				} else {
+					if (StringUtils.containsIgnoreCase(n.getHostname(), query) 
+							|| StringUtils.containsIgnoreCase(n.getAgentAddress(), query)) {
+						return true;
+					}
+				}
+				return false;
+			}).collect(Collectors.toList());
+		}
+		return ps;
 	}
 	
 	public Proc getProcByNode(String node, long pid) {
-		List<Proc> ps = getProcsByNode(node);
+		List<Proc> ps = getProcsByNode(node, StringUtils.EMPTY);
 		ps = ps.stream().filter(p -> p.getPid() == pid).collect(Collectors.toList());
 		return ps.size() > 0 ? ps.get(0) : null;
 	}

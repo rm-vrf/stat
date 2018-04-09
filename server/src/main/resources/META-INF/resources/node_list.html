@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>所有节点 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="active item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="active teal item" href="node_list.html">
+								<i class="plane icon"></i> 所有节点
+							</a>
+							<a class="item" href="node_stat.html">
+								<i class="bar chart icon"></i> 节点统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large plane icon"></i>
+								<div class="content">
+									所有节点
+									<div class="sub header">所有节点都在这里</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<div class="ui vertical segment">
+						<div class="ui small icon input right">
+							<input id="node_name" type="text" value="*" placeholder="输入搜索条件">
+							<i id="search_button" class="search icon"></i>
+						</div>
+					</div>
+					<div id="nodeList"></div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+	$(document).ready(function() {
+		$('#search_button').click(function() {
+			$("#nodeList").empty();
+			show_nodes($('#node_name').val(), 0, 10);
+		});
+		show_nodes($('#node_name').val(), 0, 10);
+		//setInterval(function() {
+			//show_stats();
+		//}, 5000);
+	});
+	
+	function show_nodes(query, from, size) {
+		$.ajax({
+			url: '/v1/node/_search?from=' + from + '&size=' + size,
+			type: 'POST',
+			contentType: 'application/json',
+			data: query,
+			dataType: 'json',
+			success: function(data, status, xhr) {
+				for (i = 0; i < data.rows.length; i++) {
+					$("#nodeList").append(get_node_html(data.rows[i]));
+				}
+			},
+			error: function(xhr, status, error) {
+				jAlert('查询失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
+			}
+		});
+	}
+	
+	function get_node_html(node) {
+		var ip = new Array();
+		for (var i=0; i<node.networks.length; i++) {
+			ip[i] = node.networks[i].address;
+		}
+		var cpus = node.os.cpus;
+		var mem = node.memory.total;
+		var disk = 0;
+		for (var i=0; i<node.disks.length; i++) {
+			disk += node.disks[i].total;
+		}
+		var stat = '';
+		if (node.agentAddress) {
+			stat = '<a href="' + node.agentAddress + '" target="_blank"><span class="ui type label green">在线</span></a>';
+		} else {
+			stat = '<span class="ui type label red">离线</span>';
+		}
+		var html = '<div id="node_div_' + node.id + '" class="ui app two column middle aligned vertical grid segment">';
+		html += '<div class="ui message hidden app_key">' + node.id + '</div>';
+		html += '<div class="column verborder">';
+		html += '<div class="ui info segment">';
+		html += '<h5 class="ui header">' + node.hostname + ' <span id="stat_' + node.id + '">' + stat + '</span></h5>';
+		html += '<p>系统：<span id="os_' + node.id + '">' + node.os.name + ' ' + node.os.version + ' ' + node.os.architecture + '</span></p>';
+		html += '<p>地址：<span id="address_' + node.id + '">' + ip + '</span></p>';
+		html += '<p>资源：<span id="res_' + node.id + '">' + cpus + ' 核CPU, ' + byteCountToDisplaySize(mem) + ' 内存, ' + byteCountToDisplaySize(disk) + ' 磁盘</span></p>';
+		html += '<p>标签：<span id="tag_' + node.id + '">' + node.tags + '</span></p>';
+		html += '</div>';
+		html += '</div>';
+		html += '<div class="center aligned column">';
+		html += '<div class="ui buttons">';
+		html += '<a class="ui tiny blue button" href="./node.html?id=' + node.id + '"><i class="setting icon"></i>管 理</a>';
+		html += '<a class="ui tiny basic button" href="./edit_node.html?id=' + node.id + '"><i class="trash icon"></i>修 改</a>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		return html;
+	}
+	
+	</script>
+</body>
+</html>
