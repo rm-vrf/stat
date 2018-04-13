@@ -18,6 +18,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -118,6 +119,7 @@ public class NodeService {
 		//查询数据
 		SearchRequestBuilder search = elasticService.getNode().client().prepareSearch().setIndices(INDEX_NAME)
 				.setQuery(QueryBuilders.queryStringQuery(query))
+				.addSort("networks.address", SortOrder.ASC)
 				.setFrom(from).setSize(size);
 		if (includeDownNode) {
 			search.setTypes(TYPE_NAME_UP, TYPE_NAME_DOWN);

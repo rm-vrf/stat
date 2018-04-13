@@ -78,12 +78,19 @@
 						</div>
 					</div>
 					<div class="ui vertical segment">
+						符合搜索条件的共 <span id="totalCount"></span> 个节点，
+						共 <span id="pageCount"></span> 页，这是第 <span id="pageIndex"></span> 页。
 						<div class="ui small icon input right">
 							<input id="node_name" type="text" value="*" placeholder="输入搜索条件">
 							<i id="search_button" class="search icon"></i>
 						</div>
+						<div class="ui label left pointing">
+							<a href="help.html#query" target="blank">点击这里了解节点检索语法</a>
+						</div>
 					</div>
 					<div id="nodeList"></div>
+					<!-- page menu -->
+					<div id="pagination" class="ui pagination menu"></div>
 				</div>
 			</div>
 		</div>	
@@ -102,18 +109,21 @@
 		</div>
 	</footer>
 	<script>
+	var PAGE_SIZE = 10;
 	$(document).ready(function() {
 		$('#search_button').click(function() {
-			$("#nodeList").empty();
-			show_nodes($('#node_name').val(), 0, 10);
+			show_nodes(0);
 		});
-		show_nodes($('#node_name').val(), 0, 10);
-		//setInterval(function() {
-			//show_stats();
-		//}, 5000);
+		show_nodes(0);
+		setInterval(function() {
+			show_stats();
+		}, 5000);
 	});
 	
-	function show_nodes(query, from, size) {
+	function show_nodes(from) {
+		$("#nodeList").empty();
+		var query = $('#node_name').val();
+		var size = PAGE_SIZE;
 		$.ajax({
 			url: '/v1/node/_search?from=' + from + '&size=' + size,
 			type: 'POST',
@@ -121,14 +131,105 @@
 			data: query,
 			dataType: 'json',
 			success: function(data, status, xhr) {
+				show_pagination(data.total, from, size);
 				for (i = 0; i < data.rows.length; i++) {
 					$("#nodeList").append(get_node_html(data.rows[i]));
 				}
+				show_stats();
 			},
 			error: function(xhr, status, error) {
 				jAlert('查询失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
 			}
 		});
+	}
+	
+	function show_pagination(total, from, size) {
+		var page_count = total % size == 0 ? total / size : Math.floor(total / size) + 1;
+		var page_index = from / size + 1;
+		$('#totalCount').text(total);
+		$('#pageCount').text(page_count);
+		$('#pageIndex').text(page_index);
+		$("#pagination").empty();
+		
+		//show last page
+		if (page_index == 1) {
+			$('#pagination').append('<a class="icon item"><i class="icon left arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_nodes(' + (from - size) + ')"><i class="icon left arrow"></i></a>');
+		}
+		
+		var max_pos = 3;
+		var start = 1;
+		var start_dis = false;
+		if (page_index - start > max_pos) {
+			start = page_index - max_pos;
+			start_dis = true;
+		}
+		
+		var end = page_count;
+		var end_dis = false;
+		if (end - page_index > max_pos) {
+			end = page_index + max_pos
+			end_dis = true;
+		}
+		
+		if (start_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+		
+		//show page index
+		for (var i=start; i<=end; i++) {
+			if (i == page_index) {
+				$('#pagination').append('<a class="active item">' + i + '</a>');
+			} else {
+				$('#pagination').append('<a class="item" onclick="show_nodes(' + ((i - 1) * size) + ')">' + i + '</a>');
+			}
+		}
+		
+		if (end_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+
+		//show next page
+		if (page_index == page_count) {
+			$('#pagination').append('<a class="icon item"><i class="icon right arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_nodes(' + (from + size) + ')"><i class="icon right arrow"></i></a>');
+		}
+	}
+	
+	function show_stats() {
+		var node_ids = get_keys();
+		$.each(node_ids, function(i, node_id) {
+			show_stat(node_id);
+		});
+	}
+	
+	function show_stat(node_id) {
+		$.get('/v1/node/' + node_id, function(node, status, xhr) {
+			//node status
+			set_button_status(node_id, node.agentAddress);
+			
+			//status display
+			var stat = '';
+			if (node.agentAddress) {
+				stat = '<a href="' + node.agentAddress + '" target="_blank"><span class="ui type label green">在线</span></a>';
+			} else {
+				stat = '<span class="ui type label red">离线</span>';
+			}
+			$('#stat_' + node.id).html(stat);
+		});
+	}
+	
+	function set_button_status(node_id, agent_address) {
+		//alert(node_id);
+		if (agent_address) {
+			$('#oper_' + node_id).show();
+			$('#edit_' + node_id).show();
+		} else {
+			$('#oper_' + node_id).hide();
+			$('#edit_' + node_id).hide();
+		}
 	}
 	
 	function get_node_html(node) {
@@ -149,7 +250,7 @@
 			stat = '<span class="ui type label red">离线</span>';
 		}
 		var html = '<div id="node_div_' + node.id + '" class="ui app two column middle aligned vertical grid segment">';
-		html += '<div class="ui message hidden app_key">' + node.id + '</div>';
+		html += '<div class="ui message hidden node_key">' + node.id + '</div>';
 		html += '<div class="column verborder">';
 		html += '<div class="ui info segment">';
 		html += '<h5 class="ui header">' + node.hostname + ' <span id="stat_' + node.id + '">' + stat + '</span></h5>';
@@ -161,13 +262,26 @@
 		html += '</div>';
 		html += '<div class="center aligned column">';
 		html += '<div class="ui buttons">';
-		html += '<a class="ui tiny blue button" href="./node.html?id=' + node.id + '"><i class="setting icon"></i>管 理</a>';
-		html += '<a class="ui tiny basic button" href="./edit_node.html?id=' + node.id + '"><i class="trash icon"></i>修 改</a>';
+		html += '<a id="oper_' +  node.id + '" class="ui tiny blue button hidden" href="./node.html?id=' + node.id + '"><i class="setting icon"></i>管 理</a>';
+		html += '<a id="edit_' +  node.id + '" class="ui tiny basic button hidden" href="./edit_node.html?id=' + node.id + '"><i class="trash icon"></i>修 改</a>';
 		html += '</div>';
 		html += '</div>';
 		html += '</div>';
 		return html;
 	}
+	
+	function get_keys() {
+		var keys = new Array();
+		var ctls = $('.node_key');
+		if (ctls) {
+			for (var i = 0; i < ctls.length; i++) {
+				var ctl = ctls[i];
+				keys.push(ctl.innerHTML);
+			}
+		}
+		return keys;
+	}
+
 	
 	</script>
 </body>
