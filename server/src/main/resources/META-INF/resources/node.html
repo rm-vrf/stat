@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>管理节点 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.dropdown.css" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.dropdown.js"></script>
+	<style type="text/css">
+		.hidden {
+			display:none;
+		}
+	</style>
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="active item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="active teal item" href="node_list.html">
+								<i class="plane icon"></i> 所有节点
+							</a>
+							<a class="item" href="node_stat.html">
+								<i class="bar chart icon"></i> 节点统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large plane icon"></i>
+								<div class="content">
+									管理节点
+									<div class="sub header">管理 <span id="node_name_title"></span> 节点和进程</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<!--the app info-->
+					<div class="ui app two column middle aligned vertical grid segment">
+						<div class="column verborder">
+							<div class="ui info segment">
+								<h5 class="ui header">
+									<span id="node_name"></span>
+									<span id="node_status"></span>
+								</h5>
+								<p>系统：<span id="node_os"></span></p>
+								<p>地址：<span id="node_address"></span></p>
+								<p>资源：<span id="node_res"></span></p>
+								<p>标签：<span id="node_tag"></span></p>
+							</div>
+						</div>
+						<div class="center aligned column">
+							<div class="ui buttons">
+								<a id="edit_button" class="ui tiny basic button"><i class="edit icon"></i>修 改</a>
+							</div>
+						</div>
+					</div>
+					<div class="ui vertical segment">
+						<div class="ui small left icon input">
+							<input id="queryDisplay" type="text" style="width:150px" placeholder="输入应用名...">
+							<input type="hidden" id="query" value="">
+							<i class="search icon"></i>
+							<a id="queryFilter" class="circular ui mini button" title="过滤">过滤</a>
+							<a id="queryAll" class="circular ui mini button active" title="全部">全部</a>
+						</div>
+					</div>
+					<!-- the proc table-->
+					<table id="statustable" class="ui compact table">
+						<tr>
+							<th class="hidden">hidden</th>
+							<th>操作</th>
+							<th>名称</th>
+							<th>PID</th>
+							<th>时间</th>
+							<th>命令</th>
+							<th>端口</th>
+						</tr>
+					</table>
+					<div id="pagination" class="ui pagination menu">
+					</div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+	$(document).ready(function() {
+		var node_id = requestParameter('id').id.replace('#', '');
+		$.get('/v1/node/' + node_id, function(node, status, xhr) {
+			show_node(node);
+			show_stat(node_id);
+			refresh_list(node_id);
+		});
+		setInterval(function() {
+			show_stat(node_id);
+			refresh_list(node_id);
+		}, 5000);
+		$('#queryFilter').click(function() {
+			$('#queryFilter').addClass('active');
+			$('#queryAll').removeClass('active');
+			$('#query').val($('#queryDisplay').val());
+			refresh_list(node_id);
+		});
+		$('#queryAll').click(function() {
+			$('#queryAll').addClass('active');
+			$('#queryFilter').removeClass('active');
+			$('#queryDisplay').val('');
+			$('#query').val($('#queryDisplay').val());
+			refresh_list(node_id);
+		});
+	});
+	
+	function refresh_list(node_id) {
+		var query = $('#query').val();
+		$.get('/v1/node/' + node_id + '/proc?query=' + query, function(ps, status, xhr) {
+			var signs = new Array();
+			for (var i=0; i<ps.length; i++) {
+				signs[i] = ps[i].pid + '@' + ps[i].node;
+			}
+			//remove deleted row
+			var keys = get_table_keys();
+			$.each(keys, function(i, key) {
+				if ($.inArray(key, signs) < 0) {
+					remove_row(key);
+				}
+			});
+			//add new row
+			$.each(ps, function(i, p) {
+				var sign = p.pid + '@' + p.node;
+				if ($.inArray(sign, keys) < 0) {
+					add_row(p.pid, p.node);
+					refresh_row(p.pid, p.node);
+				}
+			});
+		});
+	}
+	
+	function refresh_row(pid, node) {
+		$.get('/v1/node/' + node + '/proc/' + pid, function(p, status, xhr) {
+			update_row(p);
+		});
+	}
+	
+	function update_row(p) {
+		$.get('/v1/node/' + p.node, function(node, status, xhr) {
+			var address = node.agentAddress;
+			var ary = address.split(':');
+			address = ary[0] + ':' + ary[1];
+			var text = new Array();
+			$.each(p.ports, function(i, port) {
+				text.push('<a href="' + address + ':' + port + '" target="_blank">' + port + '</a>');
+			});
+			
+			$('#ppid_' + p.pid + '_' + p.node).text(p.ppid);
+			$('#app_' + p.pid + '_' + p.node).html(p.app);
+			$('#stime_' + p.pid + '_' + p.node).text(p.startTime);
+			$('#cmd_' + p.pid + '_' + p.node).text(p.cmd);
+			$('#port_' + p.pid + '_' + p.node).html(text.join(', '));
+		});
+	}
+	
+	function add_row(pid, node) {
+		var row = '<tr id="tr_' + pid + '_' + node + '" class="">';
+		row += '<td class="hidden">' + pid + '@' + node + '</td>';
+		row += '<td class="action">';
+		row += '<div id="jq-dropdown-1_' + pid + '_' + node + '" class="jq-dropdown jq-dropdown-tip">';
+		row += '<ul class="jq-dropdown-menu">';
+		row += '<li><a href="health.html?node=' + node + '&pid=' + pid + '" target="_blank"><i class="basic icon"></i>查看健康检查日志</a></li>';
+		row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stdout" target="_blank"><i class="basic icon"></i>查看标准输出</a></li>';
+		row += '<li><a href="tail.html?node=' + node + '&pid=' + pid + '&out=stderr" target="_blank"><i class="basic icon"></i>查看错误输出</a></li>';
+		row += '<li class="jq-dropdown-divider"></li>';
+		row += '<li><a href="javascript:void(0)" onclick="kill(\'' + node + '\', ' + pid + ')"><i class="trash icon"></i>杀死进程</a></li>';
+		row += '</ul>';
+		row += '</div>';
+		row += '<a href="javascript:void(0)" data-jq-dropdown="#jq-dropdown-1_' + pid + '_' + node + '"><i class="setting icon"></i></a>';
+		row += '</td>';
+		row += '<td><span id="app_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="pid_' + pid + '_' + node + '">' + pid + '</span></td>';
+		row += '<td><span id="stime_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="cmd_' + pid + '_' + node + '"></span></td>';
+		row += '<td><span id="port_' + pid + '_' + node + '"></span></td>';
+		row += '</tr>';
+		$("#statustable tr:last").after(row);
+	}
+	
+	function kill(node, pid) {
+		jConfirm('停止进程，需要继续吗？', '确认', function(r) {
+			if (r) {
+				$.post('/v1/node/' + node + '/proc/' + pid + '/_kill', function(data, status, xhr) {});
+				jAlert('已经发出停止指令', '提示');
+			}
+		});
+	}
+	
+	function remove_row(name) {
+		var keys = get_table_keys();
+		var pos = $.inArray(name, keys);
+		if (pos >= 0) {
+			$("#statustable tr:gt(0):eq(" + pos + ")").remove();
+		}
+	}
+	
+	function get_table_keys() {
+		var keys = new Array();
+		var key = '';
+		$("#statustable tr td:nth-child(1)").each(function () {
+			key = $(this).text();
+			if (key) {
+				keys.push(key);
+			}
+		});
+		return keys;
+	}
+	
+	function get_table_keys() {
+		var keys = new Array();
+		var key = '';
+		$("#statustable tr td:nth-child(1)").each(function () {
+			key = $(this).text();
+			if (key) {
+				keys.push(key);
+			}
+		});
+		return keys;
+	}
+	
+	function show_node(node) {
+		var ip = new Array();
+		for (var i=0; i<node.networks.length; i++) {
+			ip[i] = node.networks[i].address;
+		}
+		var cpus = node.os.cpus;
+		var mem = node.memory.total;
+		var disk = 0;
+		for (var i=0; i<node.disks.length; i++) {
+			disk += node.disks[i].total;
+		}
+		set_button_status(node.id, node.agentAddress);
+		$('#node_name_title').text(node.hostname);
+		$('#node_name').text(node.hostname);
+		$('#node_os').text(node.os.name + ' ' + node.os.version + ' ' + node.os.architecture);
+		$('#node_address').text(ip);
+		$('#node_res').text(cpus + ' 核CPU, ' + byteCountToDisplaySize(mem) + ' 内存, ' + byteCountToDisplaySize(disk) + ' 磁盘');
+		$('#node_tag').text(node.tags);
+	}
+
+	function set_button_status(node_id, agent_address) {
+		if (agent_address) {
+			$('#node_status').html('<a href="' + agent_address + '" target="_blank"><span class="ui type label green">在线</span></a>');
+			$('#edit_button').show();
+			$('#edit_button').attr('onclick', "window.location.href='edit_node.html?id=" + node_id + "';");
+		} else {
+			$('#node_status').html('<span class="ui type label red">离线</span>');
+			$('#edit_button').hide();
+		}
+	}
+	
+	function show_stat(node_id) {
+		$.get('/v1/node/' + node_id, function(node, status, xhr) {
+			set_button_status(node.id, node.agentAddress);
+		});
+	}
+	
+	function start_app(name) {
+		$.post('/v1/app/' + name + '/_start', function(data, status, xhr) {
+			jAlert('已经对应用 ' + name + ' 发出启动指令', '提示');
+		});
+	}
+	
+	function stop_app(name) {
+		jConfirm('是否要停止应用 ' + name + ' ？', '确认', function(r) {
+			if (r) {
+				$.post('/v1/app/' + name + '/_stop', function(data, status, xhr) {
+					jAlert('已经对应用 ' + name + ' 发出停止指令', '提示');
+				});
+			}
+		});
+	}
+	
+	function delete_app(name) {
+		jConfirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？', '确认', function(r) {
+			if (r) {
+				$.ajax({
+					url: '/v1/app/' + name,
+					type: 'DELETE',
+					contentType: 'application/json',
+					dataType: 'json',
+					success: function(data, status, xhr) {
+						jAlert('已经删除应用 ' + name, '提示');
+						$('#popup_ok').click(function() {
+							window.location.href = 'app_list.html';
+						});
+					},
+					error: function(xhr, status, error) {
+						jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '提示');
+					}
+				});
+			}
+		});
+	}
+	</script>
+</body>
+</html>

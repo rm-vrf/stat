@@ -5,6 +5,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -163,6 +164,9 @@ public class ProcService {
 					ps = JSON.parseArray(json, Proc.class);
 				}
 			}
+			Collections.sort(ps, (p1, p2) -> {
+				return (int)(p1.getPid() - p2.getPid());
+			});
 		} catch (IndexNotFoundException e) {
 			//
 		}
