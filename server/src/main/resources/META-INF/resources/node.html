@@ -273,18 +273,6 @@
 		return keys;
 	}
 	
-	function get_table_keys() {
-		var keys = new Array();
-		var key = '';
-		$("#statustable tr td:nth-child(1)").each(function () {
-			key = $(this).text();
-			if (key) {
-				keys.push(key);
-			}
-		});
-		return keys;
-	}
-	
 	function show_node(node) {
 		var ip = new Array();
 		for (var i=0; i<node.networks.length; i++) {
@@ -319,44 +307,6 @@
 	function show_stat(node_id) {
 		$.get('/v1/node/' + node_id, function(node, status, xhr) {
 			set_button_status(node.id, node.agentAddress);
-		});
-	}
-	
-	function start_app(name) {
-		$.post('/v1/app/' + name + '/_start', function(data, status, xhr) {
-			jAlert('已经对应用 ' + name + ' 发出启动指令', '提示');
-		});
-	}
-	
-	function stop_app(name) {
-		jConfirm('是否要停止应用 ' + name + ' ？', '确认', function(r) {
-			if (r) {
-				$.post('/v1/app/' + name + '/_stop', function(data, status, xhr) {
-					jAlert('已经对应用 ' + name + ' 发出停止指令', '提示');
-				});
-			}
-		});
-	}
-	
-	function delete_app(name) {
-		jConfirm('是否要删除应用 ' + name + ' ，这个操作无法恢复？', '确认', function(r) {
-			if (r) {
-				$.ajax({
-					url: '/v1/app/' + name,
-					type: 'DELETE',
-					contentType: 'application/json',
-					dataType: 'json',
-					success: function(data, status, xhr) {
-						jAlert('已经删除应用 ' + name, '提示');
-						$('#popup_ok').click(function() {
-							window.location.href = 'app_list.html';
-						});
-					},
-					error: function(xhr, status, error) {
-						jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '提示');
-					}
-				});
-			}
 		});
 	}
 	</script>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>修改节点 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.alerts.css" media="screen" />
+	<link type="text/css" rel="stylesheet" href="resource/css/jquery.tagsinput.css" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.alerts.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery.tagsinput.js"></script>
+	<style type="text/css">
+		.repeat {
+			height:48px;
+		}
+		.ui.form .ui.input .full-width {
+			width:450px;
+		}
+		.ui.form .ui.input .part-width {
+			width:430px;
+		}
+		.ui.form .ui.input .half-width {
+			width:207px;
+		}
+		.ui.form .ui.input {
+			width:550px;
+		}
+	</style>
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="active item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="htlp.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="active teal item" href="node_list.html">
+								<i class="plane icon"></i> 所有节点
+							</a>
+							<a class="item" href="node_stat.html">
+								<i class="bar chart icon"></i> 节点统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large edit icon"></i>
+								<div class="content">
+									修改节点
+									<div class="sub header">输入新的节点信息</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<div class="ui form fluid vertical segment">
+						<form id="f" name="f" method="post">
+							<input type="hidden" name="id" value="" id="id"/>
+							<!-- element -->
+							<div class="field">
+								<label>节点名称</label>
+								<div class="ui small left icon input">
+									<input type="text" name="hostname" id="hostname" class="full-width" readonly>
+									<i class="plane icon"></i>
+								</div>
+							</div>
+							<div class="field">
+								<label>标签</label>
+								<div class="ui small left input">
+									<input type="text" name="tags" id="tags">
+								</div>
+							</div>
+							<input name="save" id="save" class="ui small blue submit button" type="button" value="立即保存">
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+	$(document).ready(function() {
+		var id = requestParameter('id').id.replace('#', '');
+		$.get('/v1/node/' + id, function(node, status, xhr) {
+			show_node(node);
+		});
+		$('#save').click(function() {
+			save_node();
+		});
+	});
+	
+	function show_node(node) {
+		$('#id').val(node.id);
+		$('#hostname').val(node.hostname);
+		$('#hostname').attr("disabled","disabled")
+		$('#tags').val(node.tags);
+		$('#tags').tagsInput();
+	}
+	
+	function save_node() {
+		var id = $('#id').val();
+		var s = $('#tags').val();
+		var tags = new Array();
+		if (s) {
+			tags = s.split(',');
+		}
+		var json = JSON.stringify(tags);
+		$.ajax({
+			url: '/v1/node/' + id + '/tags',
+			type: 'PUT',
+			contentType: 'application/json',
+			data: json,
+			dataType: 'json',
+			success: function(data, status, xhr) {
+				jAlert('已经保存', '提示');
+				$('#popup_ok').click(function() {
+					window.location.href = 'node.html?id=' + id;
+				});
+			},
+			error: function(xhr, status, error) {
+				jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
+			}
+		});
+	}
+	</script>
+</body>
+</html>

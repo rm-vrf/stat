@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
 
@@ -47,6 +48,9 @@ public class NodeService {
 	
 	@Autowired
 	private EventService eventService;
+	
+	@Autowired
+	private RestTemplate restTemplate;
 	
 	public void putNode(Node node) {
 		
@@ -111,6 +115,19 @@ public class NodeService {
 		} catch (IndexNotFoundException e) {
 			return null;
 		}
+	}
+	
+	public void putTags(String id, List<String> tags) {
+		Node node = getNode(id);
+		if (StringUtils.isEmpty(node.getAgentAddress())) {
+			throw new RuntimeException("cannot change tags of a offline node");
+		}
+		node.setTags(tags);
+		
+		String url = String.format("%s/v1/node/tag", node.getAgentAddress());
+		restTemplate.put(url, tags);
+		
+		putNode(node);
 	}
 
 	public PaginationList<Node> searchNodes(String query, int from, int size, boolean includeDownNode) {

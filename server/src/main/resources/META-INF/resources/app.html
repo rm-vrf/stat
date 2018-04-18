@@ -280,18 +280,6 @@
 		return keys;
 	}
 	
-	function get_table_keys() {
-		var keys = new Array();
-		var key = '';
-		$("#statustable tr td:nth-child(1)").each(function () {
-			key = $(this).text();
-			if (key) {
-				keys.push(key);
-			}
-		});
-		return keys;
-	}
-	
 	function show_app(app) {
 		$('#app_name_title').text(app.name);
 		$('#app_name').text(app.name);
