@@ -79,6 +79,10 @@
 								<i class="search icon"></i>
 							</span>
 						</a>
+						<label>
+						符合搜索条件的应用 <span id="totalCount"></span> 个，
+						共 <span id="pageCount"></span> 页，这是第 <span id="pageIndex"></span> 页
+						</label>
 						<a id="appQuickButton" class="ui red small labeled icon button" href="./app_list.html">
 							<i class="settings icon"></i>管理所有应用
 						</a>
@@ -86,8 +90,8 @@
 				</div>
 			</div>
 			<!--app list-->
-			<div class="ui three column grid" id="indexList">
-			</div>
+			<div class="ui three column grid" id="indexList"></div>
+			<div id="pagination" class="ui pagination menu"></div>
 		</div>
 	</div>
 	<!--footer begin-->
@@ -104,6 +108,7 @@
 		</div>
 	</footer>
 	<script>
+	var PAGE_SIZE = 10;
 	$(document).ready(function() {
 		$.ajax({
 			url: '/v1/node/_search?from=0&size=0&includeDownNode=false',
@@ -128,28 +133,31 @@
 		});
 		
 		$('#search_button').click(function() {
-			$("#indexList").empty();
-			show_apps($('#app_name').val());
+			show_apps(0);
 		});
 		
-		show_apps($('#app_name').val());
+		show_apps(0);
 		
 		setInterval(function() {
 			show_stats();
 		}, 5000);
 	});
 	
-	function show_apps(query) {
+	function show_apps(from) {
+		$("#indexList").empty();
+		var query = $('#app_name').val();
+		var size = PAGE_SIZE;
 		$.get('/v1/app?query=' + encodeURIComponent(query), function(app_names, status, xhr) {
+			show_pagination(app_names.length, from, size);
 			var last, i;
-			for (i = 0; i < app_names.length; i++) {
+			for (i = 0; i < app_names.length - from && i < size; i++) {
 				//add row
 				if (i % 3 == 0) {
 					$("#indexList").append('<div id="row_' + i + '" class="row"></div>');
 					last = $("#row_" + i);
 				}
 				//add column
-				last.append(get_app_column_html(app_names[i]));
+				last.append(get_app_column_html(app_names[i + from]));
 			}
 			//add row for operation column
 			if (i % 3 == 0) {
@@ -164,6 +172,60 @@
 			//show status
 			show_stats();
 		});
+	}
+	
+	function show_pagination(total, from, size) {
+		var page_count = total % size == 0 ? total / size : Math.floor(total / size) + 1;
+		var page_index = from / size + 1;
+		$('#totalCount').text(total);
+		$('#pageCount').text(page_count);
+		$('#pageIndex').text(page_index);
+		$("#pagination").empty();
+		
+		if (page_index == 1) {
+			$('#pagination').append('<a class="icon item"><i class="icon left arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_apps(' + (from - size) + ')"><i class="icon left arrow"></i></a>');
+		}
+		
+		var max_pos = 3;
+		var start = 1;
+		var start_dis = false;
+		if (page_index - start > max_pos) {
+			start = page_index - max_pos;
+			start_dis = true;
+		}
+		
+		var end = page_count;
+		var end_dis = false;
+		if (end - page_index > max_pos) {
+			end = page_index + max_pos
+			end_dis = true;
+		}
+		
+		if (start_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+		
+		//show page index
+		for (var i=start; i<=end; i++) {
+			if (i == page_index) {
+				$('#pagination').append('<a class="active item">' + i + '</a>');
+			} else {
+				$('#pagination').append('<a class="item" onclick="show_apps(' + ((i - 1) * size) + ')">' + i + '</a>');
+			}
+		}
+		
+		if (end_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+
+		//show next page
+		if (page_index == page_count) {
+			$('#pagination').append('<a class="icon item"><i class="icon right arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_apps(' + (from + size) + ')"><i class="icon right arrow"></i></a>');
+		}
 	}
 	
 	function show_stats() {

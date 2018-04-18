@@ -75,7 +75,10 @@
 								<i class="large cloud icon"></i>
 								<div class="content">
 									所有应用
-									<div class="sub header">所有应用都在这里</div>
+									<div class="sub header">
+										符合搜索条件的应用 <span id="totalCount"></span> 个，
+										共 <span id="pageCount"></span> 页，这是第 <span id="pageIndex"></span> 页
+									</div>
 								</div>
 							</h3>
 						</div>
@@ -88,6 +91,7 @@
 						</div>
 					</div>
 					<div id="appList"></div>
+					<div id="pagination" class="ui pagination menu"></div>
 				</div>
 			</div>
 		</div>	
@@ -106,27 +110,86 @@
 		</div>
 	</footer>
 	<script>
+	var PAGE_SIZE = 10;
 	$(document).ready(function() {
 		$('#search_button').click(function() {
 			$("#appList").empty();
-			show_apps($('#app_name').val());
+			show_apps(0);
 		});
-		show_apps($('#app_name').val());
+		show_apps(0);
 		setInterval(function() {
 			show_stats();
 		}, 5000);
 	});
 	
-	function show_apps(query) {
+	function show_apps(from) {
+		$("#appList").empty();
+		var query = $('#app_name').val(); 
+		var size = PAGE_SIZE;
 		$.get('/v1/app?query=' + encodeURIComponent(query), function(app_names, status, xhr) {
-			for (i = 0; i < app_names.length; i++) {
-				$("#appList").append(get_app_html(app_names[i]));
+			show_pagination(app_names.length, from, size);
+			for (i = 0; i < app_names.length - from && i < size; i++) {
+				$("#appList").append(get_app_html(app_names[i + from]));
 			}
 			$.each(app_names, function(i, app_name) {
 				show_app(app_name);
 			});
 			show_stats();
 		});
+	}
+	
+	function show_pagination(total, from, size) {
+		var page_count = total % size == 0 ? total / size : Math.floor(total / size) + 1;
+		var page_index = from / size + 1;
+		$('#totalCount').text(total);
+		$('#pageCount').text(page_count);
+		$('#pageIndex').text(page_index);
+		$("#pagination").empty();
+		
+		if (page_index == 1) {
+			$('#pagination').append('<a class="icon item"><i class="icon left arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_apps(' + (from - size) + ')"><i class="icon left arrow"></i></a>');
+		}
+		
+		var max_pos = 3;
+		var start = 1;
+		var start_dis = false;
+		if (page_index - start > max_pos) {
+			start = page_index - max_pos;
+			start_dis = true;
+		}
+		
+		var end = page_count;
+		var end_dis = false;
+		if (end - page_index > max_pos) {
+			end = page_index + max_pos
+			end_dis = true;
+		}
+		
+		if (start_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+		
+		//show page index
+		for (var i=start; i<=end; i++) {
+			if (i == page_index) {
+				$('#pagination').append('<a class="active item">' + i + '</a>');
+			} else {
+				$('#pagination').append('<a class="item" onclick="show_apps(' + ((i - 1) * size) + ')">' + i + '</a>');
+			}
+		}
+		
+		if (end_dis) {
+			$('#pagination').append('<div class="disabled item">...</div>');
+		}
+
+		//show next page
+		if (page_index == page_count) {
+			$('#pagination').append('<a class="icon item"><i class="icon right arrow"></i></a>');
+		} else {
+			$('#pagination').append('<a class="icon item" onclick="show_apps(' + (from + size) + ')"><i class="icon right arrow"></i></a>');
+		}
 	}
 	
 	function show_stats() {

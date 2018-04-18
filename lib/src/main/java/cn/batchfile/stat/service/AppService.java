@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -58,6 +59,7 @@ public abstract class AppService {
 			}
 			apps.add(file);
 		}
+		Collections.sort(apps);
 		return apps;
 	}
 	

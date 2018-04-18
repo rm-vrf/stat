@@ -72,24 +72,22 @@
 								<i class="large plane icon"></i>
 								<div class="content">
 									所有节点
-									<div class="sub header">所有节点都在这里</div>
+									<div class="sub header">
+										符合搜索条件的节点 <span id="totalCount"></span> 个，
+										共 <span id="pageCount"></span> 页，这是第 <span id="pageIndex"></span> 页
+									</div>
 								</div>
 							</h3>
 						</div>
 					</div>
 					<div class="ui vertical segment">
-						符合搜索条件的共 <span id="totalCount"></span> 个节点，
-						共 <span id="pageCount"></span> 页，这是第 <span id="pageIndex"></span> 页。
+						<a class="ui blue small labeled icon add button" href="help.html#query" target="blank"><i class="help icon"></i>了解节点检索语法</a>
 						<div class="ui small icon input right">
 							<input id="node_name" type="text" value="*" placeholder="输入搜索条件">
 							<i id="search_button" class="search icon"></i>
 						</div>
-						<div class="ui label left pointing">
-							<a href="help.html#query" target="blank">点击这里了解节点检索语法</a>
-						</div>
 					</div>
 					<div id="nodeList"></div>
-					<!-- page menu -->
 					<div id="pagination" class="ui pagination menu"></div>
 				</div>
 			</div>
@@ -123,6 +121,10 @@
 	function show_nodes(from) {
 		$("#nodeList").empty();
 		var query = $('#node_name').val();
+		if (!query) {
+			query = '*';
+			$('#node_name').val(query);
+		}
 		var size = PAGE_SIZE;
 		$.ajax({
 			url: '/v1/node/_search?from=' + from + '&size=' + size,
@@ -263,7 +265,7 @@
 		html += '<div class="center aligned column">';
 		html += '<div class="ui buttons">';
 		html += '<a id="oper_' +  node.id + '" class="ui tiny blue button hidden" href="./node.html?id=' + node.id + '"><i class="setting icon"></i>管 理</a>';
-		html += '<a id="edit_' +  node.id + '" class="ui tiny basic button hidden" href="./edit_node.html?id=' + node.id + '"><i class="trash icon"></i>修 改</a>';
+		html += '<a id="edit_' +  node.id + '" class="ui tiny basic button hidden" href="./edit_node.html?id=' + node.id + '"><i class="edit icon"></i>修 改</a>';
 		html += '</div>';
 		html += '</div>';
 		html += '</div>';
