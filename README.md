@@ -1,6 +1,7 @@
 # STAT hub
 
-## 1.介绍
+<a name="1"></a>
+## 1.简要说明
 
 STAT hub是一个集群管理/应用编排/进程守护工具，可以用来高效的管理服务集群。功能有：
 
@@ -9,14 +10,17 @@ STAT hub是一个集群管理/应用编排/进程守护工具，可以用来高�
 
 STAT hub分为master和agent两个部分。master提供应用操作界面，用户可以编排服务；agent运行在工作节点上，守护工作进程。master和agent之间使用HTTP协议通信。
 
-## 2.环境
+<a name="2"></a>
+## 2.运行环境
 
 - 操作系统
 	- master：基于纯Java环境，可以在大部分操作系统上运行：Windows、Linux、macOS
 	- agent：Linux操作系统，内核版本2.6.24以上，x86或arm架构，32或64位都经过测试；
 - 基础环境：Java 1.8+
 
-## 3.构建
+<a name="3"></a>
+## 3.构建下载
+<a name="3.1"></a>
 ### 3.1 源码编译
 
 代码地址：
@@ -34,6 +38,7 @@ mvn package
 - agent/target/stat-agent-1.0.0-SNAPSHOT.jar
 - server/target/stat-server-1.0.0-SNAPSHOT.jar
 
+<a name="3.2"></a>
 ### 3.2 下载
 
 下载构建包：
@@ -41,8 +46,9 @@ mvn package
 - http://121.199.25.213/stat/stat-agent-1.0.0-SNAPSHOT.jar
 - http://121.199.25.213/stat/stat-server-1.0.0-SNAPSHOT.jar
 
-## 4.启动
-
+<a name="4"></a>
+## 4.启动运行
+<a name="4.1"></a>
 ### 4.1 master
 
 启动master进程：
@@ -69,6 +75,7 @@ java -jar stat-server-1.0.0-SNAPSHOT.jar
 | http://master:51027 | Elasticsearch HTTP服务端口 |
 | tcp://master:51028 | Elasticsearch TCP服务端口 |
 
+<a name="4.2"></a>
 ### 4.2 agent
 
 启动agent进程：
@@ -92,9 +99,12 @@ java -jar stat-agent-1.0.0-SNAPSHOT.jar --master.address=http://master:51026
 | --- | --- |
 | http://agent:51025 | 用户界面 |
 
-## 5.说明
+<a name="5"></a>
+## 5.开始使用
+<a name="5.1"></a>
 ### 5.1 节点
-#### 5.1.1 介绍
+<a name="5.1.1"></a>
+#### 5.1.1 定义
 
 agent启动后向master报告节点信息。节点信息如下：
 
@@ -153,6 +163,7 @@ agent启动后向master报告节点信息。节点信息如下：
 
 标签属性可以在用户界面上修改；其他信息是自动收集的，不用修改。
 
+<a name="5.1.2"></a>
 #### 5.1.2 检索
 
 节点检索可以用来对节点进行查询和管理，也可以用来对进程运行位置进行规划。使用全文检索语法对节点进行检索，最简单的检索语法是一个词，比如`hostname1`、`appserver`。复杂一些的检索可以使用通配符，比如这个通配符，可以返回所有的节点：
@@ -203,10 +214,12 @@ memory.total:>8000000000 AND networks.address:[192.168.1.100 TO 192.168.1.150]
 tags:appserver AND tags:hpc
 ```
 
+<a name="5.2"></a>
 ### 5.2 应用
-#### 5.2.1 定义
+<a name="5.2.1"></a>
+#### 5.2.1 部署
 
-应用是一个持续运行的服务，可以运行在多个节点上，每个节点上可以运行多个进程。应用定义了这些进程的启动运行参数。在STAT hub上创建一个应用：
+应用是一个持续运行的服务，可以运行在多个节点上，每个节点上可以运行多个进程。应用定义了这些进程的启动运行参数。在STAT hub上部署一个应用：
 
 ```
 {
@@ -249,8 +262,9 @@ agent在启动前会检查`uri`指定的位置。如果有更新的文件，把�
 
 agent对进程健康情况进行检查。进程启动60秒后，每隔20秒对第0个端口发起一个HTTP请求，检查请求的返回代码。如果连续3次返回错误代码，就杀死进程重新启动。
 
-agent为进程分配必要的资源，包括内存、CPU核数、磁盘空间。//TODO
+agent为进程分配必要的资源，包括内存、CPU核数、磁盘空间。//TODO 资源分配未实现
 
+<a name="5.2.2"></a>
 #### 5.2.2 编排
 
 编排是控制服务的运行位置和进程数量。
@@ -261,7 +275,8 @@ agent为进程分配必要的资源，包括内存、CPU核数、磁盘空间。
 
 应用启动后，master会按照编排规则自动分配服务进程。
 
-## 6.待办
+<a name="6"></a>
+## 6.待办事项
 
 [ ] agent资源控制，使用cgroup控制进程使用的资源  
 [ ] 优化agent与master之间的接口，减少数据流量  
