@@ -41,10 +41,10 @@ import com.alibaba.fastjson.JSONObject;
 public class ElasticService {
 	protected static final Logger log = LoggerFactory.getLogger(ElasticService.class);
 
-	@Value("${elastic.port:51027}")
+	@Value("${elastic.http.port:51027}")
 	public int elasticHttpPort;
 
-	@Value("${elastic.port:51028}")
+	@Value("${elastic.tcp.port:51028}")
 	private int elasticTcpPort;
 
 	@Value("${store.directory}")
