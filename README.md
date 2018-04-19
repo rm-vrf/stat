@@ -1,6 +1,7 @@
 # STAT hub
 
 ## 1.介绍
+
 STAT hub是一个集群管理/应用编排/进程守护工具，可以用来高效的管理服务集群。功能有：
 
 - 节点管理：管理集群中的节点，掌握节点的状态，了解每个节点上运行了哪些进程；
@@ -17,6 +18,7 @@ STAT hub分为master和agent两个部分。master提供应用操作界面，用�
 
 ## 3.构建
 ### 3.1 源码编译
+
 代码地址：
 
 https://github.com/lane-cn/stat
@@ -79,7 +81,7 @@ java -jar stat-agent-1.0.0-SNAPSHOT.jar --master.address=http://master:51026
 
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
-| master.address | master位置。可以不指定，agent以独立模式运行 |  |
+| master.address | master位置。可以不指定，以独立模式运行 |  |
 | server.port | 服务端口 | 51025 |
 | store.directory | 数据存储路径 | ${HOME}/.stat_agent |
 | agent.address | 一般情况下agent可以自动报告自己的地址。在某些环境下无法获取正确的IP地址，需要指定agent.address参数 |  |
@@ -93,7 +95,8 @@ java -jar stat-agent-1.0.0-SNAPSHOT.jar --master.address=http://master:51026
 ## 5.说明
 ### 5.1 节点
 #### 5.1.1 介绍
-agent启动后，向master报告节点信息。节点信息如下：
+
+agent启动后向master报告节点信息。节点信息如下：
 
 ```
 {
@@ -148,13 +151,61 @@ agent启动后，向master报告节点信息。节点信息如下：
 }
 ```
 
-标签信息可以在用户界面上修改；其他信息是自动收集的，不用修改。
+标签属性可以在用户界面上修改；其他信息是自动收集的，不用修改。
 
 #### 5.1.2 检索
-//TODO
+
+节点检索可以用来对节点进行查询和管理，也可以用来对进程运行位置进行规划。使用全文检索语法对节点进行检索，最简单的检索语法是一个词，比如`hostname1`、`appserver`。复杂一些的检索可以使用通配符，比如这个通配符，可以返回所有的节点：
+
+```
+*
+```
+
+用这个通配符，可以返回所有以“hostname”开头的节点
+
+```
+hostname*
+```
+
+可以使用通配符查询IP地址段：
+
+```
+192.168.1.*
+```
+
+可以在查询语法中加上属性，这样查询更加精确：
+
+```
+networks.address:192.168.1.165
+```
+
+可以准确指定一个地址段，这样：
+
+```
+networks.address:[192.168.1.100 TO 192.168.1.150]
+```
+
+对数值属性可以查询数值范围，比如要查询CPU大于8核的节点：
+
+```
+os.cpus:>8
+```
+
+可以关联组合多个查询语法，比如要查询内存大于8G，并且地址在某个段内的节点，可以这样：
+
+```
+memory.total:>8000000000 AND networks.address:[192.168.1.100 TO 192.168.1.150]
+```
+
+可以用标签属性查询。为不同用途的节点添加标签，然后按照标签进行节点管理和应用编排，这是一个好办法：
+
+```
+tags:appserver AND tags:hpc
+```
 
 ### 5.2 应用
 #### 5.2.1 定义
+
 应用是一个持续运行的服务，可以运行在多个节点上，每个节点上可以运行多个进程。应用定义了这些进程的启动运行参数。在STAT hub上创建一个应用：
 
 ```
@@ -201,6 +252,7 @@ agent对进程健康情况进行检查。进程启动60秒后，每隔20秒对�
 agent为进程分配必要的资源，包括内存、CPU核数、磁盘空间。//TODO
 
 #### 5.2.2 编排
+
 编排是控制服务的运行位置和进程数量。
 
 ![](https://raw.githubusercontent.com/lane-cn/stat/master/server/src/main/resources/META-INF/resources/images/app_choreo.png)
@@ -210,8 +262,9 @@ agent为进程分配必要的资源，包括内存、CPU核数、磁盘空间。
 应用启动后，master会按照编排规则自动分配服务进程。
 
 ## 6.待办
-[ ] agent资源控制，使用cgroup控制进程使用的资源
-[ ] 优化agent与master之间的接口，减少数据流量
-[ ] 系统监控功能：网络、磁盘、CPU、内存...
-[ ] Windows系统支持：守护进程在windows环境下得不到工作进程的pid
+
+[ ] agent资源控制，使用cgroup控制进程使用的资源  
+[ ] 优化agent与master之间的接口，减少数据流量  
+[ ] 系统监控功能：网络、磁盘、CPU、内存...  
+[ ] Windows系统支持：守护进程在windows环境下得不到工作进程的pid  
 
