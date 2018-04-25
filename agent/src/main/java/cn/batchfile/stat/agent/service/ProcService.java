@@ -417,6 +417,7 @@ public class ProcService {
 					if (PortUtil.isUsedPort(configPort)) {
 						throw new RuntimeException("Error: The port " + configPort + " is being used");
 					}
+					port = configPort;
 					ports.add(configPort);
 				}
 
