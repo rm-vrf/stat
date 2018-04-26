@@ -96,6 +96,7 @@
 								<p>地址：<span id="node_address"></span></p>
 								<p>资源：<span id="node_res"></span></p>
 								<p>标签：<span id="node_tag"></span></p>
+								<p>变量：<span id="node_env"></span></p>
 							</div>
 						</div>
 						<div class="center aligned column">
@@ -291,6 +292,18 @@
 		$('#node_address').text(ip);
 		$('#node_res').text(cpus + ' 核CPU, ' + byteCountToDisplaySize(mem) + ' 内存, ' + byteCountToDisplaySize(disk) + ' 磁盘');
 		$('#node_tag').text(node.tags);
+		$.get('/v1/node/' + node.id + '/env', function(envs, status, xhr) {
+			var s = '';
+			var props = Object.keys(envs);
+			for (var i=0; i<props.length; i++) {
+				s += props[i] + '=' + envs[props[i]]
+				if (i < props.length - 1) {
+					s += '<br/>　　　';
+				}
+			}
+			$('#node_env').html(s);
+		});
+		
 	}
 
 	function set_button_status(node_id, agent_address) {

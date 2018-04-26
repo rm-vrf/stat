@@ -117,6 +117,27 @@ public class NodeService {
 		}
 	}
 	
+	public Map<String, String> getEnvs(String id) {
+		Node node = getNode(id);
+		if (StringUtils.isEmpty(node.getAgentAddress())) {
+			throw new RuntimeException("cannot get envs of a offline node");
+		}
+		String url = String.format("%s/v1/node/env", node.getAgentAddress());
+		
+		@SuppressWarnings("unchecked")
+		Map<String, String> envs = restTemplate.getForObject(url, Map.class);
+		return envs;
+	}
+	
+	public void putEnvs(String id, Map<String, String> envs) {
+		Node node = getNode(id);
+		if (StringUtils.isEmpty(node.getAgentAddress())) {
+			throw new RuntimeException("cannot change envs of a offline node");
+		}
+		String url = String.format("%s/v1/node/env", node.getAgentAddress());
+		restTemplate.put(url, envs);
+	}
+	
 	public void putTags(String id, List<String> tags) {
 		Node node = getNode(id);
 		if (StringUtils.isEmpty(node.getAgentAddress())) {

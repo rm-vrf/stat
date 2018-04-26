@@ -2,6 +2,7 @@ package cn.batchfile.stat.server.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -53,8 +54,31 @@ public class NodeController {
 		return node;
 	}
 	
-	@PutMapping("/v1/node/{id}/tags")
-	public RestResponse<String> putTags(HttpServletResponse response,
+	@GetMapping("/v1/node/{id}/env")
+	public Map<String, String> getEnvs(@PathVariable("id") String id) {
+		return nodeService.getEnvs(id);
+	}
+	
+	@PutMapping("/v1/node/{id}/env")
+	public RestResponse<String> putEnvs(HttpServletResponse response,
+			@PathVariable("id") String id,
+			@RequestBody Map<String, String> envs) throws IOException {
+		
+		RestResponse<String> resp = new RestResponse<String>();
+		try {
+			nodeService.putEnvs(id, envs);
+			resp.setOk(true);
+			resp.setBody(id);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.sendError(500, e.getMessage());
+		}
+		return resp;
+	}
+	
+	@PutMapping("/v1/node/{id}/tag")
+	public RestResponse<String> putTag(HttpServletResponse response,
 			@PathVariable("id") String id,
 			@RequestBody List<String> tags) throws IOException {
 		
@@ -69,6 +93,15 @@ public class NodeController {
 			response.sendError(500, e.getMessage());
 		}
 		return resp;
+	}
+	
+	@PutMapping("/v1/node/{id}/tags")
+	@Deprecated
+	public RestResponse<String> putTags(HttpServletResponse response,
+			@PathVariable("id") String id,
+			@RequestBody List<String> tags) throws IOException {
+	
+		return putTag(response, id, tags);
 	}
 	
 	@PostMapping("/v1/node/_search")

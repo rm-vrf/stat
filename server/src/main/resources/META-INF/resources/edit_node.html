@@ -113,6 +113,12 @@
 									<input type="text" name="tags" id="tags">
 								</div>
 							</div>
+							<div class="field">
+								<label>变量 <a href="javascript:void(0)" onclick="add_env('', '')"><img src="images/add.gif" align="absmiddle"></a></label>
+								<div class="ui small left input">
+									<div id="envs"></div>
+								</div>
+							</div>
 							<input name="save" id="save" class="ui small blue submit button" type="button" value="立即保存">
 						</form>
 					</div>
@@ -150,6 +156,32 @@
 		$('#hostname').attr("disabled","disabled")
 		$('#tags').val(node.tags);
 		$('#tags').tagsInput();
+		$.get('/v1/node/' + node.id + '/env', function(envs, status, xhr) {
+			if (envs) {
+				$.each(envs, function(k, v) {
+					add_env(k, v);
+				});
+			}
+		});
+	}
+	
+	function add_env(name, val) {
+		var max = 0;
+		var es = $('#envs').children();
+		for (var i = 0; i < es.length; i ++) {
+		var id = parseInt(es[i].id.split('_')[1]);
+		if (id > max) {
+			max = id;
+		}
+		}
+		var id = "env_" + (max+1);
+		var div = '<div id="' + id + '" class="ui small left input repeat">';
+		div += '<input type="text" name="envName" id="envName" class="half-width" value="' + name + '"/>';
+		div += ' = ';
+		div += '<input type="text" name="envValue" id="envValue" class="half-width" value="' + val + '"/> ';
+		div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+		div += '</div>';
+		$('#envs').append(div);
 	}
 	
 	function save_node() {
@@ -159,23 +191,65 @@
 		if (s) {
 			tags = s.split(',');
 		}
-		var json = JSON.stringify(tags);
+		var tags_json = JSON.stringify(tags);
+		var envs = get_map('envs', 'envName', 'envValue');
+		var envs_json = JSON.stringify(envs);
+		
 		$.ajax({
-			url: '/v1/node/' + id + '/tags',
+			url: '/v1/node/' + id + '/tag',
 			type: 'PUT',
 			contentType: 'application/json',
-			data: json,
+			data: tags_json,
 			dataType: 'json',
 			success: function(data, status, xhr) {
-				jAlert('已经保存', '提示');
-				$('#popup_ok').click(function() {
-					window.location.href = 'node.html?id=' + id;
+				$.ajax({
+					url: '/v1/node/' + id + '/env',
+					type: 'PUT',
+					contentType: 'application/json',
+					data: envs_json,
+					dataType: 'json',
+					success: function(data, status, xhr) {
+						jAlert('已经保存', '提示');
+						$('#popup_ok').click(function() {
+							window.location.href = 'node.html?id=' + id;
+						});
+					},
+					error: function(xhr, status, error) {
+						jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
+					}
 				});
 			},
 			error: function(xhr, status, error) {
 				jAlert('保存失败，状态：' + error + ', 信息: ' + xhr.responseJSON.message, '错误');
 			}
 		});
+	}
+	
+	function get_map(panelId, keyId, valueId) {
+		var map = new Object();
+		var keys = get_list(panelId, keyId);
+		var values = get_list(panelId, valueId);
+		if (keys) {
+			for (var i=0; i<keys.length; i++) {
+				map[keys[i]] = values[i];
+			}
+		}
+		return map;
+	}
+	
+	function get_list(panelId, ctlId) {
+		var list = $('#' + panelId + ' input[type="text"]');
+		var r = new Array();
+		for (var i=0; i<list.length; i++) {
+			if (list[i].id == ctlId) {
+				r.push(list[i].value);
+			}
+		}
+		return r;
+	}
+	
+	function remove(id) {
+		$('#' + id).remove();
 	}
 	</script>
 </body>
