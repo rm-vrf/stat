@@ -103,9 +103,6 @@
                         "type": "long"
                     }
                 }
-            },
-            "timestamp": {
-                "type": "date"
             }
         }
     }

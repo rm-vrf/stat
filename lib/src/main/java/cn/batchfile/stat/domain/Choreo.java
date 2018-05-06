@@ -3,6 +3,10 @@ package cn.batchfile.stat.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+
+import com.alibaba.fastjson.JSON;
+
 public class Choreo {
 
 	private String app;
@@ -41,4 +45,8 @@ public class Choreo {
 		this.dist = dist;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		return StringUtils.equals(JSON.toJSONString(this), JSON.toJSONString(obj));
+	}
 }

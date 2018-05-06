@@ -1,10 +1,8 @@
 package cn.batchfile.stat.server.service;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +20,13 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
 
+import cn.batchfile.stat.domain.Choreo;
 import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.PaginationList;
 
@@ -36,13 +36,7 @@ public class NodeService {
 	public static final String INDEX_NAME = "node-data";
 	public static final String TYPE_NAME_UP = "up";
 	public static final String TYPE_NAME_DOWN = "down";
-	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
-		@Override
-		protected DateFormat initialValue() {
-			return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-		}
-	};
-
+	
 	@Autowired
 	private ElasticService elasticService;
 	
@@ -50,25 +44,65 @@ public class NodeService {
 	private EventService eventService;
 	
 	@Autowired
+	private ChoreoService choreoService;
+	
+	@Autowired
+	private ProcService procService;
+	
+	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Scheduled(fixedDelay = 5000)
+	public void refresh() throws IOException {
+		//得到所有在线节点
+		List<Node> nodes = getUpNodes();
+		if (nodes.size() == 0) {
+			return;
+		}
+		
+		//调用节点地址, 判断离线节点
+		List<String> nodeIds = new ArrayList<String>();
+		nodes.parallelStream().forEach((node) -> {
+			try {
+				String url = String.format("%s/v1/node", node.getAgentAddress());
+				restTemplate.getForObject(url, Node.class);
+			} catch (Exception e) {
+				nodeIds.add(node.getId());
+			}
+		});
+		
+		//去掉离线的节点
+		for (String nodeId : nodeIds) {
+			//把节点设置成宕机状态
+			downNode(nodeId);
+			
+			//删掉进程信息
+			procService.deleteProcs(nodeId);
+		}
+		
+		//清理分配数据
+		if (nodeIds.size() > 0) {
+			List<Choreo> choreos = choreoService.getChoreos();
+			for (Choreo choreo : choreos) {
+				int len = choreo.getDist().size();
+				Iterator<String> iter = choreo.getDist().iterator();
+				while (iter.hasNext()) {
+					String nodeId = iter.next();
+					if (nodeIds.contains(nodeId)) {
+						iter.remove();
+					}
+				}
+				
+				if (len != choreo.getDist().size()) {
+					choreoService.putDist(choreo.getApp(), choreo.getDist());
+				}
+			}
+		}
+	}
 	
 	public void putNode(Node node) {
 		
-		//更新时间戳
-		node.setTimestamp(new Date());
-		//TODO 检查时间戳的差值，不能太大。时差太大有隐患
-		
-		Map<String, Object> map = new HashMap<String, Object>();
-		map.put("id", node.getId());
-		map.put("hostname", node.getHostname());
-		map.put("agentAddress", node.getAgentAddress());
-		map.put("os", node.getOs());
-		map.put("memory", node.getMemory());
-		map.put("networks", node.getNetworks());
-		map.put("disks", node.getDisks());
-		map.put("tags", node.getTags());
-		map.put("timestamp", TIME_FORMAT.get().format(node.getTimestamp()));
-		String json = JSON.toJSONString(map);
+		String json = JSON.toJSONString(node);
 
 		//插入在线节点
 		IndexResponse indexResp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
@@ -185,7 +219,35 @@ public class NodeService {
 		}
 	}
 
-	public void downNode(String id) {
+	private List<Node> getUpNodes() {
+		List<Node> nodes = new ArrayList<Node>();
+		
+		try {
+			int size = 100;
+			long total = size;
+			for (int from = 0; from + size <=total; from += size) {
+				//查询数据
+				SearchResponse resp = elasticService.getNode().client().prepareSearch()
+						.setIndices(NodeService.INDEX_NAME).setTypes(NodeService.TYPE_NAME_UP)
+						.setQuery(QueryBuilders.matchAllQuery())
+						.setFrom(from).setSize(size).execute().actionGet();
+				total = resp.getHits().getTotalHits();
+				SearchHit[] hits = resp.getHits().getHits();
+				
+				//解析查询结果
+				for (SearchHit hit : hits) {
+					Node node = JSON.parseObject(hit.getSourceAsString(), Node.class);
+					nodes.add(node);
+				}
+			}
+		} catch (IndexNotFoundException e) {
+			//pass
+		}
+		
+		return nodes;
+	}
+
+	private void downNode(String id) {
 		//获取节点数据
 		GetResponse getResp = elasticService.getNode().client().prepareGet()
 				.setIndex(INDEX_NAME).setType(TYPE_NAME_UP).setId(id).execute().actionGet();

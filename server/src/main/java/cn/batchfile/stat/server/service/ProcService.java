@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -41,7 +40,6 @@ import cn.batchfile.stat.domain.Proc;
 @Service
 public class ProcService {
 	protected static final Logger log = LoggerFactory.getLogger(ProcService.class);
-	private static final int EXP_TIME = 30 * 1000;
 	private static final String INDEX_NAME = "proc-data";
 	private static final String TYPE_NAME_NODE = "node";
 	private static final String TYPE_NAME_APP = "app";
@@ -83,21 +81,15 @@ public class ProcService {
 	
 	@Scheduled(fixedDelay = 5000)
 	public void refresh() throws ParseException, IOException {
-		//从汇报数据里得到可用节点和进程
-		Map<Node, Date> nodes = getNodes();
-		List<Proc> ps = getProcs();
-		List<Choreo> choreos = choreoService.getChoreos();
-		
-		//剔除不可用节点
-		delUnavailNodes(nodes, ps, choreos);
-		
 		//按照应用名称归并进程
+		List<Proc> ps = getProcs();
 		groupProcs(ps);
 		
 		//剔除删除的应用
 		delApps();
 		
 		//按照运行计划，停止或者启动进程
+		List<Choreo> choreos = choreoService.getChoreos();
 		scheduleProc(choreos);
 	}
 	
@@ -229,6 +221,16 @@ public class ProcService {
 		return restTemplate.getForObject(url, String[].class);
 	}
 	
+	public void deleteProcs(String node) {
+		try {
+			DeleteResponse resp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_NODE)
+					.setId(node).execute().actionGet();
+			log.debug("delete node: {}", resp.getId());
+		} catch (IndexNotFoundException e) {
+			//pass
+		}
+	}
+
 	private void scheduleProc(List<Choreo> choreos) throws IOException {
 		for (Choreo choreo : choreos) {
 			//实际分配的进程数量
@@ -277,88 +279,6 @@ public class ProcService {
 		return dist;
 	}
 
-	private void delUnavailNodes(Map<Node, Date> nodes, List<Proc> ps, List<Choreo> choreos) throws IOException {
-		//清理不可用节点，30秒以上没有握手的节点清理掉。不清理会造成任务无法正常分配
-		//清理范围包括：节点数据，进程数据，分配数据
-		List<String> validNodeIds = new ArrayList<String>();
-		long now = new Date().getTime();
-		Iterator<Entry<Node, Date>> it = nodes.entrySet().iterator();
-		while (it.hasNext()) {
-			Entry<Node, Date> entry = it.next();
-			Date ts = entry.getValue();
-			Node n = entry.getKey();
-			if (now - ts.getTime() > EXP_TIME) {
-				//超时，把节点设置成宕机状态
-				nodeService.downNode(n.getId());
-				deleteProcs(n.getId());
-				
-				//删除进程数据
-				it.remove();
-			} else {
-				//把节点编号加入有效列表
-				validNodeIds.add(n.getId());
-			}
-		}
-		
-		//清理进程数据
-		Iterator<Proc> iter = ps.iterator();
-		while (iter.hasNext()) {
-			Proc p = iter.next();
-			if (!validNodeIds.contains(p.getNode())) {
-				//已经失效的节点，相应的进程删掉
-				iter.remove();
-			}
-		}
-		
-		//清理分配数据
-		for (Choreo choreo : choreos) {
-			int len = choreo.getDist().size();
-			Iterator<String> i = choreo.getDist().iterator();
-			while (i.hasNext()) {
-				String e = i.next();
-				if (!validNodeIds.contains(e)) {
-					i.remove();
-				}
-			}
-			
-			if (len != choreo.getDist().size()) {
-				choreoService.putDist(choreo.getApp(), choreo.getDist());
-			}
-		}
-	}
-	
-	private Map<Node, Date> getNodes() throws ParseException {
-		Map<Node, Date> nodes = new HashMap<Node, Date>();
-		
-		try {
-			int size = 100;
-			long total = size;
-			for (int from = 0; from + size <=total; from += size) {
-				//查询数据
-				SearchResponse resp = elasticService.getNode().client().prepareSearch()
-						.setIndices(NodeService.INDEX_NAME).setTypes(NodeService.TYPE_NAME_UP)
-						.setQuery(QueryBuilders.matchAllQuery())
-						.setFrom(from).setSize(size).execute().actionGet();
-				total = resp.getHits().getTotalHits();
-				SearchHit[] hits = resp.getHits().getHits();
-				
-				//解析查询结果
-				for (SearchHit hit : hits) {
-					String ts = hit.getSourceAsMap().get("timestamp").toString();
-					String json = hit.getSourceAsString();
-					
-					Date date = TIME_FORMAT.get().parse(ts);
-					Node n = JSON.parseObject(json, Node.class);
-					nodes.put(n, date);
-				}
-			}
-		} catch (IndexNotFoundException e) {
-			//pass
-		}
-		
-		return nodes;
-	}
-
 	private void groupProcs(List<Proc> ps) {
 		//按照app名称归类
 		Map<String, List<Proc>> groups = ps.stream().collect(Collectors.groupingBy(p -> p.getApp()));
@@ -394,16 +314,6 @@ public class ProcService {
 		log.debug("index ps data, app: {}, version: {}", app, version);
 	}
 	
-	private void deleteProcs(String node) {
-		try {
-			DeleteResponse resp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_NODE)
-					.setId(node).execute().actionGet();
-			log.debug("delete node: {}", resp.getId());
-		} catch (IndexNotFoundException e) {
-			//pass
-		}
-	}
-
 	private void delApps() {
 		//查询进程缓存
 		List<String> names = new ArrayList<String>();

@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+
+import com.alibaba.fastjson.JSON;
+
 public class App {
 	
 	private String name;
@@ -105,5 +109,10 @@ public class App {
 
 	public void setResAlloc(Res resAlloc) {
 		this.resAlloc = resAlloc;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return StringUtils.equals(JSON.toJSONString(this), JSON.toJSONString(obj));
 	}
 }
