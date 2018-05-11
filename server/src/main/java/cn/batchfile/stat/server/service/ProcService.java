@@ -100,13 +100,15 @@ public class ProcService {
 			if (dist > scale) {
 				//实际数量大，需要撤销
 				for (int i = 0; i < dist - scale; i ++) {
-					choreo.getDist().remove(0);
+					String id = choreo.getDist().remove(0);
+					log.info("Remove dist, app: {}, node: {}", choreo.getApp(), id);
 				}
 			} else if (dist < scale) {
 				//实际数量小，需要分配
 				List<String> nodes = distribute(choreo.getQuery(), choreo.getDist(), scale - dist);
-				if (nodes != null) {
+				if (nodes != null && nodes.size() > 0) {
 					choreo.getDist().addAll(nodes);
+					log.info("Add dist, app: {}, nodes: {}", choreo.getApp(), nodes.toString());
 				}
 			}
 			

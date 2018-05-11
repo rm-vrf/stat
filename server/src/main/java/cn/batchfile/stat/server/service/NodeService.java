@@ -92,25 +92,25 @@ public class NodeService {
 		List<Proc> changePs = new ArrayList<Proc>();
 		Map<String, Long> timestamps = new ConcurrentHashMap<String, Long>();
 		nodes.parallelStream().forEach((node) -> {
+			String url = String.format("%s/v1/proc", node.getAgentAddress());
 			try {
 				//向节点发出询问消息，带时间戳
 				HttpHeaders headers = new HttpHeaders();
 				headers.setIfModifiedSince(this.timestamps.containsKey(node.getId()) ? this.timestamps.get(node.getId()) : 0);
 				HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
-				ResponseEntity<Long[]> resp = restTemplate.exchange(
-						String.format("%s/v1/proc", node.getAgentAddress()), 
-						HttpMethod.GET, entity, Long[].class);
+				ResponseEntity<Long[]> resp = restTemplate.exchange(url, HttpMethod.GET, entity, Long[].class);
 				
 				//如果有实际内容，加入进程列表
-				if (resp.getStatusCode() == HttpStatus.OK && resp != null) {
+				if (resp.getStatusCode() == HttpStatus.OK) {
+					log.info("GET {} {}", url, resp.toString());
 					for (Long pid : resp.getBody()) {
-						Proc p = restTemplate.getForObject(String.format("%s/v1/proc/%s", node.getAgentAddress(), pid), Proc.class);
+						url = String.format("%s/v1/proc/%s", node.getAgentAddress(), pid);
+						Proc p = restTemplate.getForObject(url, Proc.class);
+						log.info("GET {} <200 OK>", url);
 						if (p != null) {
 							changePs.add(p);
 						}
 					}
-					log.info("get ps from node, id: {}, address: {}, count: {}", 
-							node.getId(), node.getAgentAddress(), resp.getBody().length);
 				}
 				
 				//添加变动节点列表
@@ -121,23 +121,23 @@ public class NodeService {
 			} catch (ResourceAccessException e) {
 				//如果访问超时，加入离线进程列表
 				downNodeIds.add(node.getId());
-				log.info("node down, id: {}, address: {}", 
-						node.getId(), node.getAgentAddress());
+				log.error("GET {} <{}>", url, e.getMessage());
 			}
 		});
 
 		//记录时间日志
-		log.info("get ps from node(s), count: {}, cost: {}", nodes.size(), (System.currentTimeMillis() - begin));
+		log.debug("get ps from node(s), count: {}, cost: {}", nodes.size(), (System.currentTimeMillis() - begin));
 		
 		//处理离线的节点
 		for (String downNodeId : downNodeIds) {
 			//把节点设置成宕机状态
 			downNode(nodes, downNodeId);
-			log.info("move node from up to down, id: {}", downNodeId);
+			log.info("Move index: {}/{}/{} -> {}/{}/{}", 
+					INDEX_NAME, TYPE_NAME_UP, downNodeId, INDEX_NAME, TYPE_NAME_DOWN, downNodeId);
 			
 			//删除节点相关的进程信息
 			procService.deleteProcs(downNodeId);
-			log.info("delete ps of node, id: {}", downNodeId);
+			log.info("Delete index: {}/{}/{}", ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, downNodeId);
 		}
 		
 		//清理分配数据
@@ -156,7 +156,7 @@ public class NodeService {
 				
 				if (len != choreo.getDist().size()) {
 					choreoService.putDist(choreo.getApp(), choreo.getDist());
-					log.info("change choreo, remove dist, app: {}", choreo.getApp());
+					log.info("Remove dist, app: {}, count: {}", choreo.getApp(), choreo.getDist().size());
 				}
 			}
 		}
@@ -166,7 +166,8 @@ public class NodeService {
 			Map<String, List<Proc>> groups = changePs.stream().collect(Collectors.groupingBy(p -> p.getNode()));
 			for (Entry<String, List<Proc>> entry : groups.entrySet()) {
 				procService.putProcs(entry.getKey(), entry.getValue());
-				log.info("update ps, node: {}, count: {}", entry.getKey(), entry.getValue().size());
+				log.info("Update index: {}/{}/{}, ps count: {}", 
+						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, entry.getKey(), entry.getValue().size());
 			}
 		}
 		
@@ -186,7 +187,7 @@ public class NodeService {
 			
 			//按照应用名归类保存
 			procService.groupProcs(ps);
-			log.info("group ps by app name, count: {}", ps.size());
+			log.info("Group by app, ps count: {}", ps.size());
 		}
 		
 		//更新时间戳
@@ -215,11 +216,12 @@ public class NodeService {
 				DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete()
 						.setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
 						.setId(node.getId()).execute().actionGet();
-				log.info("node up, id: {}, address: {}", 
-						deleteResp.getId(), node.getAgentAddress());
+				log.debug("delete index: {}/{}/{}", INDEX_NAME, TYPE_NAME_DOWN, deleteResp.getId());
 				
 				//报告事件
 				eventService.putNodeUpEvent(node);
+				log.info("Node up: {'id':'{}', 'hostname':'{}', 'agentAddress':'{}'}", 
+						node.getId(), node.getHostname(), node.getAgentAddress());
 			}
 		} catch (IndexNotFoundException e) {
 			//pass
@@ -367,5 +369,7 @@ public class NodeService {
 		//报告事件
 		node.setAgentAddress(agentAddress);
 		eventService.putNodeDownEvent(node);
+		
+		log.info("Node down: {'id':'{}', 'hostname':'{}', 'agentAddress':'{}'}", id, node.getHostname(), agentAddress);
 	}
 }

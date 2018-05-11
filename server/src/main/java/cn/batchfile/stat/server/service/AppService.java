@@ -87,7 +87,8 @@ public class AppService extends cn.batchfile.stat.service.AppService {
 					DeleteResponse resp = elasticService.getNode().client().prepareDelete()
 							.setIndex(ProcService.INDEX_NAME).setType(ProcService.TYPE_NAME_APP)
 							.setId(name).execute().actionGet();
-					log.debug("delete app: {}", resp.getId());
+					log.info("Deleted index: {}/{}/{}", 
+							ProcService.INDEX_NAME, ProcService.TYPE_NAME_APP, resp.getId());
 				}
 			}
 		} catch (IndexNotFoundException e) {
