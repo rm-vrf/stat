@@ -6,8 +6,10 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -16,6 +18,7 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
 import org.elasticsearch.action.admin.indices.template.put.PutIndexTemplateResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
@@ -33,6 +36,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSONObject;
@@ -40,7 +44,8 @@ import com.alibaba.fastjson.JSONObject;
 @Service
 public class ElasticService {
 	protected static final Logger log = LoggerFactory.getLogger(ElasticService.class);
-
+	private static final String INDEX_DATE_FORMAT = "yyyy-MM-dd";
+	
 	@Value("${elastic.http.port:51027}")
 	public int elasticHttpPort;
 
@@ -92,6 +97,29 @@ public class ElasticService {
 		log.info("elastic node started, {}", node.toString());
 	}
 	
+	@Scheduled(initialDelay = 600000, fixedDelay = 600000)
+	public void delete() {
+		SimpleDateFormat format = new SimpleDateFormat(INDEX_DATE_FORMAT);
+		Date now = new Date();
+		
+		GetIndexResponse response = node.client().admin().indices().prepareGetIndex().get();
+		String[] indexNames = response.indices();
+		if (indexNames != null) {
+			for (String indexName : indexNames) {
+				log.debug("index name: {}", indexName);
+				try {
+					String s = StringUtils.right(indexName, INDEX_DATE_FORMAT.length());
+					Date date = format.parse(s);
+					if (now.getTime() - date.getTime() > 7L * 86400000L) {
+						node.client().admin().indices().prepareDelete(indexName).execute();
+					}
+				} catch (Exception e) {
+					//pass
+				}
+			}
+		}
+	}
+	
 	private void putIndexTemplate() throws InterruptedException, ExecutionException, IOException {
 		// 判断是否设置了映射路径
 		if (StringUtils.isEmpty(mappingResourcePath)) {
@@ -104,7 +132,7 @@ public class ElasticService {
 		Resource[] resources = resourcePatternResolver.getResources(mappingResourcePath);
 
 		for (Resource resource : resources) {
-			log.info("find mapping file: {}, [{}]", resource.toString(), resource.getClass().getName());
+			//log.info("find mapping file: {}, [{}]", resource.toString(), resource.getClass().getName());
 			String path = getPathOfResource(resource);
 
 			// 从文件名称上得到索引名称和类型名称
@@ -114,7 +142,7 @@ public class ElasticService {
 
 			// 读文件内容
 			String content = getContentOfResource(resource);
-			log.info("get template: {}/{}, length: {}", indexName, typeName, StringUtils.length(content));
+			//log.info("get template: {}/{}, length: {}", indexName, typeName, StringUtils.length(content));
 			JSONObject json = JSONObject.parseObject(content);
 
 			// 添加类型映射
@@ -122,7 +150,7 @@ public class ElasticService {
 			PutIndexTemplateResponse response = node.client().admin().indices().preparePutTemplate(templateName)
 					.setTemplate(indexName + "*").addMapping(typeName, json).execute().get();
 			log.info("template response: {}", response.toString());
-			log.info("add template: {}", templateName);
+			//log.info("add template: {}", templateName);
 		}
 	}
 
