@@ -3,14 +3,13 @@ package cn.batchfile.stat.server.controller;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 
 import cn.batchfile.stat.domain.App;
 import cn.batchfile.stat.domain.RestResponse;
@@ -34,16 +34,17 @@ public class AppController extends cn.batchfile.stat.controller.AppController {
 	}
 	
 	@GetMapping("/v1/app")
-	public List<String> getApps(@RequestParam(name="query", defaultValue="") String query) {
-		List<String> names = super.getApps();
-		return names.stream().filter(app -> StringUtils.containsIgnoreCase(app, query)).collect(Collectors.toList());
+	public ResponseEntity<List<String>> getApps(WebRequest request,
+			@RequestParam(name="query", defaultValue="") String query) {
+		
+		return super.getApps(request, query);
 	}
 	
 	@GetMapping("/v1/app/{name}")
-	public App getApp(HttpServletResponse response, 
+	public ResponseEntity<App> getApp(WebRequest request, 
 			@PathVariable("name") String name) throws IOException {
 		
-		return super.getApp(response, name);
+		return super.getApp(request, name);
 	}
 	
 	@PostMapping("/v1/app")

@@ -12,6 +12,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.config.RequestConfig;
@@ -23,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import cn.batchfile.stat.domain.App;
@@ -48,16 +49,29 @@ public class HealthCheckService {
 	@Autowired
 	private EventService eventService;
 	
-	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws IOException {
-		synchronized (this) {
-			//移除多余的健康检查器
-			List<Long> pids = procService.getProcs();
-			cleanHealthCheck(pids);
-			
-			//寻找本地的所有进程，重建健康检查
-			restoreHealthCheck(pids);
-		}
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					refresh();
+				} catch (Exception e) {
+					//pass
+				}
+			}
+		}, 5, 5, TimeUnit.SECONDS);
+	}
+	
+	private void refresh() throws IOException {
+		//移除多余的健康检查器
+		List<Long> pids = procService.getProcs();
+		cleanHealthCheck(pids);
+		
+		//寻找本地的所有进程，重建健康检查
+		restoreHealthCheck(pids);
 	}
 	
 	public List<HealthCheckResult> getResults(long pid) {

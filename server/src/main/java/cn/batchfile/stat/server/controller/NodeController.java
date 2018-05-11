@@ -26,7 +26,7 @@ public class NodeController {
 	@Autowired
 	private NodeService nodeService;
 	
-	@PostMapping("/v1/node")
+	@PutMapping("/v1/node")
 	public RestResponse<String> putNode(HttpServletResponse response,
 			@RequestBody Node node) throws IOException {
 		

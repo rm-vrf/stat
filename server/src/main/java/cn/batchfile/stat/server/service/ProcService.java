@@ -11,7 +11,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -25,7 +30,6 @@ import org.elasticsearch.search.SearchHit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -40,9 +44,9 @@ import cn.batchfile.stat.domain.Proc;
 @Service
 public class ProcService {
 	protected static final Logger log = LoggerFactory.getLogger(ProcService.class);
-	private static final String INDEX_NAME = "proc-data";
-	private static final String TYPE_NAME_NODE = "node";
-	private static final String TYPE_NAME_APP = "app";
+	public static final String INDEX_NAME = "proc-data";
+	public static final String TYPE_NAME_NODE = "node";
+	public static final String TYPE_NAME_APP = "app";
 	private static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
 		protected DateFormat initialValue() {
@@ -65,6 +69,54 @@ public class ProcService {
 	@Autowired
 	private RestTemplate restTemplate;
 
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(() -> {
+			try {
+				refresh();
+			} catch (Exception e) {
+				//pass
+			}
+		}, 5, 5, TimeUnit.SECONDS);
+	}
+	
+	private void refresh() throws ParseException, IOException {
+		//按照运行计划，停止或者启动进程
+		List<Choreo> choreos = choreoService.getChoreos();
+		for (Choreo choreo : choreos) {
+			//实际分配的进程数量
+			if (choreo.getDist() == null) {
+				choreo.setDist(new ArrayList<String>());
+			}
+			int dist = choreo.getDist().size();
+
+			//计划中的进程数量
+			App app = appService.getApp(choreo.getApp());
+			int scale = app != null && app.isStart() ? choreo.getScale() : 0;
+			
+			//比较实际数量和计划数量
+			if (dist > scale) {
+				//实际数量大，需要撤销
+				for (int i = 0; i < dist - scale; i ++) {
+					choreo.getDist().remove(0);
+				}
+			} else if (dist < scale) {
+				//实际数量小，需要分配
+				List<String> nodes = distribute(choreo.getQuery(), choreo.getDist(), scale - dist);
+				if (nodes != null) {
+					choreo.getDist().addAll(nodes);
+				}
+			}
+			
+			//保存新的分配方案
+			if (choreo.getDist().size() != dist) {
+				choreoService.putDist(choreo.getApp(), choreo.getDist());
+			}
+		}
+	}
+	
 	public void putProcs(String id, List<Proc> ps) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("id", id);
@@ -77,20 +129,6 @@ public class ProcService {
 		
 		long version = resp.getVersion();
 		log.debug("index ps data, id: {}, version: {}", id, version);
-	}
-	
-	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws ParseException, IOException {
-		//按照应用名称归并进程
-		List<Proc> ps = getProcs();
-		groupProcs(ps);
-		
-		//剔除删除的应用
-		delApps();
-		
-		//按照运行计划，停止或者启动进程
-		List<Choreo> choreos = choreoService.getChoreos();
-		scheduleProc(choreos);
 	}
 	
 	public List<Proc> getProcsByNode(String node, String query) {
@@ -231,39 +269,6 @@ public class ProcService {
 		}
 	}
 
-	private void scheduleProc(List<Choreo> choreos) throws IOException {
-		for (Choreo choreo : choreos) {
-			//实际分配的进程数量
-			if (choreo.getDist() == null) {
-				choreo.setDist(new ArrayList<String>());
-			}
-			int dist = choreo.getDist().size();
-
-			//计划中的进程数量
-			App app = appService.getApp(choreo.getApp());
-			int scale = app != null && app.isStart() ? choreo.getScale() : 0;
-			
-			//比较实际数量和计划数量
-			if (dist > scale) {
-				//实际数量大，需要撤销
-				for (int i = 0; i < dist - scale; i ++) {
-					choreo.getDist().remove(0);
-				}
-			} else if (dist < scale) {
-				//实际数量小，需要分配
-				List<String> nodes = distribute(choreo.getQuery(), choreo.getDist(), scale - dist);
-				if (nodes != null) {
-					choreo.getDist().addAll(nodes);
-				}
-			}
-			
-			//保存新的分配方案
-			if (choreo.getDist().size() != dist) {
-				choreoService.putDist(choreo.getApp(), choreo.getDist());
-			}
-		}
-	}
-
 	private List<String> distribute(String query, List<String> exists, int count) {
 		List<String> dist = new ArrayList<String>();
 		PaginationList<Node> nodes = nodeService.searchNodes(query, 0, 4096, false);
@@ -279,7 +284,7 @@ public class ProcService {
 		return dist;
 	}
 
-	private void groupProcs(List<Proc> ps) {
+	public void groupProcs(List<Proc> ps) {
 		//按照app名称归类
 		Map<String, List<Proc>> groups = ps.stream().collect(Collectors.groupingBy(p -> p.getApp()));
 		
@@ -314,45 +319,5 @@ public class ProcService {
 		log.debug("index ps data, app: {}, version: {}", app, version);
 	}
 	
-	private void delApps() {
-		//查询进程缓存
-		List<String> names = new ArrayList<String>();
-		try {
-			int size = 100;
-			long total = size;
-			for (int from = 0; from + size <= total; from += size) {
-				//查询数据
-				SearchResponse resp = elasticService.getNode().client().prepareSearch()
-						.setIndices(INDEX_NAME).setTypes(TYPE_NAME_APP)
-						.setQuery(QueryBuilders.matchAllQuery())
-						.setFrom(from).setSize(size).execute().actionGet();
-				total = resp.getHits().getTotalHits();
-				SearchHit[] hits = resp.getHits().getHits();
-				
-				//得到查询结果
-				for (SearchHit hit : hits) {
-					names.add(hit.getId());
-				}
-			}
-		} catch (IndexNotFoundException e) {
-			//pass
-		}
-		
-		//循环判断缓存应用名是否已经被删除了
-		List<String> apps = appService.getApps();
-		try {
-			for (String name : names) {
-				if (!apps.contains(name)) {
-					//这个应用已经不存在了
-					DeleteResponse resp = elasticService.getNode().client().prepareDelete()
-							.setIndex(INDEX_NAME).setType(TYPE_NAME_APP)
-							.setId(name).execute().actionGet();
-					log.debug("delete app: {}", resp.getId());
-				}
-			}
-		} catch (IndexNotFoundException e) {
-			//pass
-		}
-	}
 
 }

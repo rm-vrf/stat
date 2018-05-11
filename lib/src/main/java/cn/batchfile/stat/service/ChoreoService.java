@@ -42,6 +42,16 @@ public abstract class ChoreoService {
 		}
 	}
 	
+	public long getLastModified() {
+		long l = choreoDirectory.lastModified();
+		for (File f : choreoDirectory.listFiles()) {
+			if (f.lastModified() > l) {
+				l = f.lastModified();
+			}
+		}
+		return l;
+	}
+	
 	public Choreo getChoreo(String app) throws IOException {
 		Choreo choreo = null;
 		File f = new File(choreoDirectory, app);
@@ -63,6 +73,15 @@ public abstract class ChoreoService {
 			}
 		}
 		return choreo;
+	}
+	
+	public long getLastModified(String name) {
+		File f = new File(choreoDirectory, name);
+		if (f.exists()) {
+			return f.lastModified();
+		} else {
+			return 0;
+		}
 	}
 	
 	public List<Choreo> getChoreos() throws IOException {

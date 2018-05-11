@@ -50,6 +50,16 @@ public abstract class AppService {
 		}
 	}
 	
+	public long getLastModified() {
+		long l = appDirectory.lastModified();
+		for (File f : appDirectory.listFiles()) {
+			if (f.lastModified() > l) {
+				l = f.lastModified();
+			}
+		}
+		return l;
+	}
+	
 	public List<String> getApps() {
 		List<String> apps = new ArrayList<String>();
 		String[] files = appDirectory.list();
@@ -61,6 +71,15 @@ public abstract class AppService {
 		}
 		Collections.sort(apps);
 		return apps;
+	}
+	
+	public long getLastModified(String name) {
+		File f = new File(appDirectory, name);
+		if (f.exists()) {
+			return f.lastModified();
+		} else {
+			return -1;
+		}
 	}
 	
 	public App getApp(String name) throws IOException {

@@ -88,11 +88,11 @@ public class EventService {
 		postEvent(e);
 	}
 	
-	public void putNodeDownEvent(Map<String, Object> node) {
+	public void putNodeDownEvent(Node node) {
 		Event e = new Event();
 		e.setAction("nodeDown");
 		e.setTimestamp(new Date());
-		e.setDesc(String.format("节点下线，主机名：%s，地址：%s", node.get("hostname"), node.get("agentAddress")));
+		e.setDesc(String.format("节点下线，主机名：%s，地址：%s", node.getHostname(), node.getAgentAddress()));
 		postEvent(e);
 	}
 	

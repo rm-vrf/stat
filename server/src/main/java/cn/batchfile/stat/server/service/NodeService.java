@@ -2,9 +2,18 @@ package cn.batchfile.stat.server.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -20,8 +29,13 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
@@ -29,6 +43,7 @@ import com.alibaba.fastjson.JSON;
 import cn.batchfile.stat.domain.Choreo;
 import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.PaginationList;
+import cn.batchfile.stat.domain.Proc;
 
 @Service
 public class NodeService {
@@ -36,6 +51,7 @@ public class NodeService {
 	public static final String INDEX_NAME = "node-data";
 	public static final String TYPE_NAME_UP = "up";
 	public static final String TYPE_NAME_DOWN = "down";
+	private Map<String, Long> timestamps = new HashMap<String, Long>();
 	
 	@Autowired
 	private ElasticService elasticService;
@@ -52,52 +68,130 @@ public class NodeService {
 	@Autowired
 	private RestTemplate restTemplate;
 	
-	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws IOException {
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(() -> {
+			try {
+				refresh();
+			} catch (Exception e) {
+				//pass
+			}
+		}, 1, 1, TimeUnit.SECONDS);
+	}
+	
+	private void refresh() throws IOException {
 		//得到所有在线节点
+		long begin = System.currentTimeMillis();
 		List<Node> nodes = getUpNodes();
-		if (nodes.size() == 0) {
-			return;
-		}
 		
-		//调用节点地址, 判断离线节点
-		List<String> nodeIds = new ArrayList<String>();
+		//获取每一个节点的进程信息
+		List<String> changeNodeIds = new ArrayList<String>();
+		List<String> downNodeIds = new ArrayList<String>();
+		List<Proc> changePs = new ArrayList<Proc>();
+		Map<String, Long> timestamps = new ConcurrentHashMap<String, Long>();
 		nodes.parallelStream().forEach((node) -> {
 			try {
-				String url = String.format("%s/v1/node", node.getAgentAddress());
-				restTemplate.getForObject(url, Node.class);
-			} catch (Exception e) {
-				nodeIds.add(node.getId());
+				//向节点发出询问消息，带时间戳
+				HttpHeaders headers = new HttpHeaders();
+				headers.setIfModifiedSince(this.timestamps.containsKey(node.getId()) ? this.timestamps.get(node.getId()) : 0);
+				HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
+				ResponseEntity<Long[]> resp = restTemplate.exchange(
+						String.format("%s/v1/proc", node.getAgentAddress()), 
+						HttpMethod.GET, entity, Long[].class);
+				
+				//如果有实际内容，加入进程列表
+				if (resp.getStatusCode() == HttpStatus.OK && resp != null) {
+					for (Long pid : resp.getBody()) {
+						Proc p = restTemplate.getForObject(String.format("%s/v1/proc/%s", node.getAgentAddress(), pid), Proc.class);
+						if (p != null) {
+							changePs.add(p);
+						}
+					}
+					log.info("get ps from node, id: {}, address: {}, count: {}", 
+							node.getId(), node.getAgentAddress(), resp.getBody().length);
+				}
+				
+				//添加变动节点列表
+				changeNodeIds.add(node.getId());
+				
+				//更新时间戳
+				timestamps.put(node.getId(), resp.getHeaders().getLastModified());
+			} catch (ResourceAccessException e) {
+				//如果访问超时，加入离线进程列表
+				downNodeIds.add(node.getId());
+				log.info("node down, id: {}, address: {}", 
+						node.getId(), node.getAgentAddress());
 			}
 		});
+
+		//记录时间日志
+		log.info("get ps from node(s), count: {}, cost: {}", nodes.size(), (System.currentTimeMillis() - begin));
 		
-		//去掉离线的节点
-		for (String nodeId : nodeIds) {
+		//处理离线的节点
+		for (String downNodeId : downNodeIds) {
 			//把节点设置成宕机状态
-			downNode(nodeId);
+			downNode(nodes, downNodeId);
+			log.info("move node from up to down, id: {}", downNodeId);
 			
-			//删掉进程信息
-			procService.deleteProcs(nodeId);
+			//删除节点相关的进程信息
+			procService.deleteProcs(downNodeId);
+			log.info("delete ps of node, id: {}", downNodeId);
 		}
 		
 		//清理分配数据
-		if (nodeIds.size() > 0) {
+		if (downNodeIds.size() > 0) {
 			List<Choreo> choreos = choreoService.getChoreos();
 			for (Choreo choreo : choreos) {
+				//遍历分配数据，把分配列表中的下线节点去掉
 				int len = choreo.getDist().size();
 				Iterator<String> iter = choreo.getDist().iterator();
 				while (iter.hasNext()) {
 					String nodeId = iter.next();
-					if (nodeIds.contains(nodeId)) {
+					if (downNodeIds.contains(nodeId)) {
 						iter.remove();
 					}
 				}
 				
 				if (len != choreo.getDist().size()) {
 					choreoService.putDist(choreo.getApp(), choreo.getDist());
+					log.info("change choreo, remove dist, app: {}", choreo.getApp());
 				}
 			}
 		}
+		
+		//更新进程信息
+		if (changePs.size() > 0) {
+			Map<String, List<Proc>> groups = changePs.stream().collect(Collectors.groupingBy(p -> p.getNode()));
+			for (Entry<String, List<Proc>> entry : groups.entrySet()) {
+				procService.putProcs(entry.getKey(), entry.getValue());
+				log.info("update ps, node: {}, count: {}", entry.getKey(), entry.getValue().size());
+			}
+		}
+		
+		//重新归类进程信息
+		if (changePs.size() > 0 || downNodeIds.size() > 0) {
+			List<Proc> ps = procService.getProcs();
+			
+			//用新数据代替ps里面的缓存数据，es查询存在n秒延时
+			Iterator<Proc> iter = ps.iterator();
+			while (iter.hasNext()) {
+				Proc p = iter.next();
+				if (changeNodeIds.contains(p.getNode()) || downNodeIds.contains(p.getNode())) {
+					iter.remove();
+				}
+			}
+			ps.addAll(changePs);
+			
+			//按照应用名归类保存
+			procService.groupProcs(ps);
+			log.info("group ps by app name, count: {}", ps.size());
+		}
+		
+		//更新时间戳
+		this.timestamps.clear();
+		this.timestamps.putAll(timestamps);
 	}
 	
 	public void putNode(Node node) {
@@ -121,7 +215,8 @@ public class NodeService {
 				DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete()
 						.setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
 						.setId(node.getId()).execute().actionGet();
-				log.debug("delete node from down type: {}", deleteResp.getId());
+				log.info("node up, id: {}, address: {}", 
+						deleteResp.getId(), node.getAgentAddress());
 				
 				//报告事件
 				eventService.putNodeUpEvent(node);
@@ -247,32 +342,30 @@ public class NodeService {
 		return nodes;
 	}
 
-	private void downNode(String id) {
-		//获取节点数据
-		GetResponse getResp = elasticService.getNode().client().prepareGet()
-				.setIndex(INDEX_NAME).setType(TYPE_NAME_UP).setId(id).execute().actionGet();
+	private void downNode(List<Node> nodes, String id) {
 		
-		if (getResp.isExists()) {
-			//把agent地址去掉，用这个属性标注节点的在线状态
-			Map<String, Object> node = getResp.getSourceAsMap();
-			Object agentAddress = node.remove("agentAddress");
-			
-			//删除在线节点
-			DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
-					.setId(id).execute().actionGet();
-			log.debug("delete node: {}", deleteResp.getId());
-			
-			//插入离线节点
-			String json = JSON.toJSONString(node);
-			IndexResponse indexResp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
-					.setId(id).setSource(json, XContentType.JSON).execute().actionGet();
-			
-			long version = indexResp.getVersion();
-			log.debug("index node data to down type, id: {}, version: {}", id, version);
-			
-			//报告事件
-			node.put("agentAddress", agentAddress);
-			eventService.putNodeDownEvent(node);
-		}
+		//从列表上寻找节点
+		Node node = nodes.stream().filter((n) -> {return StringUtils.equals(id, n.getId());}).collect(Collectors.toList()).get(0);
+		
+		//删除在线节点
+		DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)
+				.setId(id).execute().actionGet();
+		log.debug("delete node: {}", deleteResp.getId());
+		
+		//把agent地址去掉，用这个属性标注节点的在线状态
+		String agentAddress = node.getAgentAddress();
+		node.setAgentAddress(StringUtils.EMPTY);
+		
+		//添加离线节点
+		String json = JSON.toJSONString(node);
+		IndexResponse indexResp = elasticService.getNode().client().prepareIndex().setIndex(INDEX_NAME).setType(TYPE_NAME_DOWN)
+				.setId(id).setSource(json, XContentType.JSON).execute().actionGet();
+		
+		long version = indexResp.getVersion();
+		log.debug("index node data to down type, id: {}, version: {}", id, version);
+		
+		//报告事件
+		node.setAgentAddress(agentAddress);
+		eventService.putNodeDownEvent(node);
 	}
 }

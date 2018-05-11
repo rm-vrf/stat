@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.WebRequest;
 
 import cn.batchfile.stat.domain.Choreo;
 import cn.batchfile.stat.domain.RestResponse;
@@ -30,15 +32,17 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 	}
 	
 	@GetMapping("/v1/choreo")
-	public List<Choreo> getChoreos(@RequestParam("node") String node) throws IOException {
-		return super.getChoreos(node);
+	public ResponseEntity<List<Choreo>> getChoreos(WebRequest request,
+			@RequestParam("node") String node) throws IOException {
+		
+		return super.getChoreos(request, node);
 	}
 	
 	@GetMapping("/v1/app/{name}/choreo")
-	public Choreo getChoreo(HttpServletResponse response,
+	public ResponseEntity<Choreo> getChoreo(WebRequest request,
 			@PathVariable("name") String name) throws IOException {
 		
-		return super.getChoreo(response, name);
+		return super.getChoreo(request, name);
 	}
 	
 	@PutMapping("/v1/app/{name}/choreo")
@@ -48,10 +52,10 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 	}
 	
 	@GetMapping("/v1/app/{name}/_scale")
-	public int getScale(HttpServletResponse response,
+	public ResponseEntity<Integer> getScale(WebRequest request,
 			@PathVariable("name") String name) throws IOException {
 		
-		return super.getScale(response, name);
+		return super.getScale(request, name);
 	}
 	
 	@PostMapping("/v1/app/{name}/_scale")
@@ -63,11 +67,10 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 	}
 	
 	@GetMapping("/v1/app/{name}/_query")
-	public String getQuery(HttpServletResponse response,
+	public ResponseEntity<String> getQuery(WebRequest request,
 			@PathVariable("name") String name) throws IOException {
 		
-		Choreo choreo = super.getChoreo(response, name);
-		return choreo.getQuery();
+		return super.getQuery(request, name);
 	}
 	
 	@PostMapping("/v1/app/{name}/_query")
@@ -75,17 +78,7 @@ public class ChoreoController extends cn.batchfile.stat.controller.ChoreoControl
 			@PathVariable("name") String name, 
 			@RequestBody String query) throws IOException {
 		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			Choreo choreo = super.getChoreo(response, name);
-			choreo.setQuery(query);
-			super.putChoreo(response, choreo);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
+		return super.putQuery(response, name, query);
 	}
 
 }

@@ -12,7 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -28,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
@@ -94,23 +96,52 @@ public class ProcService {
 		if (!procDirectory.exists()) {
 			FileUtils.forceMkdir(procDirectory);
 		}
+
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					refresh();
+				} catch (Exception e) {
+					//pass
+				}
+			}
+		}, 5, 5, TimeUnit.SECONDS);
 	}
 	
-	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws IOException, CommandLineException, InterruptedException, SigarException {
-		synchronized (this) {
-			//检查文件存储，把废弃的进程号清理掉
-			checkFileStore();
-			
-			//停止多余的进程
-			checkRunningProc();
-			
-			//按计划拉起进程
-			startScheduleProc();
-			
-			//清理输出信息
-			cleanSystemOut(systemErrs);
-			cleanSystemOut(systemOuts);
+	private void refresh() throws IOException, CommandLineException, InterruptedException, SigarException {
+		//检查文件存储，把废弃的进程号清理掉
+		checkFileStore();
+		
+		//停止多余的进程
+		checkRunningProc();
+		
+		//按计划拉起进程
+		startScheduleProc();
+		
+		//清理输出信息
+		cleanSystemOut(systemErrs);
+		cleanSystemOut(systemOuts);
+	}
+	
+	public long getLastModified() {
+		long l = procDirectory.lastModified();
+		for (File f : procDirectory.listFiles()) {
+			if (f.lastModified() > l) {
+				l = f.lastModified();
+			}
+		}
+		return l;
+	}
+	
+	public long getLastModified(long pid) {
+		File f = new File(procDirectory, String.valueOf(pid));
+		if (f.exists()) {
+			return f.lastModified();
+		} else {
+			return -1;
 		}
 	}
 	

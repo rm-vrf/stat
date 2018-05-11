@@ -1,40 +1,46 @@
 package cn.batchfile.stat.agent.service;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.catalina.util.URLEncoder;
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import cn.batchfile.stat.domain.App;
 import cn.batchfile.stat.domain.Choreo;
 import cn.batchfile.stat.domain.Event;
 import cn.batchfile.stat.domain.Node;
-import cn.batchfile.stat.domain.Proc;
 import cn.batchfile.stat.domain.RestResponse;
 
 @Service
 public class ShakehandService {
 	protected static final Logger log = LoggerFactory.getLogger(ShakehandService.class);
+	private long putNodeTime = 0;
+	private long appsTime = 0;
+	private long choreoTime = 0;
 	
 	@Value("${master.address:}")
 	private String masterAddress;
 	
 	@Autowired
 	private NodeService nodeService;
-	
-	@Autowired
-	private ProcService procService;
 	
 	@Autowired
 	private AppService appService;
@@ -48,72 +54,111 @@ public class ShakehandService {
 	@Autowired
 	private RestTemplate restTemplate;
 	
-	@Scheduled(fixedDelay = 5000)
-	public void refresh() throws IOException {
-		//初始化提交节点数据
-		submitNode();
-		
-		//更新应用数据
-		fetchApps();
-		
-		//提交事件
-		submitEvents();
-		
-		//提交进程列表
-		submitProcs();
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					refresh();
+				} catch (Exception e) {
+					//pass
+				}
+			}
+		}, 2, 2, TimeUnit.SECONDS);
 	}
 	
-	private void fetchApps() throws IOException {
+	private void refresh() throws IOException, InterruptedException {
+		try {
+			//每隔120秒向主节点汇报自己在线的消息
+			if (System.currentTimeMillis() - putNodeTime >= 120000) {
+				putNode();
+				putNodeTime = System.currentTimeMillis();
+			}
+			
+			//提交事件
+			putEvents();
+			
+			//更新应用数据
+			refreshApps();
+		} catch (ResourceAccessException e) {
+			log.error("cannot connect to master");
+			Thread.sleep(30000);
+		}
+	}
+	
+	private void refreshApps() throws IOException {
 		if (StringUtils.isEmpty(masterAddress)) {
 			return;
 		}
 
-		//获取本地的应用名称
-		List<String> existNames = appService.getApps();
+		//得到应用名称，添加时间戳消息头
+		HttpHeaders appHeaders = new HttpHeaders();
+		appHeaders.setIfModifiedSince(appsTime);
+		HttpEntity<?> appEntity = new HttpEntity<>("parameters", appHeaders);
+		ResponseEntity<String[]> appResp = restTemplate.exchange(String.format("%s/v1/app", masterAddress), 
+				HttpMethod.GET, appEntity, String[].class);
 		
-		//抓远程的应用名称，添加时间戳消息头
-		String url = String.format("%s/v1/app", masterAddress);
-		String[] ary = restTemplate.getForObject(url, String[].class);
-		List<String> appNames = Arrays.asList(ary);
-		log.debug("get app names: {}", appNames);
+		//如果返回实际内容，更新应用列表
+		if (appResp.getStatusCode() == HttpStatus.OK) {
+			List<String> remoteAppNames = Arrays.asList(appResp.getBody());
+			log.info("get app names: {}", remoteAppNames);
+			
+			//获取本地的应用名称
+			List<String> localAppNames = appService.getApps();
 
-		//遍历应用数据，更新应用数据
-		for (String appName : appNames) {
-			url = String.format("%s/v1/app/%s", masterAddress, appName);
-			App app = restTemplate.getForObject(url, App.class);
-			if (existNames.contains(appName)) {
-				App existApp = appService.getApp(appName);
-				if (!existApp.equals(app)) {
-					appService.putApp(app);
-					log.info("change app: {}", appName);
+			//循环判断每一个应用，更新或者添加应用
+			for (String appName : remoteAppNames) {
+				String url = String.format("%s/v1/app/%s", masterAddress, appName);
+				App remoteApp = restTemplate.getForObject(url, App.class);
+				if (remoteApp != null && localAppNames.contains(appName)) {
+					App localApp = appService.getApp(appName);
+					if (localApp != null && !localApp.equals(remoteApp)) {
+						appService.putApp(remoteApp);
+						log.info("change app: {}", appName);
+					}
+				} else if (remoteApp != null) {
+					appService.postApp(remoteApp);
+					log.info("add app: {}", appName);
 				}
-			} else {
-				appService.postApp(app);
-				log.info("add app: {}", appName);
+			}
+			
+			//删除多余的应用
+			for (String localAppName : localAppNames) {
+				if (!remoteAppNames.contains(localAppName)) {
+					appService.deleteApp(localAppName);
+					log.info("delete app: {}", localAppName);
+				}
 			}
 		}
 		
-		//更新编排数据
-		url = String.format("%s/v1/choreo?node=%s", masterAddress, nodeService.getNode().getId());
-		Choreo[] choreos = restTemplate.getForObject(url, Choreo[].class);
-		for (Choreo choreo : choreos) {
-			Choreo existChoreo = choreoService.getChoreo(choreo.getApp());
-			if (choreo.getScale() != existChoreo.getScale()) {
-				choreoService.putScale(choreo.getApp(), choreo.getScale());
-				log.info("change scale, app: {}, {}", choreo.getApp(), choreo.getScale());
-			}
-		}
+		//得到编排信息，加时间戳消息头
+		HttpHeaders chHeaders = new HttpHeaders();
+		chHeaders.setIfModifiedSince(choreoTime);
+		HttpEntity<?> chEntity = new HttpEntity<>("parameters", chHeaders);
+		ResponseEntity<Choreo[]> chResp = restTemplate.exchange(
+				String.format("%s/v1/choreo?node=%s", masterAddress, nodeService.getNode().getId()), 
+				HttpMethod.GET, chEntity, Choreo[].class);
 		
-		//删除多余的应用
-		for (String existName : existNames) {
-			if (!appNames.contains(existName)) {
-				appService.deleteApp(existName);
-				log.info("delete app: {}", existName);
+		//如果返回实际内容，更新应用列表
+		if (chResp.getStatusCode() == HttpStatus.OK) {
+			for (Choreo choreo : chResp.getBody()) {
+				Choreo existChoreo = choreoService.getChoreo(choreo.getApp());
+				if (choreo.getScale() != existChoreo.getScale()) {
+					choreoService.putScale(choreo.getApp(), choreo.getScale());
+					log.info("change scale, app: {}, {}", choreo.getApp(), choreo.getScale());
+				}
 			}
 		}
+
+		//更新时间戳
+		appsTime = appResp.getHeaders().getLastModified();
+		choreoTime = chResp.getHeaders().getLastModified();
 	}
 	
-	private int submitEvents() {
+	private int putEvents() {
 		if (StringUtils.isEmpty(masterAddress)) {
 			return 0;
 		}
@@ -122,43 +167,20 @@ public class ShakehandService {
 		if (events.size() > 0) {
 			String url = String.format("%s/v1/event", masterAddress);
 			RestResponse<?> resp = restTemplate.postForObject(url, events, RestResponse.class);
-			log.debug("submit events, count: {}, resp: {}", events.size(), resp.isOk());
+			log.info("submit events, count: {}, resp: {}", events.size(), resp.isOk());
 		}
 		return events.size();
 	}
 
-	private void submitNode() throws IOException {
+	private void putNode() throws IOException {
 		if (StringUtils.isEmpty(masterAddress)) {
 			return;
 		}
 		
 		Node node = nodeService.getNode();
 		String url = String.format("%s/v1/node", masterAddress);
-		RestResponse<?> resp = restTemplate.postForObject(url, node, RestResponse.class);
-		log.debug("submit node, resp: {}", resp.isOk());
+		restTemplate.put(url, node);
+		log.info("put node successfully");
 	}
 	
-	private int submitProcs() throws IOException {
-		if (StringUtils.isEmpty(masterAddress)) {
-			return 0;
-		}
-		
-		Node node = nodeService.getNode();
-		List<Proc> ps = new ArrayList<Proc>();
-		List<Long> pids = procService.getProcs();
-		for (Long pid : pids) {
-			Proc p = procService.getProc(pid);
-			if (p != null) {
-				ps.add(p);
-			}
-		}
-
-		String url = String.format("%s/v1/proc?id=%s", masterAddress, 
-				new URLEncoder().encode(node.getId(), Charset.forName("UTF-8")));
-		
-		RestResponse<?> resp = restTemplate.postForObject(url, ps, RestResponse.class);
-		log.debug("submit ps, count: {}, resp: {}", ps.size(), resp.isOk());
-		
-		return ps.size();
-	}
 }

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -99,24 +98,6 @@ public class ProcController {
 			@PathVariable("pid") long pid) {
 		
 		return procService.getSystemErr(node, pid);
-	}
-	
-	@PostMapping("/v1/proc")
-	public RestResponse<String> putProcs(HttpServletResponse response, 
-			@RequestBody List<Proc> ps,
-			@RequestParam("id") String id) throws IOException {
-		
-		RestResponse<String> resp = new RestResponse<String>();
-		try {
-			procService.putProcs(id, ps);
-			resp.setOk(true);
-			resp.setBody(id);
-		} catch (Exception e) {
-			resp.setOk(false);
-			resp.setMessage(e.getMessage());
-			response.sendError(500, e.getMessage());
-		}
-		return resp;
 	}
 	
 }

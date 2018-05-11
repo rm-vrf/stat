@@ -81,6 +81,16 @@ public class NodeService {
 		}
 	}
 	
+	public long getLastModified() {
+		File id = new File(new File(storeDirectory), "id");
+		File tag = new File(new File(storeDirectory), "tag");
+		File env = new File(new File(storeDirectory), "env");
+		long li = id.exists() ? id.lastModified() : 0;
+		long lt = tag.exists() ? tag.lastModified() : 0;
+		long le = env.exists() ? env.lastModified() : 0;
+		return Math.max(li, Math.max(lt, le));
+	}
+	
 	public Node getNode() throws IOException {
 		List<String> tags = getTags();
 		if (tags != null) {
