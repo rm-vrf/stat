@@ -347,7 +347,7 @@ public class NodeService {
 	private void downNode(List<Node> nodes, String id) {
 		
 		//从列表上寻找节点
-		Node node = nodes.stream().filter((n) -> {return StringUtils.equals(id, n.getId());}).collect(Collectors.toList()).get(0);
+		Node node = nodes.stream().filter(n -> StringUtils.equals(id, n.getId())).collect(Collectors.toList()).get(0);
 		
 		//删除在线节点
 		DeleteResponse deleteResp = elasticService.getNode().client().prepareDelete().setIndex(INDEX_NAME).setType(TYPE_NAME_UP)

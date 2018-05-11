@@ -58,14 +58,11 @@ public class ShakehandService {
 	public void init() {
 		//启动定时器
 		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-		es.scheduleWithFixedDelay(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					refresh();
-				} catch (Exception e) {
-					//pass
-				}
+		es.scheduleWithFixedDelay(() -> {
+			try {
+				refresh();
+			} catch (Exception e) {
+				//pass
 			}
 		}, 2, 2, TimeUnit.SECONDS);
 	}

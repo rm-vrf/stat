@@ -14,16 +14,23 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.hyperic.sigar.CpuPerc;
 import org.hyperic.sigar.FileSystem;
 import org.hyperic.sigar.FileSystemUsage;
 import org.hyperic.sigar.Mem;
 import org.hyperic.sigar.NetInterfaceConfig;
+import org.hyperic.sigar.NetInterfaceStat;
 import org.hyperic.sigar.ProcCpu;
 import org.hyperic.sigar.ProcCredName;
 import org.hyperic.sigar.ProcState;
@@ -31,24 +38,31 @@ import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
+import cn.batchfile.stat.domain.CpuStat;
 import cn.batchfile.stat.domain.Disk;
+import cn.batchfile.stat.domain.DiskStat;
+import cn.batchfile.stat.domain.Everything;
 import cn.batchfile.stat.domain.Memory;
+import cn.batchfile.stat.domain.MemoryStat;
 import cn.batchfile.stat.domain.Network;
+import cn.batchfile.stat.domain.NetworkStat;
 import cn.batchfile.stat.domain.Os;
+import cn.batchfile.stat.domain.OsStat;
 import cn.batchfile.stat.domain.Proc;
 
 @Service
 public class SysService {
 	protected static final Logger log = LoggerFactory.getLogger(SysService.class);
-	private Sigar sigar;
-	private String[] FSS = new String[] {
+	private static String[] FSS = new String[] {
 			"btrfs", "f2fs", "ext3", "ext4", "hfs", "jfs", "nilfs", 
 			"reiser4", "reiserfs", "udf", "xfs", "zfs", 
 			"ntfs", "refs", "exfat", "fat", "vfat", 
@@ -56,9 +70,18 @@ public class SysService {
 			"adbfs", "encfs", "fuseiso", "gitfs", "gocryptfs", "sshfs", "vdfuse", "bfuse", "xmlfs", 
 			"aufs", "ecryptfs", "mergerfs", "mhddfs", "overlayfs", "unionfs", "squashfs", 
 			"ceph", "glusterfs", "go-ipfs", "moosefs", "openafs", "orangefs", "sheepdog", "tahoe-lafs"};
+	private Sigar sigar;
+	private List<DiskStat> diskStats = new ArrayList<DiskStat>();
+	private List<NetworkStat> networkStats = new ArrayList<NetworkStat>();
+	
+	@Value("${master.address:}")
+	private String masterAddress;
 	
 	@Value("${store.directory}")
 	private String storeDirectory;
+	
+	@Autowired
+	private RestTemplate restTemplate;
 	
 	@PostConstruct
 	public void init() throws Exception {
@@ -83,6 +106,16 @@ public class SysService {
 
 		//init sigar object
 		sigar = new Sigar();
+		
+		//start timer
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleAtFixedRate(() -> {
+			try {
+				reportStat();
+			} catch (Exception e) {
+				//pass
+			}
+		}, 0, 60, TimeUnit.SECONDS);
 	}
 	
 	private void copyResources() throws IOException {
@@ -318,5 +351,181 @@ public class SysService {
 		} else {
 			throw new RuntimeException("error when get resouece content");
 		}
+	}
+
+	private void reportStat() throws IOException, SigarException {
+		if (StringUtils.isEmpty(masterAddress)) {
+			return;
+		}
+		
+		Everything everything = new Everything();
+		everything.setId(getId());
+		everything.setHostname(getHostname());
+		
+		if (StringUtils.isEmpty(everything.getId())) {
+			return;
+		}
+		
+		everything.setCpuStat(getCpuStat());
+		everything.setOsStat(getOsStat());
+		everything.setDiskStats(getDiskStats());
+		everything.setMemoryStat(getMemoryStat());
+		everything.setNetworkStats(getNetworkStats());
+
+		String url = String.format("%s/v1/everything", masterAddress);
+		restTemplate.put(url, everything);
+	}
+
+	private List<NetworkStat> getNetworkStats() throws SigarException {
+		String[] netIfs = sigar.getNetInterfaceList();
+		List<NetworkStat> networks = new ArrayList<NetworkStat>();
+		
+		for (String name : netIfs) {
+			NetInterfaceConfig config = sigar.getNetInterfaceConfig(name);
+			NetInterfaceStat stat = sigar.getNetInterfaceStat(name);
+			
+			if (!config.getAddress().equals("127.0.0.1") 
+					&& !config.getAddress().equals("0.0.0.0")) {
+				
+				NetworkStat network = new NetworkStat();
+				
+				network.setAddress(config.getAddress());
+				network.setName(config.getName());
+				network.setRxBytes(stat.getRxBytes());
+				network.setRxDropped(stat.getRxDropped());
+				network.setRxErrors(stat.getRxErrors());
+				network.setRxFrame(stat.getRxFrame());
+				network.setRxOverruns(stat.getRxOverruns());
+				network.setRxPackets(stat.getRxPackets());
+				network.setSpeed(stat.getSpeed());
+				network.setTxBytes(stat.getTxBytes());
+				network.setTxCarrier(stat.getTxCarrier());
+				network.setTxCollisions(stat.getTxCollisions());
+				network.setTxDropped(stat.getTxDropped());
+				network.setTxErrors(stat.getTxErrors());
+				network.setTxOverruns(stat.getTxOverruns());
+				network.setTxPackets(stat.getTxPackets());
+				
+				List<NetworkStat> ns = networkStats.stream()
+						.filter(net -> net.getName().equals(network.getName()) && net.getAddress().equals(network.getAddress()))
+						.collect(Collectors.toList());
+				
+				if (ns.size() > 0) {
+					network.setRxBytesPerSecond((network.getRxBytes() - ns.get(0).getRxBytes()) / 60);
+					network.setRxPacketsPerSecond((network.getRxPackets() - ns.get(0).getRxPackets()) / 60);
+					network.setRxErrorsPerSecond((network.getRxErrors() - ns.get(0).getRxErrors()) / 60);
+					network.setRxDroppedPerSecond((network.getRxDropped() - ns.get(0).getRxDropped()) / 60);
+					network.setRxOverrunsPerSecond((network.getRxOverruns() - ns.get(0).getRxOverruns()) / 60);
+					network.setRxFramePerSecond((network.getRxFrame() - ns.get(0).getRxFrame()) / 60);
+					network.setTxBytesPerSecond((network.getTxBytes() - ns.get(0).getTxBytes()) / 60);
+					network.setTxPacketsPerSecond((network.getTxPackets() - ns.get(0).getTxPackets()) / 60);
+					network.setTxErrorsPerSecond((network.getTxErrors() - ns.get(0).getTxErrors()) / 60);
+					network.setTxDroppedPerSecond((network.getTxDropped() - ns.get(0).getTxDropped()) / 60);
+					network.setTxOverrunsPerSecond((network.getTxOverruns() - ns.get(0).getTxOverruns()) / 60);
+					network.setTxCollisionsPerSecond((network.getTxCollisions() - ns.get(0).getTxCollisions()) / 60);
+					network.setTxCarrierPerSecond((network.getTxCarrier() - ns.get(0).getTxCarrier()) / 60);
+				}
+				
+				networks.add(network);
+			}
+		}
+		
+		networkStats.clear();
+		networkStats.addAll(networks);
+		
+		return networks;
+	}
+
+	private MemoryStat getMemoryStat() throws SigarException {
+		MemoryStat memory = new MemoryStat();
+		Mem mem = sigar.getMem();
+		memory.setActualFree(mem.getActualFree());
+		memory.setActualUsed(mem.getActualUsed());
+		memory.setFree(mem.getFree());
+		memory.setFreePercent(mem.getFreePercent());
+		memory.setRam(mem.getRam());
+		memory.setTotal(mem.getTotal());
+		memory.setUsed(mem.getUsed());
+		memory.setUsedPercent(mem.getUsedPercent());
+		return memory;
+	}
+
+	private List<DiskStat> getDiskStats() throws SigarException {
+		FileSystem[] fss = sigar.getFileSystemList();
+		
+		List<DiskStat> list = new ArrayList<DiskStat>();
+		for (FileSystem fs : fss) {
+			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
+			DiskStat disk = new DiskStat();
+			disk.setDevName(fs.getDevName());
+			disk.setDirName(fs.getDirName());
+			disk.setAvail(fsu.getAvail());
+			disk.setDiskQueue(fsu.getDiskQueue());
+			disk.setDiskReadBytes(fsu.getDiskReadBytes());
+			disk.setDiskReads(fsu.getDiskReads());
+			disk.setDiskServiceTime(fsu.getDiskServiceTime());
+			disk.setDiskWriteBytes(fsu.getDiskWriteBytes());
+			disk.setDiskWrites(fsu.getDiskWrites());
+			disk.setFiles(fsu.getFiles());
+			disk.setFree(fsu.getFree());
+			disk.setFreeFiles(fsu.getFreeFiles());
+			disk.setTotal(fsu.getTotal());
+			disk.setUsed(fsu.getUsed());
+			disk.setUsePercent(fsu.getUsePercent());
+			
+			List<DiskStat> ds = diskStats.stream()
+					.filter(d -> StringUtils.equals(disk.getDevName(), d.getDevName()) && StringUtils.equals(disk.getDirName(), d.getDirName()))
+					.collect(Collectors.toList());
+			
+			if (ds.size() > 0) {
+				disk.setDiskReadsPerSecond((disk.getDiskReads() - ds.get(0).getDiskReads()) / 60);
+				disk.setDiskWritesPerSecond((disk.getDiskWrites() - ds.get(0).getDiskReads()) / 60);
+				disk.setDiskReadBytesPerSecond((disk.getDiskReadBytes() - ds.get(0).getDiskReads()) / 60);
+				disk.setDiskWriteBytesPerSecond((disk.getDiskWriteBytes() - ds.get(0).getDiskReads()) / 60);
+			}
+			
+			list.add(disk);
+		}
+		
+		diskStats.clear();
+		diskStats.addAll(list);
+		
+		return list;
+	}
+
+	private OsStat getOsStat() {
+		OperatingSystemMXBean oper = ManagementFactory.getOperatingSystemMXBean();
+		OsStat os = new OsStat();
+		os.setLoad(oper.getSystemLoadAverage());
+		return os;
+	}
+
+	private CpuStat getCpuStat() throws SigarException {
+		CpuStat cpu = new CpuStat();
+		CpuPerc cpuP = sigar.getCpuPerc();
+		cpu.setCombined(cpuP.getCombined());
+		cpu.setIdle(cpuP.getCombined());
+		cpu.setIrq(cpuP.getIrq());
+		cpu.setNice(cpuP.getNice());
+		cpu.setSoftIrq(cpuP.getSoftIrq());
+		cpu.setStolen(cpuP.getStolen());
+		cpu.setSys(cpuP.getSys());
+		cpu.setUser(cpuP.getUser());
+		cpu.setWait(cpuP.getWait());
+		return cpu;
+	}
+
+	private String getId() throws IOException {
+		String id = StringUtils.EMPTY;
+		
+		File f = new File(new File(storeDirectory), "id");
+		if (f.exists()) {
+			id = FileUtils.readFileToString(f, "UTF-8");
+		} else {
+			id = StringUtils.remove(UUID.randomUUID().toString(), "-");
+			FileUtils.writeByteArrayToFile(f, id.getBytes("UTF-8"));
+		}
+		
+		return id;
 	}
 }
