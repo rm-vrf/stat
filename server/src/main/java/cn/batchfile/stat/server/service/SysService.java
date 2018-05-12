@@ -50,6 +50,7 @@ public class SysService {
 		index("disk-stat-", everything.getId(), everything.getHostname(), time, everything.getDiskStats());
 		index("os-stat-", everything.getId(), everything.getHostname(), time, everything.getOsStat());
 		index("cpu-stat-", everything.getId(), everything.getHostname(), time, everything.getCpuStat());
+		index("proc-stat-", everything.getId(), everything.getHostname(), time, everything.getProcStats());
 	}
 
 	private void index(String prefix, String node, String hostname, Date time, Object data) {

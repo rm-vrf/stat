@@ -129,8 +129,10 @@ public class ProcService {
 	public long getLastModified() {
 		long l = procDirectory.lastModified();
 		for (File f : procDirectory.listFiles()) {
-			if (f.lastModified() > l) {
-				l = f.lastModified();
+			if (!StringUtils.startsWith(f.getName(), ".") && StringUtils.isNumeric(f.getName())) {
+				if (f.lastModified() > l) {
+					l = f.lastModified();
+				}
 			}
 		}
 		return l;

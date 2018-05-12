@@ -10,6 +10,7 @@ public class Everything {
 	private List<DiskStat> diskStats;
 	private MemoryStat memoryStat;
 	private List<NetworkStat> networkStats;
+	private List<ProcStat> procStats;
 
 	public String getId() {
 		return id;
@@ -65,5 +66,13 @@ public class Everything {
 
 	public void setNetworkStats(List<NetworkStat> networkStats) {
 		this.networkStats = networkStats;
+	}
+
+	public List<ProcStat> getProcStats() {
+		return procStats;
+	}
+
+	public void setProcStats(List<ProcStat> procStats) {
+		this.procStats = procStats;
 	}
 }

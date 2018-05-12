@@ -33,9 +33,12 @@ import org.hyperic.sigar.NetInterfaceConfig;
 import org.hyperic.sigar.NetInterfaceStat;
 import org.hyperic.sigar.ProcCpu;
 import org.hyperic.sigar.ProcCredName;
+import org.hyperic.sigar.ProcExe;
+import org.hyperic.sigar.ProcMem;
 import org.hyperic.sigar.ProcState;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
+import org.hyperic.sigar.SigarNotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +61,7 @@ import cn.batchfile.stat.domain.NetworkStat;
 import cn.batchfile.stat.domain.Os;
 import cn.batchfile.stat.domain.OsStat;
 import cn.batchfile.stat.domain.Proc;
+import cn.batchfile.stat.domain.ProcStat;
 
 @Service
 public class SysService {
@@ -272,17 +276,17 @@ public class SysService {
 			Disk disk = new Disk();
 			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
 			
-			disk.setDevName(fs.getDevName());
-			disk.setDirName(fs.getDirName());
-			disk.setFlags(fs.getFlags());
-			disk.setOption(fs.getOptions());
-			disk.setSysTypeName(fs.getSysTypeName());
-			disk.setTotal(fsu.getTotal() * 1024);
-			disk.setType(fs.getType());
-			disk.setTypeName(fs.getTypeName());
+			if (fsu.getTotal() > 0 && isAnyFs(fs.getSysTypeName(), FSS)) {
+				
+				disk.setDevName(fs.getDevName());
+				disk.setDirName(fs.getDirName());
+				disk.setFlags(fs.getFlags());
+				disk.setOption(fs.getOptions());
+				disk.setSysTypeName(fs.getSysTypeName());
+				disk.setTotal(fsu.getTotal() * 1024);
+				disk.setType(fs.getType());
+				disk.setTypeName(fs.getTypeName());
 			
-			if (disk.getTotal() > 0 
-					&& isAnyFs(disk.getSysTypeName(), FSS)) {
 				disks.add(disk);
 			}
 		}
@@ -303,7 +307,6 @@ public class SysService {
 		String[] netIfs = sigar.getNetInterfaceList();
 		for (String netIf : netIfs) {
 			NetInterfaceConfig config = sigar.getNetInterfaceConfig(netIf);
-			//NetInterfaceStat stat = sigar.getNetInterfaceStat(netIf);
 			Network network = new Network();
 			network.setAddress(config.getAddress());
 			network.setName(config.getName());
@@ -371,6 +374,7 @@ public class SysService {
 		everything.setDiskStats(getDiskStats());
 		everything.setMemoryStat(getMemoryStat());
 		everything.setNetworkStats(getNetworkStats());
+		everything.setProcStats(getProcStats());
 
 		String url = String.format("%s/v1/everything", masterAddress);
 		restTemplate.put(url, everything);
@@ -456,35 +460,37 @@ public class SysService {
 		List<DiskStat> list = new ArrayList<DiskStat>();
 		for (FileSystem fs : fss) {
 			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
-			DiskStat disk = new DiskStat();
-			disk.setDevName(fs.getDevName());
-			disk.setDirName(fs.getDirName());
-			disk.setAvail(fsu.getAvail());
-			disk.setDiskQueue(fsu.getDiskQueue());
-			disk.setDiskReadBytes(fsu.getDiskReadBytes());
-			disk.setDiskReads(fsu.getDiskReads());
-			disk.setDiskServiceTime(fsu.getDiskServiceTime());
-			disk.setDiskWriteBytes(fsu.getDiskWriteBytes());
-			disk.setDiskWrites(fsu.getDiskWrites());
-			disk.setFiles(fsu.getFiles());
-			disk.setFree(fsu.getFree());
-			disk.setFreeFiles(fsu.getFreeFiles());
-			disk.setTotal(fsu.getTotal());
-			disk.setUsed(fsu.getUsed());
-			disk.setUsePercent(fsu.getUsePercent());
-			
-			List<DiskStat> ds = diskStats.stream()
-					.filter(d -> StringUtils.equals(disk.getDevName(), d.getDevName()) && StringUtils.equals(disk.getDirName(), d.getDirName()))
-					.collect(Collectors.toList());
-			
-			if (ds.size() > 0) {
-				disk.setDiskReadsPerSecond((disk.getDiskReads() - ds.get(0).getDiskReads()) / 60);
-				disk.setDiskWritesPerSecond((disk.getDiskWrites() - ds.get(0).getDiskReads()) / 60);
-				disk.setDiskReadBytesPerSecond((disk.getDiskReadBytes() - ds.get(0).getDiskReads()) / 60);
-				disk.setDiskWriteBytesPerSecond((disk.getDiskWriteBytes() - ds.get(0).getDiskReads()) / 60);
+			if (fsu.getTotal() > 0 && isAnyFs(fs.getSysTypeName(), FSS)) {
+				DiskStat disk = new DiskStat();
+				disk.setDevName(fs.getDevName());
+				disk.setDirName(fs.getDirName());
+				disk.setAvail(fsu.getAvail());
+				disk.setDiskQueue(fsu.getDiskQueue());
+				disk.setDiskReadBytes(fsu.getDiskReadBytes());
+				disk.setDiskReads(fsu.getDiskReads());
+				disk.setDiskServiceTime(fsu.getDiskServiceTime());
+				disk.setDiskWriteBytes(fsu.getDiskWriteBytes());
+				disk.setDiskWrites(fsu.getDiskWrites());
+				disk.setFiles(fsu.getFiles());
+				disk.setFree(fsu.getFree());
+				disk.setFreeFiles(fsu.getFreeFiles());
+				disk.setTotal(fsu.getTotal());
+				disk.setUsed(fsu.getUsed());
+				disk.setUsePercent(fsu.getUsePercent());
+				
+				List<DiskStat> ds = diskStats.stream()
+						.filter(d -> StringUtils.equals(disk.getDevName(), d.getDevName()) && StringUtils.equals(disk.getDirName(), d.getDirName()))
+						.collect(Collectors.toList());
+				
+				if (ds.size() > 0) {
+					disk.setDiskReadsPerSecond((disk.getDiskReads() - ds.get(0).getDiskReads()) / 60);
+					disk.setDiskWritesPerSecond((disk.getDiskWrites() - ds.get(0).getDiskReads()) / 60);
+					disk.setDiskReadBytesPerSecond((disk.getDiskReadBytes() - ds.get(0).getDiskReads()) / 60);
+					disk.setDiskWriteBytesPerSecond((disk.getDiskWriteBytes() - ds.get(0).getDiskReads()) / 60);
+				}
+				
+				list.add(disk);
 			}
-			
-			list.add(disk);
 		}
 		
 		diskStats.clear();
@@ -513,6 +519,69 @@ public class SysService {
 		cpu.setUser(cpuP.getUser());
 		cpu.setWait(cpuP.getWait());
 		return cpu;
+	}
+	
+	private List<ProcStat> getProcStats() throws SigarException {
+		List<ProcStat> ps = new ArrayList<ProcStat>();
+		File f = new File(storeDirectory);
+		if (!f.exists()) {
+			return ps;
+		}
+		File procDirectory = new File(f, "proc");
+		if (!procDirectory.exists()) {
+			return ps;
+		}
+		String[] files = procDirectory.list();
+		
+		for (String file : files) {
+			if (!StringUtils.startsWith(file, ".") && StringUtils.isNumeric(file)) {
+				Long pid = Long.valueOf(file);
+				ProcStat p = composeProcStat(pid);
+				if (p != null) {
+					ps.add(p);
+				}
+			}
+		}
+		
+		return ps;
+	}
+
+	private ProcStat composeProcStat(Long pid) throws SigarException {
+		ProcStat process = new ProcStat();
+		process.setPid(pid);
+		
+		try {
+			String[] args = sigar.getProcArgs(pid);
+			process.setArgs(args);
+		} catch (SigarNotImplementedException ex) {}
+		
+		try {
+			ProcCpu cpu = sigar.getProcCpu(pid);
+			process.setCpuPercent(cpu.getPercent());
+			process.setCpuSys(cpu.getSys());
+			process.setCpuTotal(cpu.getTotal());
+			process.setCpuUser(cpu.getUser());
+		} catch (SigarNotImplementedException ex) {}
+
+		try {
+			ProcExe exe = sigar.getProcExe(pid);
+			process.setExe(exe.getName());
+		} catch (SigarNotImplementedException ex) {}
+
+		try {
+			ProcMem mem = sigar.getProcMem(pid);
+			process.setVsz(mem.getSize());
+			process.setRss(mem.getResident());
+		} catch (SigarNotImplementedException ex) {}
+
+		try {
+			ProcState state = sigar.getProcState(pid);
+			process.setThreads(state.getThreads());
+			process.setPpid(state.getPpid());
+			process.setName(state.getName());
+		} catch (SigarNotImplementedException ex) {}
+
+		return process;
 	}
 
 	private String getId() throws IOException {

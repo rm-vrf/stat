@@ -45,6 +45,9 @@ public abstract class ChoreoService {
 	public long getLastModified() {
 		long l = choreoDirectory.lastModified();
 		for (File f : choreoDirectory.listFiles()) {
+			if (StringUtils.startsWith(f.getName(), ".")) {
+				continue;
+			}
 			if (f.lastModified() > l) {
 				l = f.lastModified();
 			}

@@ -53,6 +53,9 @@ public abstract class AppService {
 	public long getLastModified() {
 		long l = appDirectory.lastModified();
 		for (File f : appDirectory.listFiles()) {
+			if (StringUtils.startsWith(f.getName(), ".")) {
+				continue;
+			}
 			if (f.lastModified() > l) {
 				l = f.lastModified();
 			}
