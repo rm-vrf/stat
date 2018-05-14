@@ -274,16 +274,22 @@ public class SysService {
 		FileSystem[] fss = sigar.getFileSystemList();
 		for (FileSystem fs : fss) {
 			Disk disk = new Disk();
-			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
 			
-			if (fsu.getTotal() > 0 && isAnyFs(fs.getSysTypeName(), FSS)) {
-				
+			long total = 0;
+			try {
+				FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
+				total = fsu.getTotal() * 1024;
+			} catch (Exception e) {
+				//pass
+			}
+			
+			if (isAnyFs(fs.getSysTypeName(), FSS)) {
 				disk.setDevName(fs.getDevName());
 				disk.setDirName(fs.getDirName());
 				disk.setFlags(fs.getFlags());
 				disk.setOption(fs.getOptions());
 				disk.setSysTypeName(fs.getSysTypeName());
-				disk.setTotal(fsu.getTotal() * 1024);
+				disk.setTotal(total);
 				disk.setType(fs.getType());
 				disk.setTypeName(fs.getTypeName());
 			
@@ -459,24 +465,56 @@ public class SysService {
 		
 		List<DiskStat> list = new ArrayList<DiskStat>();
 		for (FileSystem fs : fss) {
-			FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
-			if (fsu.getTotal() > 0 && isAnyFs(fs.getSysTypeName(), FSS)) {
+			long avail = 0;
+			double diskQueue = 0;
+			long diskReadBytes = 0;
+			long diskReads = 0;
+			double diskServiceTime = 0;
+			long diskWriteBytes = 0;
+			long diskWrites = 0;
+			long files = 0;
+			long free = 0;
+			long freeFiles = 0;
+			long total = 0;
+			long used = 0;
+			double usePercent = 0;
+			
+			try {
+				FileSystemUsage fsu = sigar.getFileSystemUsage(fs.getDirName());
+				avail = fsu.getAvail();
+				diskQueue = fsu.getDiskQueue();
+				diskReadBytes = fsu.getDiskReadBytes();
+				diskReads = fsu.getDiskReads();
+				diskServiceTime = fsu.getDiskServiceTime();
+				diskWriteBytes = fsu.getDiskWriteBytes();
+				diskWrites = fsu.getDiskWrites();
+				files = fsu.getFiles();
+				free = fsu.getFree();
+				freeFiles = fsu.getFreeFiles();
+				total = fsu.getTotal();
+				used = fsu.getUsed();
+				usePercent = fsu.getUsePercent();
+			} catch (Exception e) {
+				//pass
+			}
+			
+			if (isAnyFs(fs.getSysTypeName(), FSS)) {
 				DiskStat disk = new DiskStat();
 				disk.setDevName(fs.getDevName());
 				disk.setDirName(fs.getDirName());
-				disk.setAvail(fsu.getAvail());
-				disk.setDiskQueue(fsu.getDiskQueue());
-				disk.setDiskReadBytes(fsu.getDiskReadBytes());
-				disk.setDiskReads(fsu.getDiskReads());
-				disk.setDiskServiceTime(fsu.getDiskServiceTime());
-				disk.setDiskWriteBytes(fsu.getDiskWriteBytes());
-				disk.setDiskWrites(fsu.getDiskWrites());
-				disk.setFiles(fsu.getFiles());
-				disk.setFree(fsu.getFree());
-				disk.setFreeFiles(fsu.getFreeFiles());
-				disk.setTotal(fsu.getTotal());
-				disk.setUsed(fsu.getUsed());
-				disk.setUsePercent(fsu.getUsePercent());
+				disk.setAvail(avail);
+				disk.setDiskQueue(diskQueue);
+				disk.setDiskReadBytes(diskReadBytes);
+				disk.setDiskReads(diskReads);
+				disk.setDiskServiceTime(diskServiceTime);
+				disk.setDiskWriteBytes(diskWriteBytes);
+				disk.setDiskWrites(diskWrites);
+				disk.setFiles(files);
+				disk.setFree(free);
+				disk.setFreeFiles(freeFiles);
+				disk.setTotal(total);
+				disk.setUsed(used);
+				disk.setUsePercent(usePercent);
 				
 				List<DiskStat> ds = diskStats.stream()
 						.filter(d -> StringUtils.equals(disk.getDevName(), d.getDevName()) && StringUtils.equals(disk.getDirName(), d.getDirName()))
