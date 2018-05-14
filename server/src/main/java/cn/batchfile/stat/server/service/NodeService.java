@@ -111,13 +111,13 @@ public class NodeService {
 							changePs.add(p);
 						}
 					}
+					
+					//添加变动节点列表
+					changeNodeIds.add(node.getId());
+					
+					//更新时间戳
+					timestamps.put(node.getId(), resp.getHeaders().getLastModified());
 				}
-				
-				//添加变动节点列表
-				changeNodeIds.add(node.getId());
-				
-				//更新时间戳
-				timestamps.put(node.getId(), resp.getHeaders().getLastModified());
 			} catch (ResourceAccessException e) {
 				//如果访问超时，加入离线进程列表
 				downNodeIds.add(node.getId());
@@ -137,7 +137,7 @@ public class NodeService {
 			
 			//删除节点相关的进程信息
 			procService.deleteProcs(downNodeId);
-			log.info("Delete index: {}/{}/{}", ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, downNodeId);
+			log.info("Delete index: {}/{}/{}", ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, downNodeId); 
 		}
 		
 		//清理分配数据
@@ -174,6 +174,12 @@ public class NodeService {
 		//重新归类进程信息
 		if (changePs.size() > 0 || downNodeIds.size() > 0) {
 			List<Proc> ps = procService.getProcs();
+			log.debug("ps size: {}", ps.size());
+			log.debug("change nodes: {}", changeNodeIds);
+			log.debug("down nodes: {}", downNodeIds);
+			for (Proc p : ps) {
+				log.debug(JSON.toJSONString(p));
+			}
 			
 			//用新数据代替ps里面的缓存数据，es查询存在n秒延时
 			Iterator<Proc> iter = ps.iterator();
@@ -184,6 +190,7 @@ public class NodeService {
 				}
 			}
 			ps.addAll(changePs);
+			log.debug("ps size before group: {}", ps.size());
 			
 			//按照应用名归类保存
 			procService.groupProcs(ps);
@@ -191,8 +198,11 @@ public class NodeService {
 		}
 		
 		//更新时间戳
-		this.timestamps.clear();
+		for (String id : downNodeIds) {
+			this.timestamps.remove(id);
+		}
 		this.timestamps.putAll(timestamps);
+		log.debug("timestamp: {}", this.timestamps);
 	}
 	
 	public void putNode(Node node) {

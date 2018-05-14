@@ -296,6 +296,7 @@ public class ProcService {
 			List<Proc> list = entry.getValue();
 			list = list == null ? new ArrayList<Proc>() : list;
 			indexApp(app, list);
+			log.debug("app name: {}, ps count: {}", app, list.size());
 		}
 		
 		//没有运行的应用要索引一个空节点
@@ -303,6 +304,7 @@ public class ProcService {
 		for (String appName : appNames) {
 			if (!groups.containsKey(appName)) {
 				indexApp(appName, new ArrayList<Proc>());
+				log.debug("app name: {}, ps count: {}", appName, 0);
 			}
 		}
 	}
