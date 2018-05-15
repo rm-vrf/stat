@@ -540,6 +540,7 @@ public class SysService {
 	private OsStat getOsStat() {
 		OperatingSystemMXBean oper = ManagementFactory.getOperatingSystemMXBean();
 		OsStat os = new OsStat();
+		os.setCpus(oper.getAvailableProcessors());
 		os.setLoad(oper.getSystemLoadAverage());
 		return os;
 	}
