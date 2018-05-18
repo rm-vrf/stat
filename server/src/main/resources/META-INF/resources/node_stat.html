@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>所有节点 | STAT HUB</title>
+	<link type="text/css" rel="stylesheet" href="resource/css/framework.css" />
+	<link type="text/css" rel="stylesheet" href="resource/css/main.css" />
+	<script type="text/javascript" src="resource/javascript/jquery.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="resource/javascript/stathub.js"></script>
+	<script type="text/javascript" src="resource/javascript/echarts.min.js"></script>
+</head>
+<body>
+	<div class="page">
+		<!--header begin-->
+		<header>
+			<div class="bigcontainer">
+				<div id="logo">
+					<a href="/">STAT HUB 应用管理</a>
+				</div>
+				<div class="user">
+					<div class="ui compact notif menu">
+						<a class="item" href="notifications.html">
+							<i class="mail large icon"></i>
+							<span id="message_count" class="circular floating ui small red label"></span>
+						</a>
+					</div>
+					<div class="ui icon top right dropdown">
+						<a href="user_profile.html">
+							<img class="ui avatar image" src="resource/images/avatar-default.gif"/>
+							欢迎，管理员
+						</a>
+					</div>
+				</div>
+			</div>
+		</header>
+		<!-- the main menu-->
+		<div class="ui teal inverted menu">
+			<div class="bigcontainer">
+				<div class="right menu">
+					<a class="item" href="/"><i class="home icon"></i>管理首页</a>
+					<a class="active item" href="node_list.html"><i class="sitemap icon"></i>节点</a>
+					<a class="item" href="app_list.html"><i class="cloud icon"></i>应用</a>
+					<a class="item" href="help.html"><i class="help icon"></i>帮助</a>
+					<a class="item" href="api_doc.html"><i class="info icon"></i>API接口</a>
+				</div>
+			</div>
+		</div>
+		<!--the main content begin-->
+		<div class="container">
+			<!--the content-->
+			<div class="ui grid">
+				<!--the vertical menu-->
+				<div class="four wide column">
+					<div class="verticalMenu">
+						<div class="ui vertical pointing menu fluid">
+							<a class="item" href="node_list.html">
+								<i class="plane icon"></i> 所有节点
+							</a>
+							<a class="active teal item" href="node_stat.html" id="stat_link">
+								<i class="bar chart icon"></i> 节点统计
+							</a>
+						</div>
+					</div>
+				</div>
+				<!--the App list-->
+				<div class="twelve wide column">
+					<div class="pageHeader">
+						<div class="segment">
+							<h3 class="ui dividing header">
+								<i class="large bar chart icon"></i>
+								<div class="content">
+									运行状态
+									<div class="sub header" id="hostname">
+										所有节点
+									</div>
+								</div>
+							</h3>
+						</div>
+					</div>
+					<div class="ui vertical segment">
+						<div class="ui small icon input right">
+							<input id="node_name" type="text" placeholder="时间">
+							<i id="search_button" class="search icon"></i>
+						</div>
+					</div>
+					<div id="chart">
+						<div id="os_load" style="width:780px;height:280px;"></div>
+						<div id="cpu" style="width:780px;height:280px;"></div>
+						<div id="mem" style="width:780px;height:280px;"></div>
+						<div id="net_bytes" style="width:780px;height:280px;"></div>
+						<div id="net_packs" style="width:780px;height:280px;"></div>
+						<div id="disk_bytes" style="width:780px;height:280px;"></div>
+						<div id="disk_packs" style="width:780px;height:280px;"></div>
+						<div id="disk_use" style="width:780px;height:280px;"></div>
+					</div>
+					<div id="pagination" class="ui pagination menu"></div>
+				</div>
+			</div>
+		</div>	
+	</div>
+	<!--footer begin-->
+	<footer>
+		<div id="copyrights">
+			<div class="inset">
+				<div class="bigcontainer">
+					<div class="fl">
+						<div class="logo"></div>
+						<p>&copy; 2014 lane.cn@gmail.com <a href="https://github.com/lane-cn/stat" target="_blank">https://github.com/lane-cn/stat</a></p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<script>
+	$(document).ready(function() {
+		var node_id = requestParameter('id').id;
+		if (node_id) {
+			node_id = node_id.replace('#', '');
+		} else {
+			node_id = '';
+		}
+		$.get('/v1/node/' + node_id, function(node, status, xhr) {
+			$('#hostname').text(node.hostname);
+			$('#stat_link').attr('href', 'node_stat.html?id=' + node_id);
+		});
+		
+		var osLoadChart = echarts.init(document.getElementById('os_load'));
+		var memChart = echarts.init(document.getElementById('mem'));
+		var cpuChart = echarts.init(document.getElementById('cpu'));
+		var netBytesChart = echarts.init(document.getElementById('net_bytes'));
+		var netPacksChart = echarts.init(document.getElementById('net_packs'));
+		var diskUseChart = echarts.init(document.getElementById('disk_use'));
+		var diskPacksChart = echarts.init(document.getElementById('disk_packs'));
+		var diskBytesChart = echarts.init(document.getElementById('disk_bytes'));
+		
+		setInterval(function () {
+			//os load
+			$.get('/v1/stat/node/os?node=' + node_id, function(stat, status, xhr) {
+				var option = {
+					    title: {
+					        text: '操作系统负荷'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['CPU逻辑核数','负荷']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'CPU逻辑核数',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_cpus
+					        },
+					        {
+					            name:'负荷',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_load
+					        }
+					    ]
+					};
+				osLoadChart.setOption(option);
+			});
+			
+			//cpu
+			$.get('/v1/stat/node/cpu?node=' + node_id, function(stat, status, xhr) {
+				var option = {
+					    title: {
+					        text: 'CPU负荷'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['系统','用户']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'系统',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_sys
+					        },
+					        {
+					            name:'用户',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_user
+					        }
+					    ]
+					};
+				cpuChart.setOption(option);
+			});
+			
+			//mem
+			$.get('/v1/stat/node/mem?node=' + node_id, function(stat, status, xhr) {
+				var option = {
+					    title: {
+					        text: '内存压力'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['物理内存','已使用内存']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'物理内存',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_total
+					        },
+					        {
+					            name:'已使用内存',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_actualUsed
+					        }
+					    ]
+					};
+				memChart.setOption(option);
+			});
+			
+			//network
+			$.get('/v1/stat/node/net?node=' + node_id, function(stat, status, xhr) {
+				var option1 = {
+					    title: {
+					        text: '网络数据'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['收到的字节/秒','发出的字节/秒']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'收到的字节/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_rxBytesPerSecond
+					        },
+					        {
+					            name:'发出的字节/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_txBytesPerSecond
+					        }
+					    ]
+					};
+				netBytesChart.setOption(option1);
+				var option2 = {
+					    title: {
+					        text: '网络包'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['包接收/秒','包发送/秒']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'包接收/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_rxPacketsPerSecond
+					        },
+					        {
+					            name:'包发送/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_txPacketsPerSecond
+					        }
+					    ]
+					};
+				netPacksChart.setOption(option2);
+			});
+			
+			//disk
+			$.get('/v1/stat/node/disk?node=' + node_id, function(stat, status, xhr) {
+				var option = {
+					    title: {
+					        text: '磁盘使用量'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['总容量','已使用量']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'总容量',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_total
+					        },
+					        {
+					            name:'已使用量',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_used
+					        }
+					    ]
+					};
+				diskUseChart.setOption(option);
+				var option2 = {
+					    title: {
+					        text: '磁盘数据'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['读取的数据/秒','写入的数据/秒']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'读取的数据/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_diskReadBytesPerSecond
+					        },
+					        {
+					            name:'写入的数据/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_diskWritesBytesPerSecond
+					        }
+					    ]
+					};
+				diskBytesChart.setOption(option2);
+				var option3 = {
+					    title: {
+					        text: '磁盘IO'
+					    },
+					    tooltip: {
+					        trigger: 'axis'
+					    },
+					    legend: {
+					        data:['读入/秒','写出/秒']
+					    },
+					    grid: {
+					        left: '3%',
+					        right: '4%',
+					        bottom: '3%',
+					        containLabel: true
+					    },
+					    xAxis: {
+					        type: 'category',
+					        boundaryGap: false,
+					        data: stat.keys
+					    },
+					    yAxis: {
+					        type: 'value'
+					    },
+					    series: [
+					        {
+					            name:'读入/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'a',
+					            data:stat.datas.data_diskReadsPerSecond
+					        },
+					        {
+					            name:'写出/秒',
+					            type:'line',
+					            //areaStyle: {normal: {}},
+					            stack: 'b',
+					            data:stat.datas.data_diskWritesPerSecond
+					        }
+					    ]
+					};
+				diskPacksChart.setOption(option3);
+			});
+			//over
+		});
+	}, 60000);
+	</script>
+</body>
+</html>

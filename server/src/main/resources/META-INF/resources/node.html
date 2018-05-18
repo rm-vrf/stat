@@ -65,7 +65,7 @@
 							<a class="active teal item" href="node_list.html">
 								<i class="plane icon"></i> 所有节点
 							</a>
-							<a class="item" href="node_stat.html">
+							<a class="item" href="node_stat.html" id="stat_link">
 								<i class="bar chart icon"></i> 节点统计
 							</a>
 						</div>
@@ -148,6 +148,8 @@
 	<script>
 	$(document).ready(function() {
 		var node_id = requestParameter('id').id.replace('#', '');
+		$('#stat_link').attr('href', 'node_stat.html?id=' + node_id);
+		
 		$.get('/v1/node/' + node_id, function(node, status, xhr) {
 			show_node(node);
 			show_stat(node_id);
