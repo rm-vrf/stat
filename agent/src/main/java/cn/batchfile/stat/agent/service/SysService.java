@@ -522,9 +522,9 @@ public class SysService {
 				
 				if (ds.size() > 0) {
 					disk.setDiskReadsPerSecond((disk.getDiskReads() - ds.get(0).getDiskReads()) / 60);
-					disk.setDiskWritesPerSecond((disk.getDiskWrites() - ds.get(0).getDiskReads()) / 60);
-					disk.setDiskReadBytesPerSecond((disk.getDiskReadBytes() - ds.get(0).getDiskReads()) / 60);
-					disk.setDiskWriteBytesPerSecond((disk.getDiskWriteBytes() - ds.get(0).getDiskReads()) / 60);
+					disk.setDiskWritesPerSecond((disk.getDiskWrites() - ds.get(0).getDiskWrites()) / 60);
+					disk.setDiskReadBytesPerSecond((disk.getDiskReadBytes() - ds.get(0).getDiskReadBytes()) / 60);
+					disk.setDiskWriteBytesPerSecond((disk.getDiskWriteBytes() - ds.get(0).getDiskWriteBytes()) / 60);
 				}
 				
 				list.add(disk);

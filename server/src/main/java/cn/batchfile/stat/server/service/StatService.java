@@ -60,7 +60,7 @@ public class StatService {
 	
 	public Stat getCpuStat(String node, String time) {
 		Timespan tspan = getTimespan(time);
-		return getSumStat(node, tspan, "cpu-stat-*", "data.sys", "data.user");
+		return getSumStat(node, tspan, "cpu-stat-*", "data.sys", "data.user", "data.idle", "data.wait");
 	}
 	
 	public Stat getOsStat(String node, String time) {

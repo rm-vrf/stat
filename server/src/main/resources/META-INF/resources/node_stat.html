@@ -165,14 +165,16 @@
 					        {
 					            name:'CPU逻辑核数',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#4FC3F7',
+					            areaStyle: {normal: {color:'#4FC3F7'}},
 					            stack: 'a',
 					            data:stat.datas.data_cpus
 					        },
 					        {
 					            name:'负荷',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
+					            areaStyle: {normal: {color:'#1565C0'}},
 					            stack: 'b',
 					            data:stat.datas.data_load
 					        }
@@ -191,7 +193,7 @@
 					        trigger: 'axis'
 					    },
 					    legend: {
-					        data:['系统','用户']
+					        data:['系统','用户','空闲']
 					    },
 					    grid: {
 					        left: '3%',
@@ -211,16 +213,26 @@
 					        {
 					            name:'系统',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#E65100',
+					            areaStyle: {normal: {color:'#E65100'}},
 					            stack: 'a',
 					            data:stat.datas.data_sys
 					        },
 					        {
 					            name:'用户',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
+					            areaStyle: {normal: {color:'#1565C0'}},
 					            stack: 'a',
 					            data:stat.datas.data_user
+					        },
+					        {
+					            name:'空闲',
+					            type:'line',
+					            color:'#56ffb0',
+					            areaStyle: {normal: {color:'#56ffb0'}},
+					            stack: 'a',
+					            data:stat.datas.data_idle
 					        }
 					    ]
 					};
@@ -257,14 +269,16 @@
 					        {
 					            name:'物理内存',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#4FC3F7',
+					            areaStyle: {normal: {color:'#4FC3F7'}},
 					            stack: 'a',
 					            data:stat.datas.data_total
 					        },
 					        {
 					            name:'已使用内存',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
+					            areaStyle: {normal: {color:'#1565C0'}},
 					            stack: 'b',
 					            data:stat.datas.data_actualUsed
 					        }
@@ -303,14 +317,14 @@
 					        {
 					            name:'收到的字节/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
 					            stack: 'a',
 					            data:stat.datas.data_rxBytesPerSecond
 					        },
 					        {
 					            name:'发出的字节/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#E65100',
 					            stack: 'b',
 					            data:stat.datas.data_txBytesPerSecond
 					        }
@@ -345,14 +359,14 @@
 					        {
 					            name:'包接收/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
 					            stack: 'a',
 					            data:stat.datas.data_rxPacketsPerSecond
 					        },
 					        {
 					            name:'包发送/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#E65100',
 					            stack: 'b',
 					            data:stat.datas.data_txPacketsPerSecond
 					        }
@@ -391,14 +405,16 @@
 					        {
 					            name:'总容量',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#4FC3F7',
+					            areaStyle: {normal: {color:'#4FC3F7'}},
 					            stack: 'a',
 					            data:stat.datas.data_total
 					        },
 					        {
 					            name:'已使用量',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
+					            areaStyle: {normal: {color:'#1565C0'}},
 					            stack: 'b',
 					            data:stat.datas.data_used
 					        }
@@ -433,14 +449,14 @@
 					        {
 					            name:'读取的数据/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
 					            stack: 'a',
 					            data:stat.datas.data_diskReadBytesPerSecond
 					        },
 					        {
 					            name:'写入的数据/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#E65100',
 					            stack: 'b',
 					            data:stat.datas.data_diskWritesBytesPerSecond
 					        }
@@ -475,14 +491,14 @@
 					        {
 					            name:'读入/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#1565C0',
 					            stack: 'a',
 					            data:stat.datas.data_diskReadsPerSecond
 					        },
 					        {
 					            name:'写出/秒',
 					            type:'line',
-					            //areaStyle: {normal: {}},
+					            color:'#E65100',
 					            stack: 'b',
 					            data:stat.datas.data_diskWritesPerSecond
 					        }
