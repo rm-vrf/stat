@@ -105,12 +105,28 @@ public class CommandLineExecutor {
 			
 			public long getPid() {
 				try {
-					Field field = p.getClass().getDeclaredField("pid");
-					field.setAccessible(true);
-					Object obj = field.get(p);
+					Object obj = getFieldValue(p, "pid");
 					return Long.valueOf(obj.toString());
+				} catch (NoSuchFieldException e) {
+					try {
+						Object obj = getFieldValue(p, "handle");
+						return Long.valueOf(obj.toString());
+					} catch (NoSuchFieldException ex) {
+						throw new RuntimeException("cannot get pid", ex);
+					}
+				}
+			}
+			
+			private Object getFieldValue(Object obj, String fieldName) throws NoSuchFieldException {
+				try {
+					Field field = obj.getClass().getDeclaredField(fieldName);
+					field.setAccessible(true);
+					Object o = field.get(obj);
+					return o;
+				} catch (NoSuchFieldException e) {
+					throw e;
 				} catch (Exception e) {
-					return 0;
+					return null;
 				}
 			}
 		};

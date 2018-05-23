@@ -22,6 +22,7 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.codehaus.plexus.util.cli.Arg;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -35,6 +36,9 @@ import org.springframework.stereotype.Service;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.sun.jna.Pointer;
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 
 import cn.batchfile.stat.domain.App;
 import cn.batchfile.stat.domain.Choreo;
@@ -343,6 +347,14 @@ public class ProcService {
 				Proc proc = new Proc();
 				log.info("start proc of app: {}, #{}", app.getName(), i);
 				long pid = startProc(app, proc);
+				
+				//get pid in windows os
+				if (SystemUtils.IS_OS_WINDOWS) {
+					Kernel32 kernel = Kernel32.INSTANCE;
+					WinNT.HANDLE handle = new WinNT.HANDLE();
+					handle.setPointer(Pointer.createConstant(pid));
+					pid = kernel.GetProcessId(handle);
+				}
 
 				//补充进程的基本信息
 				proc.setApp(app.getName());
