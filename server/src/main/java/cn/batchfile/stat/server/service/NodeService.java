@@ -169,10 +169,16 @@ public class NodeService {
 				log.info("Update index: {}/{}/{}, ps count: {}", 
 						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, entry.getKey(), entry.getValue().size());
 			}
+		} else if (changeNodeIds.size() > 0) {
+			for (String nodeId : changeNodeIds) {
+				procService.putProcs(nodeId, new ArrayList<Proc>());
+				log.info("Update index: {}/{}/{}, ps count: {}", 
+						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, nodeId, 0);
+			}
 		}
 		
 		//重新归类进程信息
-		if (changePs.size() > 0 || downNodeIds.size() > 0) {
+		if (changePs.size() > 0 || downNodeIds.size() > 0 || changeNodeIds.size() > 0) {
 			List<Proc> ps = procService.getProcs();
 			log.debug("ps size: {}", ps.size());
 			log.debug("change nodes: {}", changeNodeIds);
