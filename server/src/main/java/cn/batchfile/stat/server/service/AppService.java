@@ -47,7 +47,7 @@ public class AppService extends cn.batchfile.stat.service.AppService {
 		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
 		es.scheduleWithFixedDelay(() -> {
 			refresh();
-		}, 5, 5, TimeUnit.SECONDS);
+		}, 30, 5, TimeUnit.SECONDS);
 	}
 
 	/**

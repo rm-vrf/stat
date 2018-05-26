@@ -2,11 +2,11 @@ package cn.batchfile.stat.server.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,7 +51,7 @@ public class NodeService {
 	public static final String INDEX_NAME = "node-data";
 	public static final String TYPE_NAME_UP = "up";
 	public static final String TYPE_NAME_DOWN = "down";
-	private Map<String, Long> timestamps = new HashMap<String, Long>();
+	private Map<String, Date> timestamps = new HashMap<String, Date>();
 	
 	@Autowired
 	private ElasticService elasticService;
@@ -78,70 +78,70 @@ public class NodeService {
 			} catch (Exception e) {
 				//pass
 			}
-		}, 1, 1, TimeUnit.SECONDS);
+		}, 30, 1, TimeUnit.SECONDS);
 	}
 	
 	private void refresh() throws IOException {
 		//得到所有在线节点
 		long begin = System.currentTimeMillis();
 		List<Node> nodes = getUpNodes();
+		log.debug("==node count: {}", nodes.size());
 		
 		//获取每一个节点的进程信息
-		List<String> changeNodeIds = new ArrayList<String>();
-		List<String> downNodeIds = new ArrayList<String>();
+		List<String> downNodes = new ArrayList<String>();
 		List<Proc> changePs = new ArrayList<Proc>();
-		Map<String, Long> timestamps = new ConcurrentHashMap<String, Long>();
+		Map<String, Date> changeNodes = new ConcurrentHashMap<String, Date>();
 		nodes.parallelStream().forEach((node) -> {
 			String url = String.format("%s/v1/proc", node.getAgentAddress());
 			try {
 				//向节点发出询问消息，带时间戳
 				HttpHeaders headers = new HttpHeaders();
-				headers.setIfModifiedSince(this.timestamps.containsKey(node.getId()) ? this.timestamps.get(node.getId()) : 0);
+				headers.setIfModifiedSince(timestamps.containsKey(node.getId()) ? timestamps.get(node.getId()).getTime() : 0L);
 				HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
 				ResponseEntity<Long[]> resp = restTemplate.exchange(url, HttpMethod.GET, entity, Long[].class);
 				
 				//如果有实际内容，加入进程列表
 				if (resp.getStatusCode() == HttpStatus.OK) {
-					log.info("GET {} {}", url, resp.toString());
+					log.info("GET {} {} -> {}", url, entity.toString(), resp.toString());
 					for (Long pid : resp.getBody()) {
 						url = String.format("%s/v1/proc/%s", node.getAgentAddress(), pid);
-						Proc p = restTemplate.getForObject(url, Proc.class);
-						log.info("GET {} <200 OK>", url);
-						if (p != null) {
-							changePs.add(p);
+						ResponseEntity<Proc> p = restTemplate.getForEntity(url, Proc.class);
+						log.info("GET {} -> {}", url, p.toString());
+						if (p.getStatusCode() == HttpStatus.OK && p.getBody() != null) {
+							changePs.add(p.getBody());
 						}
 					}
 					
-					//添加变动节点列表
-					changeNodeIds.add(node.getId());
-					
-					//更新时间戳
-					timestamps.put(node.getId(), resp.getHeaders().getLastModified());
+					//更新变动节点的时间戳
+					changeNodes.put(node.getId(), new Date(resp.getHeaders().getLastModified()));
+					//log.info("change nodes: {}", changeNodes);
 				}
 			} catch (ResourceAccessException e) {
 				//如果访问超时，加入离线进程列表
-				downNodeIds.add(node.getId());
+				downNodes.add(node.getId());
 				log.error("GET {} <{}>", url, e.getMessage());
 			}
 		});
 
 		//记录时间日志
-		log.debug("get ps from node(s), count: {}, cost: {}", nodes.size(), (System.currentTimeMillis() - begin));
+		log.debug("==get {} ps from {} nodes, change nodes: {}, remove nodes: {}, cost: {}", 
+				changePs.size(), nodes.size(), changeNodes.size(), downNodes.size(), 
+				(System.currentTimeMillis() - begin));
 		
 		//处理离线的节点
-		for (String downNodeId : downNodeIds) {
+		for (String downNode : downNodes) {
 			//把节点设置成宕机状态
-			downNode(nodes, downNodeId);
+			downNode(nodes, downNode);
 			log.info("Move index: {}/{}/{} -> {}/{}/{}", 
-					INDEX_NAME, TYPE_NAME_UP, downNodeId, INDEX_NAME, TYPE_NAME_DOWN, downNodeId);
+					INDEX_NAME, TYPE_NAME_UP, downNode, INDEX_NAME, TYPE_NAME_DOWN, downNode);
 			
 			//删除节点相关的进程信息
-			procService.deleteProcs(downNodeId);
-			log.info("Delete index: {}/{}/{}", ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, downNodeId); 
+			procService.deleteProcs(downNode);
+			log.info("Delete index: {}/{}/{}", ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, downNode);
 		}
 		
 		//清理分配数据
-		if (downNodeIds.size() > 0) {
+		if (downNodes.size() > 0) {
 			List<Choreo> choreos = choreoService.getChoreos();
 			for (Choreo choreo : choreos) {
 				//遍历分配数据，把分配列表中的下线节点去掉
@@ -149,7 +149,7 @@ public class NodeService {
 				Iterator<String> iter = choreo.getDist().iterator();
 				while (iter.hasNext()) {
 					String nodeId = iter.next();
-					if (downNodeIds.contains(nodeId)) {
+					if (downNodes.contains(nodeId)) {
 						iter.remove();
 					}
 				}
@@ -162,36 +162,29 @@ public class NodeService {
 		}
 		
 		//更新进程信息
-		if (changePs.size() > 0) {
+		if (changeNodes.size() > 0) {
 			Map<String, List<Proc>> groups = changePs.stream().collect(Collectors.groupingBy(p -> p.getNode()));
-			for (Entry<String, List<Proc>> entry : groups.entrySet()) {
-				procService.putProcs(entry.getKey(), entry.getValue());
+			for (String nodeId : changeNodes.keySet()) {
+				List<Proc> ps = groups == null ? null : groups.get(nodeId);
+				ps = (ps == null ? new ArrayList<Proc>() : ps);
+				procService.putProcs(nodeId, ps);
 				log.info("Update index: {}/{}/{}, ps count: {}", 
-						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, entry.getKey(), entry.getValue().size());
-			}
-		} else if (changeNodeIds.size() > 0) {
-			for (String nodeId : changeNodeIds) {
-				procService.putProcs(nodeId, new ArrayList<Proc>());
-				log.info("Update index: {}/{}/{}, ps count: {}", 
-						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, nodeId, 0);
+						ProcService.INDEX_NAME, ProcService.TYPE_NAME_NODE, nodeId, ps.size());
 			}
 		}
 		
 		//重新归类进程信息
-		if (changePs.size() > 0 || downNodeIds.size() > 0 || changeNodeIds.size() > 0) {
+		if (downNodes.size() > 0 || changeNodes.size() > 0) {
 			List<Proc> ps = procService.getProcs();
-			log.debug("ps size: {}", ps.size());
-			log.debug("change nodes: {}", changeNodeIds);
-			log.debug("down nodes: {}", downNodeIds);
-			for (Proc p : ps) {
-				log.debug(JSON.toJSONString(p));
-			}
+			log.debug("==ps size: {}", ps.size());
+			log.debug("==change nodes: {}", changeNodes);
+			log.debug("==down nodes: {}", downNodes);
 			
 			//用新数据代替ps里面的缓存数据，es查询存在n秒延时
 			Iterator<Proc> iter = ps.iterator();
 			while (iter.hasNext()) {
 				Proc p = iter.next();
-				if (changeNodeIds.contains(p.getNode()) || downNodeIds.contains(p.getNode())) {
+				if (changeNodes.containsKey(p.getNode()) || downNodes.contains(p.getNode())) {
 					iter.remove();
 				}
 			}
@@ -204,11 +197,14 @@ public class NodeService {
 		}
 		
 		//更新时间戳
-		for (String id : downNodeIds) {
-			this.timestamps.remove(id);
+		for (String id : downNodes) {
+			log.debug("remove down node: {}", id);
+			timestamps.remove(id);
 		}
-		this.timestamps.putAll(timestamps);
-		log.debug("timestamp: {}", this.timestamps);
+		timestamps.putAll(changeNodes);
+		if (downNodes.size() > 0 || changeNodes.size() > 0) {
+			log.info("==timestamp: {}", timestamps);
+		}
 	}
 	
 	public void putNode(Node node) {

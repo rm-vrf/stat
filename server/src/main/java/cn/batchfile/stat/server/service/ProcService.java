@@ -79,7 +79,7 @@ public class ProcService {
 			} catch (Exception e) {
 				//pass
 			}
-		}, 5, 5, TimeUnit.SECONDS);
+		}, 30, 5, TimeUnit.SECONDS);
 	}
 	
 	private void refresh() throws ParseException, IOException {
