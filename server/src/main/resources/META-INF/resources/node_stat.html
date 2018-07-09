@@ -80,8 +80,16 @@
 					</div>
 					<div class="ui vertical segment">
 						<div class="ui small icon input right">
-							<input id="node_name" type="text" placeholder="时间">
-							<i id="search_button" class="search icon"></i>
+							<select name="time_span" id="time_span" class="form-control">
+								<option value="30min" selected>最近30分钟</option>
+								<option value="1h">最近1小时</option>
+								<option value="4h">最近4小时</option>
+								<option value="8h">最近8小时</option>
+								<option value="24h">最近24小时</option>
+								<option value="0day">昨天</option>
+								<option value="-1day">前天</option>
+								<option value="-2day">大前天</option>
+							</select>
 						</div>
 					</div>
 					<div id="chart">
@@ -135,380 +143,414 @@
 		var diskBytesChart = echarts.init(document.getElementById('disk_bytes'));
 		
 		setInterval(function () {
-			//os load
-			$.get('/v1/stat/node/os?node=' + node_id, function(stat, status, xhr) {
-				var option = {
-					    title: {
-					        text: '操作系统负荷'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['CPU逻辑核数','负荷']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'CPU逻辑核数',
-					            type:'line',
-					            color:'#4FC3F7',
-					            areaStyle: {normal: {color:'#4FC3F7'}},
-					            stack: 'a',
-					            data:stat.datas.data_cpus
-					        },
-					        {
-					            name:'负荷',
-					            type:'line',
-					            color:'#1565C0',
-					            areaStyle: {normal: {color:'#1565C0'}},
-					            stack: 'b',
-					            data:stat.datas.data_load
-					        }
-					    ]
-					};
-				osLoadChart.setOption(option);
-			});
-			
-			//cpu
-			$.get('/v1/stat/node/cpu?node=' + node_id, function(stat, status, xhr) {
-				var option = {
-					    title: {
-					        text: 'CPU负荷'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['系统','用户','空闲']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'系统',
-					            type:'line',
-					            color:'#E65100',
-					            areaStyle: {normal: {color:'#E65100'}},
-					            stack: 'a',
-					            data:stat.datas.data_sys
-					        },
-					        {
-					            name:'用户',
-					            type:'line',
-					            color:'#1565C0',
-					            areaStyle: {normal: {color:'#1565C0'}},
-					            stack: 'a',
-					            data:stat.datas.data_user
-					        },
-					        {
-					            name:'空闲',
-					            type:'line',
-					            color:'#56ffb0',
-					            areaStyle: {normal: {color:'#56ffb0'}},
-					            stack: 'a',
-					            data:stat.datas.data_idle
-					        }
-					    ]
-					};
-				cpuChart.setOption(option);
-			});
-			
-			//mem
-			$.get('/v1/stat/node/mem?node=' + node_id, function(stat, status, xhr) {
-				var option = {
-					    title: {
-					        text: '内存压力'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['物理内存','已使用内存']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'物理内存',
-					            type:'line',
-					            color:'#4FC3F7',
-					            areaStyle: {normal: {color:'#4FC3F7'}},
-					            stack: 'a',
-					            data:stat.datas.data_total
-					        },
-					        {
-					            name:'已使用内存',
-					            type:'line',
-					            color:'#1565C0',
-					            areaStyle: {normal: {color:'#1565C0'}},
-					            stack: 'b',
-					            data:stat.datas.data_actualUsed
-					        }
-					    ]
-					};
-				memChart.setOption(option);
-			});
-			
-			//network
-			$.get('/v1/stat/node/net?node=' + node_id, function(stat, status, xhr) {
-				var option1 = {
-					    title: {
-					        text: '网络数据'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['收到的字节/秒','发出的字节/秒']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'收到的字节/秒',
-					            type:'line',
-					            color:'#1565C0',
-					            stack: 'a',
-					            data:stat.datas.data_rxBytesPerSecond
-					        },
-					        {
-					            name:'发出的字节/秒',
-					            type:'line',
-					            color:'#E65100',
-					            stack: 'b',
-					            data:stat.datas.data_txBytesPerSecond
-					        }
-					    ]
-					};
-				netBytesChart.setOption(option1);
-				var option2 = {
-					    title: {
-					        text: '网络包'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['包接收/秒','包发送/秒']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'包接收/秒',
-					            type:'line',
-					            color:'#1565C0',
-					            stack: 'a',
-					            data:stat.datas.data_rxPacketsPerSecond
-					        },
-					        {
-					            name:'包发送/秒',
-					            type:'line',
-					            color:'#E65100',
-					            stack: 'b',
-					            data:stat.datas.data_txPacketsPerSecond
-					        }
-					    ]
-					};
-				netPacksChart.setOption(option2);
-			});
-			
-			//disk
-			$.get('/v1/stat/node/disk?node=' + node_id, function(stat, status, xhr) {
-				var option = {
-					    title: {
-					        text: '磁盘使用量'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['总容量','已使用量']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'总容量',
-					            type:'line',
-					            color:'#4FC3F7',
-					            areaStyle: {normal: {color:'#4FC3F7'}},
-					            stack: 'a',
-					            data:stat.datas.data_total
-					        },
-					        {
-					            name:'已使用量',
-					            type:'line',
-					            color:'#1565C0',
-					            areaStyle: {normal: {color:'#1565C0'}},
-					            stack: 'b',
-					            data:stat.datas.data_used
-					        }
-					    ]
-					};
-				diskUseChart.setOption(option);
-				var option2 = {
-					    title: {
-					        text: '磁盘数据'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['读取的数据/秒','写入的数据/秒']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'读取的数据/秒',
-					            type:'line',
-					            color:'#1565C0',
-					            stack: 'a',
-					            data:stat.datas.data_diskReadBytesPerSecond
-					        },
-					        {
-					            name:'写入的数据/秒',
-					            type:'line',
-					            color:'#E65100',
-					            stack: 'b',
-					            data:stat.datas.data_diskWritesBytesPerSecond
-					        }
-					    ]
-					};
-				diskBytesChart.setOption(option2);
-				var option3 = {
-					    title: {
-					        text: '磁盘IO'
-					    },
-					    tooltip: {
-					        trigger: 'axis'
-					    },
-					    legend: {
-					        data:['读入/秒','写出/秒']
-					    },
-					    grid: {
-					        left: '3%',
-					        right: '4%',
-					        bottom: '3%',
-					        containLabel: true
-					    },
-					    xAxis: {
-					        type: 'category',
-					        boundaryGap: false,
-					        data: stat.keys
-					    },
-					    yAxis: {
-					        type: 'value'
-					    },
-					    series: [
-					        {
-					            name:'读入/秒',
-					            type:'line',
-					            color:'#1565C0',
-					            stack: 'a',
-					            data:stat.datas.data_diskReadsPerSecond
-					        },
-					        {
-					            name:'写出/秒',
-					            type:'line',
-					            color:'#E65100',
-					            stack: 'b',
-					            data:stat.datas.data_diskWritesPerSecond
-					        }
-					    ]
-					};
-				diskPacksChart.setOption(option3);
-			});
-			//over
+			refresh(osLoadChart, 
+					memChart, 
+					cpuChart, 
+					netBytesChart, 
+					netPacksChart, 
+					diskUseChart, 
+					diskPacksChart, 
+					diskBytesChart, 
+					node_id);
 		});
 	}, 60000);
+	
+	$("#time_span").change(function() {
+		refresh(osLoadChart, 
+				memChart, 
+				cpuChart, 
+				netBytesChart, 
+				netPacksChart, 
+				diskUseChart, 
+				diskPacksChart, 
+				diskBytesChart, 
+				node_id);
+	});
+	
+	function refresh(osLoadChart, 
+			memChart, 
+			cpuChart, 
+			netBytesChart, 
+			netPacksChart, 
+			diskUseChart, 
+			diskPacksChart, 
+			diskBytesChart, 
+			node_id) {
+		
+		//os load
+		var time = $("#time_span").val();
+		$.get('/v1/stat/node/os?node=' + node_id + '&time=' + time, function(stat, status, xhr) {
+			var option = {
+				    title: {
+				        text: '操作系统负荷'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['CPU逻辑核数','负荷']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'CPU逻辑核数',
+				            type:'line',
+				            color:'#4FC3F7',
+				            areaStyle: {normal: {color:'#4FC3F7'}},
+				            stack: 'a',
+				            data:stat.datas.data_cpus
+				        },
+				        {
+				            name:'负荷',
+				            type:'line',
+				            color:'#1565C0',
+				            areaStyle: {normal: {color:'#1565C0'}},
+				            stack: 'b',
+				            data:stat.datas.data_load
+				        }
+				    ]
+				};
+			osLoadChart.setOption(option);
+		});
+		
+		//cpu
+		$.get('/v1/stat/node/cpu?node=' + node_id + '&time=' + time, function(stat, status, xhr) {
+			var option = {
+				    title: {
+				        text: 'CPU负荷'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['系统','用户','空闲']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'系统',
+				            type:'line',
+				            color:'#E65100',
+				            areaStyle: {normal: {color:'#E65100'}},
+				            stack: 'a',
+				            data:stat.datas.data_sys
+				        },
+				        {
+				            name:'用户',
+				            type:'line',
+				            color:'#1565C0',
+				            areaStyle: {normal: {color:'#1565C0'}},
+				            stack: 'a',
+				            data:stat.datas.data_user
+				        },
+				        {
+				            name:'空闲',
+				            type:'line',
+				            color:'#56ffb0',
+				            areaStyle: {normal: {color:'#56ffb0'}},
+				            stack: 'a',
+				            data:stat.datas.data_idle
+				        }
+				    ]
+				};
+			cpuChart.setOption(option);
+		});
+		
+		//mem
+		$.get('/v1/stat/node/mem?node=' + node_id + '&time=' + time, function(stat, status, xhr) {
+			var option = {
+				    title: {
+				        text: '内存压力'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['物理内存','已使用内存']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'物理内存',
+				            type:'line',
+				            color:'#4FC3F7',
+				            areaStyle: {normal: {color:'#4FC3F7'}},
+				            stack: 'a',
+				            data:stat.datas.data_total
+				        },
+				        {
+				            name:'已使用内存',
+				            type:'line',
+				            color:'#1565C0',
+				            areaStyle: {normal: {color:'#1565C0'}},
+				            stack: 'b',
+				            data:stat.datas.data_actualUsed
+				        }
+				    ]
+				};
+			memChart.setOption(option);
+		});
+		
+		//network
+		$.get('/v1/stat/node/net?node=' + node_id + '&time=' + time, function(stat, status, xhr) {
+			var option1 = {
+				    title: {
+				        text: '网络数据'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['收到的字节/秒','发出的字节/秒']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'收到的字节/秒',
+				            type:'line',
+				            color:'#1565C0',
+				            stack: 'a',
+				            data:stat.datas.data_rxBytesPerSecond
+				        },
+				        {
+				            name:'发出的字节/秒',
+				            type:'line',
+				            color:'#E65100',
+				            stack: 'b',
+				            data:stat.datas.data_txBytesPerSecond
+				        }
+				    ]
+				};
+			netBytesChart.setOption(option1);
+			var option2 = {
+				    title: {
+				        text: '网络包'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['包接收/秒','包发送/秒']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'包接收/秒',
+				            type:'line',
+				            color:'#1565C0',
+				            stack: 'a',
+				            data:stat.datas.data_rxPacketsPerSecond
+				        },
+				        {
+				            name:'包发送/秒',
+				            type:'line',
+				            color:'#E65100',
+				            stack: 'b',
+				            data:stat.datas.data_txPacketsPerSecond
+				        }
+				    ]
+				};
+			netPacksChart.setOption(option2);
+		});
+		
+		//disk
+		$.get('/v1/stat/node/disk?node=' + node_id + '&time=' + time, function(stat, status, xhr) {
+			var option = {
+				    title: {
+				        text: '磁盘使用量'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['总容量','已使用量']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'总容量',
+				            type:'line',
+				            color:'#4FC3F7',
+				            areaStyle: {normal: {color:'#4FC3F7'}},
+				            stack: 'a',
+				            data:stat.datas.data_total
+				        },
+				        {
+				            name:'已使用量',
+				            type:'line',
+				            color:'#1565C0',
+				            areaStyle: {normal: {color:'#1565C0'}},
+				            stack: 'b',
+				            data:stat.datas.data_used
+				        }
+				    ]
+				};
+			diskUseChart.setOption(option);
+			var option2 = {
+				    title: {
+				        text: '磁盘数据'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['读取的数据/秒','写入的数据/秒']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'读取的数据/秒',
+				            type:'line',
+				            color:'#1565C0',
+				            stack: 'a',
+				            data:stat.datas.data_diskReadBytesPerSecond
+				        },
+				        {
+				            name:'写入的数据/秒',
+				            type:'line',
+				            color:'#E65100',
+				            stack: 'b',
+				            data:stat.datas.data_diskWritesBytesPerSecond
+				        }
+				    ]
+				};
+			diskBytesChart.setOption(option2);
+			var option3 = {
+				    title: {
+				        text: '磁盘IO'
+				    },
+				    tooltip: {
+				        trigger: 'axis'
+				    },
+				    legend: {
+				        data:['读入/秒','写出/秒']
+				    },
+				    grid: {
+				        left: '3%',
+				        right: '4%',
+				        bottom: '3%',
+				        containLabel: true
+				    },
+				    xAxis: {
+				        type: 'category',
+				        boundaryGap: false,
+				        data: stat.keys
+				    },
+				    yAxis: {
+				        type: 'value'
+				    },
+				    series: [
+				        {
+				            name:'读入/秒',
+				            type:'line',
+				            color:'#1565C0',
+				            stack: 'a',
+				            data:stat.datas.data_diskReadsPerSecond
+				        },
+				        {
+				            name:'写出/秒',
+				            type:'line',
+				            color:'#E65100',
+				            stack: 'b',
+				            data:stat.datas.data_diskWritesPerSecond
+				        }
+				    ]
+				};
+			diskPacksChart.setOption(option3);
+		});
+		//over
+	}
 	</script>
 </body>
 </html>

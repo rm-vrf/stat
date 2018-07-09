@@ -96,24 +96,27 @@ public class StatService {
 		log.debug(search.toString());
 		log.debug(resp.toString());
 		
-		InternalDateHistogram agg = (InternalDateHistogram)resp.getAggregations().get("agg_");
-		List<Bucket> buckets = agg.getBuckets();
-		
 		Stat stat = new Stat();
 		for (int i = 0; i < fields.length; i ++) {
 			stat.getDatas().put(StringUtils.replace(fields[i], ".", "_"), new ArrayList<Object>());
 		}
 		
-		for (Bucket bucket : buckets) {
-			DateTime key = (DateTime)bucket.getKey();
-			String time = TIME_FORMAT.get().format(new Date(key.getMillis()));
-			stat.getKeys().add(time);
+		Aggregations aggs = resp.getAggregations();
+		if (aggs != null) {
+			InternalDateHistogram agg = (InternalDateHistogram)aggs.get("agg_");
+			List<Bucket> buckets = agg.getBuckets();
 			
-			Aggregations agg2 = bucket.getAggregations();
-			for (int i = 0; i < fields.length; i ++) {
-				InternalSum sum = (InternalSum)agg2.get(String.valueOf(i));
-				stat.getDatas().get(StringUtils.replace(fields[i], ".", "_")).add(sum.getValue());
-				log.debug("time: {}, name: {}, value: {}", time, fields[i], sum.getValue());
+			for (Bucket bucket : buckets) {
+				DateTime key = (DateTime)bucket.getKey();
+				String time = TIME_FORMAT.get().format(new Date(key.getMillis()));
+				stat.getKeys().add(time);
+				
+				Aggregations agg2 = bucket.getAggregations();
+				for (int i = 0; i < fields.length; i ++) {
+					InternalSum sum = (InternalSum)agg2.get(String.valueOf(i));
+					stat.getDatas().get(StringUtils.replace(fields[i], ".", "_")).add(sum.getValue());
+					log.debug("time: {}, name: {}, value: {}", time, fields[i], sum.getValue());
+				}
 			}
 		}
 		
