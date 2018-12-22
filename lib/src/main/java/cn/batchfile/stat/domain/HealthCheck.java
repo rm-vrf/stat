@@ -1,67 +1,113 @@
 package cn.batchfile.stat.domain;
 
+/**
+ * 健康检查
+ * @author lane.cn@gmail.com
+ *
+ */
 public class HealthCheck {
-	private int initialDelaySeconds = 60;
-	private int intervalSeconds = 60;
-	private int maxConsecutiveFailures = 3;
-	private String path = "/";
-	private int portIndex = 0;
-	private String protocol = "HTTP";
-	private int timeoutSeconds = 20;
+	
+	private Boolean enabled;
+	private HttpGet httpGet;
+	private Command command;
+	private Integer startPeriod;
+	private Integer retries;
+	private Integer interval;
 
-	public int getInitialDelaySeconds() {
-		return initialDelaySeconds;
+	/**
+	 * 启用
+	 * @return 启用
+	 */
+	public Boolean getEnabled() {
+		return enabled;
 	}
 
-	public void setInitialDelaySeconds(int initialDelaySeconds) {
-		this.initialDelaySeconds = initialDelaySeconds;
+	/**
+	 * 启用
+	 * @param enabled 启用
+	 */
+	public void setEnabled(Boolean enabled) {
+		this.enabled = enabled;
 	}
 
-	public int getIntervalSeconds() {
-		return intervalSeconds;
+	/**
+	 * HTTP 检查
+	 * @return HTTP 检查
+	 */
+	public HttpGet getHttpGet() {
+		return httpGet;
 	}
 
-	public void setIntervalSeconds(int intervalSeconds) {
-		this.intervalSeconds = intervalSeconds;
+	/**
+	 * HTTP 检查
+	 * @param httpGet HTTP 检查
+	 */
+	public void setHttpGet(HttpGet httpGet) {
+		this.httpGet = httpGet;
 	}
 
-	public int getMaxConsecutiveFailures() {
-		return maxConsecutiveFailures;
+	/**
+	 * 命令检查
+	 * @return 命令检查
+	 */
+	public Command getCommand() {
+		return command;
 	}
 
-	public void setMaxConsecutiveFailures(int maxConsecutiveFailures) {
-		this.maxConsecutiveFailures = maxConsecutiveFailures;
+	/**
+	 * 命令检查
+	 * @param command 命令检查
+	 */
+	public void setCommand(Command command) {
+		this.command = command;
 	}
 
-	public String getPath() {
-		return path;
+	/**
+	 * 启动时间
+	 * @return 启动时间
+	 */
+	public Integer getStartPeriod() {
+		return startPeriod;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
+	/**
+	 * 启动时间
+	 * @param startPeriod 启动时间
+	 */
+	public void setStartPeriod(Integer startPeriod) {
+		this.startPeriod = startPeriod;
 	}
 
-	public int getPortIndex() {
-		return portIndex;
+	/**
+	 * 尝试次数
+	 * @return 尝试次数
+	 */
+	public Integer getRetries() {
+		return retries;
 	}
 
-	public void setPortIndex(int portIndex) {
-		this.portIndex = portIndex;
+	/**
+	 * 尝试次数
+	 * @param retries 尝试次数
+	 */
+	public void setRetries(Integer retries) {
+		this.retries = retries;
 	}
 
-	public String getProtocol() {
-		return protocol;
+	/**
+	 * 间隔时间
+	 * @return 间隔时间
+	 */
+	public Integer getInterval() {
+		return interval;
 	}
 
-	public void setProtocol(String protocol) {
-		this.protocol = protocol;
+	/**
+	 * 间隔时间
+	 * @param interval 间隔时间
+	 */
+	public void setInterval(Integer interval) {
+		this.interval = interval;
 	}
 
-	public int getTimeoutSeconds() {
-		return timeoutSeconds;
-	}
-
-	public void setTimeoutSeconds(int timeoutSeconds) {
-		this.timeoutSeconds = timeoutSeconds;
-	}
 }
