@@ -10,7 +10,7 @@ public class Deploy {
 	public static final String MODE_GLOBAL = "global";
 
 	private String mode;
-	private Integer replicas;
+	private int replicas;
 	private Placement placement;
 	private Resources resources;
 
@@ -34,7 +34,7 @@ public class Deploy {
 	 * 副本数
 	 * @return 副本数
 	 */
-	public Integer getReplicas() {
+	public int getReplicas() {
 		return replicas;
 	}
 
@@ -42,7 +42,7 @@ public class Deploy {
 	 * 副本数
 	 * @param replicas 副本数
 	 */
-	public void setReplicas(Integer replicas) {
+	public void setReplicas(int replicas) {
 		this.replicas = replicas;
 	}
 

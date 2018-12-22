@@ -5,12 +5,11 @@ import java.util.Date;
 public class HealthCheckResult {
 
 	private long pid;
-	private String app;
+	private String service;
 	private Date time;
 	private boolean ok;
 	private String endpoint;
 	private String message;
-	private int code;
 	private long responseTime;
 	
 	public long getPid() {
@@ -21,12 +20,12 @@ public class HealthCheckResult {
 		this.pid = pid;
 	}
 	
-	public String getApp() {
-		return app;
+	public String getService() {
+		return service;
 	}
 	
-	public void setApp(String app) {
-		this.app = app;
+	public void setService(String service) {
+		this.service = service;
 	}
 	
 	public Date getTime() {
@@ -59,14 +58,6 @@ public class HealthCheckResult {
 	
 	public void setMessage(String message) {
 		this.message = message;
-	}
-	
-	public int getCode() {
-		return code;
-	}
-	
-	public void setCode(int code) {
-		this.code = code;
 	}
 	
 	public long getResponseTime() {

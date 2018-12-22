@@ -3,12 +3,6 @@ package cn.batchfile.stat.util;
 import java.io.IOException;
 import java.net.ServerSocket;
 
-/**
- * 端口检测工具
- * 
- * @author xdxing@iflytek.com
- * @date 2014年5月29日 上午10:36:50
- */
 public class PortUtil {
 
 	/**

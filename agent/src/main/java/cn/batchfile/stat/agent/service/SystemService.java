@@ -68,13 +68,15 @@ public class SystemService {
 	private String storeDirectory;
 	
 	public SystemService(MeterRegistry registry) {
-		// Gauge.builder("system.load", "", s ->
-		// Runtime.getRuntime().).baseUnit("bytes").register(registry);
+//		Gauge.builder("free.disk.space", "/", path -> new File(path).getFreeSpace())
+//		.baseUnit("bytes")
+//		.register(registry);
 	}
 
 	@PostConstruct
 	public void init() throws IOException, NoSuchFieldException, SecurityException,
 			IllegalArgumentException, IllegalAccessException {
+		
 		// copy lib into data path
 		copyResources();
 
@@ -304,11 +306,11 @@ public class SystemService {
 	}
 	
 	private boolean match(Process_ p, String s) {
-		if (StringUtils.equals(p.getPid().toString(), s)) {
+		if (StringUtils.equals(String.valueOf(p.getPid()), s)) {
 			return true;
 		}
 		
-		if (StringUtils.equals(p.getPpid().toString(), s)) {
+		if (StringUtils.equals(String.valueOf(p.getPpid()), s)) {
 			return true;
 		}
 		

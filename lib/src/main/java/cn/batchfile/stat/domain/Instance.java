@@ -10,8 +10,8 @@ import java.util.List;
 public class Instance {
 
 	private String service;
-	private Long pid;
-	private Long ppid;
+	private long pid;
+	private long ppid;
 	private String uid;
 	private String startTime;
 	private String command;
@@ -39,7 +39,7 @@ public class Instance {
 	 * 进程ID
 	 * @return 进程ID
 	 */
-	public Long getPid() {
+	public long getPid() {
 		return pid;
 	}
 
@@ -47,7 +47,7 @@ public class Instance {
 	 * 进程ID
 	 * @param pid 进程ID
 	 */
-	public void setPid(Long pid) {
+	public void setPid(long pid) {
 		this.pid = pid;
 	}
 
@@ -55,7 +55,7 @@ public class Instance {
 	 * 父进程ID
 	 * @return 父进程ID
 	 */
-	public Long getPpid() {
+	public long getPpid() {
 		return ppid;
 	}
 
@@ -63,7 +63,7 @@ public class Instance {
 	 * 父进程ID
 	 * @param ppid 父进程ID
 	 */
-	public void setPpid(Long ppid) {
+	public void setPpid(long ppid) {
 		this.ppid = ppid;
 	}
 

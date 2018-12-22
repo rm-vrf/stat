@@ -1,6 +1,5 @@
 package cn.batchfile.stat.domain;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -17,8 +16,8 @@ public class Service {
 	private List<Integer> ports;
 	private String uid;
 	private String workDirectory;
-	private Integer stopSignal;
-	private Integer stopGracePeriod;
+	private int stopSignal;
+	private int stopGracePeriod;
 	private String command;
 	private Map<String, String> environment;
 	private List<String> dependsOn;
@@ -127,7 +126,7 @@ public class Service {
 	 * 停止信号
 	 * @return 停止信号
 	 */
-	public Integer getStopSignal() {
+	public int getStopSignal() {
 		return stopSignal;
 	}
 
@@ -135,7 +134,7 @@ public class Service {
 	 * 停止信号
 	 * @param stopSignal 停止信号
 	 */
-	public void setStopSignal(Integer stopSignal) {
+	public void setStopSignal(int stopSignal) {
 		this.stopSignal = stopSignal;
 	}
 
@@ -143,7 +142,7 @@ public class Service {
 	 * 停止时间
 	 * @return 停止时间
 	 */
-	public Integer getStopGracePeriod() {
+	public int getStopGracePeriod() {
 		return stopGracePeriod;
 	}
 
@@ -151,7 +150,7 @@ public class Service {
 	 * 停止时间
 	 * @param stopGracePeriod 停止时间
 	 */
-	public void setStopGracePeriod(Integer stopGracePeriod) {
+	public void setStopGracePeriod(int stopGracePeriod) {
 		this.stopGracePeriod = stopGracePeriod;
 	}
 

@@ -7,18 +7,18 @@ package cn.batchfile.stat.domain;
  */
 public class HealthCheck {
 	
-	private Boolean enabled;
+	private boolean enabled;
 	private HttpGet httpGet;
 	private Command command;
-	private Integer startPeriod;
-	private Integer retries;
-	private Integer interval;
+	private int startPeriod;
+	private int retries;
+	private int interval;
 
 	/**
 	 * 启用
 	 * @return 启用
 	 */
-	public Boolean getEnabled() {
+	public boolean getEnabled() {
 		return enabled;
 	}
 
@@ -26,7 +26,7 @@ public class HealthCheck {
 	 * 启用
 	 * @param enabled 启用
 	 */
-	public void setEnabled(Boolean enabled) {
+	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
 
@@ -66,7 +66,7 @@ public class HealthCheck {
 	 * 启动时间
 	 * @return 启动时间
 	 */
-	public Integer getStartPeriod() {
+	public int getStartPeriod() {
 		return startPeriod;
 	}
 
@@ -74,7 +74,7 @@ public class HealthCheck {
 	 * 启动时间
 	 * @param startPeriod 启动时间
 	 */
-	public void setStartPeriod(Integer startPeriod) {
+	public void setStartPeriod(int startPeriod) {
 		this.startPeriod = startPeriod;
 	}
 
@@ -82,7 +82,7 @@ public class HealthCheck {
 	 * 尝试次数
 	 * @return 尝试次数
 	 */
-	public Integer getRetries() {
+	public int getRetries() {
 		return retries;
 	}
 
@@ -90,7 +90,7 @@ public class HealthCheck {
 	 * 尝试次数
 	 * @param retries 尝试次数
 	 */
-	public void setRetries(Integer retries) {
+	public void setRetries(int retries) {
 		this.retries = retries;
 	}
 
@@ -98,7 +98,7 @@ public class HealthCheck {
 	 * 间隔时间
 	 * @return 间隔时间
 	 */
-	public Integer getInterval() {
+	public int getInterval() {
 		return interval;
 	}
 
@@ -106,7 +106,7 @@ public class HealthCheck {
 	 * 间隔时间
 	 * @param interval 间隔时间
 	 */
-	public void setInterval(Integer interval) {
+	public void setInterval(int interval) {
 		this.interval = interval;
 	}
 

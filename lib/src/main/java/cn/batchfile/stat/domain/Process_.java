@@ -7,8 +7,8 @@ package cn.batchfile.stat.domain;
  */
 public class Process_ {
 
-	private Long pid;
-	private Long ppid;
+	private long pid;
+	private long ppid;
 	private String uid;
 	private String gid;
 	private String time;
@@ -20,7 +20,7 @@ public class Process_ {
 	 * 进程ID
 	 * @return 进程ID
 	 */
-	public Long getPid() {
+	public long getPid() {
 		return pid;
 	}
 
@@ -28,7 +28,7 @@ public class Process_ {
 	 * 进程ID
 	 * @param pid 进程ID
 	 */
-	public void setPid(Long pid) {
+	public void setPid(long pid) {
 		this.pid = pid;
 	}
 
@@ -36,7 +36,7 @@ public class Process_ {
 	 * 父进程ID
 	 * @return 父进程ID
 	 */
-	public Long getPpid() {
+	public long getPpid() {
 		return ppid;
 	}
 
@@ -44,7 +44,7 @@ public class Process_ {
 	 * 父进程ID
 	 * @param ppid 父进程ID
 	 */
-	public void setPpid(Long ppid) {
+	public void setPpid(long ppid) {
 		this.ppid = ppid;
 	}
 
