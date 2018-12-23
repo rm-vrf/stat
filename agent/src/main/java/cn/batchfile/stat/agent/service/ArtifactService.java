@@ -11,6 +11,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -30,11 +31,23 @@ import org.slf4j.LoggerFactory;
 import cn.batchfile.stat.domain.Artifact;
 import cn.batchfile.stat.domain.Service;
 import cn.batchfile.stat.util.Lock;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 @org.springframework.stereotype.Service
 public class ArtifactService {
 
 	protected static final Logger LOG = LoggerFactory.getLogger(ArtifactService.class);
+	private Counter downloadCounter;
+	private Counter downloadSize;
+	private Timer downloadResponseTime;
+	
+	public ArtifactService(MeterRegistry registry) {
+		downloadCounter = Counter.builder("artifact.download.file").register(registry);
+		downloadSize = Counter.builder("artifact.download.size").baseUnit("bytes").register(registry);
+		downloadResponseTime = Timer.builder("artifact.download.response.time").register(registry);
+	}
 
 	/**
 	 * 下载
@@ -91,8 +104,12 @@ public class ArtifactService {
 			// 如果时间不相同，下载最新的包
 			if (!StringUtils.equals(remoteLastModified, localLastModified)) {
 				LOG.info("downloading ...");
+				long begin = System.currentTimeMillis();
 				File pkg = download(artifact, path, baseName, remoteLastModified);
 				LOG.info("downloaded file size: {}", FileUtils.byteCountToDisplaySize(pkg.length()));
+				downloadResponseTime.record(System.currentTimeMillis() - begin, TimeUnit.MICROSECONDS);
+				downloadCounter.increment();
+				downloadSize.increment(pkg.length());
 
 				// 解压到根目录
 				if (StringUtils.endsWithIgnoreCase(pkg.getName(), ".zip")) {

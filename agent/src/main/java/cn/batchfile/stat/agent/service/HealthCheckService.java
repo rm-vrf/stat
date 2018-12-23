@@ -30,12 +30,23 @@ import cn.batchfile.stat.domain.HealthCheckResult;
 import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Service;
 import cn.batchfile.stat.service.ServiceService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @org.springframework.stereotype.Service
 public class HealthCheckService {
 	protected static final Logger log = LoggerFactory.getLogger(HealthCheckService.class);
 	private static final int CACHE_LINE_COUNT = 500;
 	private Map<Long, HealthCheckHandler> handlers = new ConcurrentHashMap<Long, HealthCheckHandler>();
+	private Counter okCounter;
+	private Counter failCounter;
+	
+	public HealthCheckService(MeterRegistry registry) {
+		okCounter = Counter.builder("health.check.ok").register(registry);
+		failCounter = Counter.builder("health.check.fail").register(registry);
+		Gauge.builder("health.check.running", "/", s -> handlers.size()).register(registry);
+	}
 	
 	@Autowired
 	private ServiceService serviceService;
@@ -43,8 +54,8 @@ public class HealthCheckService {
 	@Autowired
 	private InstanceService instanceService;
 	
-//	@Autowired
-//	private EventService eventService;
+	@Autowired
+	private EventService eventService;
 	
 	@PostConstruct
 	public void init() {
@@ -144,7 +155,7 @@ public class HealthCheckService {
 			//无效的检查设置
 			return;
 		}
-		log.info("health check, service: {}, pid: {}, result: {}", service.getName(), in.getPid(), ret.getMessage());
+		log.debug("health check, service: {}, pid: {}, result: {}", service.getName(), in.getPid(), ret.getMessage());
 
 		//保存检查结果
 		if (handler.results.remainingCapacity() < 1) {
@@ -156,15 +167,17 @@ public class HealthCheckService {
 		if (ret.isOk()) {
 			//计数器归零
 			handler.consecutiveFailures = 0;
+			okCounter.increment();
 		} else {
+			failCounter.increment();
 			//累加计数器
 			handler.consecutiveFailures ++;
 			
-			//TODO 报告事件
-			//eventService.putHealthCheckFailEvent(ret);
+			//报告事件
+			eventService.putHealthCheckFailEvent(ret);
 			
 			//超过失败次数，杀进程
-			if (handler.consecutiveFailures > service.getHealthCheck().getRetries()) {
+			if (handler.consecutiveFailures >= service.getHealthCheck().getRetries()) {
 				log.info("EXCEED MAX CONSECUTIVE FAILURES, KILL PROCESS: {}, SERVICE: {}", in.getPid(), service.getName());
 				instanceService.killInstances(Arrays.asList(new Long[] {in.getPid()}));
 			}

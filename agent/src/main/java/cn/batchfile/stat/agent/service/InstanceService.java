@@ -45,6 +45,9 @@ import cn.batchfile.stat.service.ServiceService;
 import cn.batchfile.stat.util.PortUtil;
 import cn.batchfile.stat.util.cmd.CommandLineCallable;
 import cn.batchfile.stat.util.cmd.CommandLineExecutor;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @org.springframework.stereotype.Service
 public class InstanceService {
@@ -60,7 +63,12 @@ public class InstanceService {
 	private File instanceStoreDirectory;
 	private Map<Long, LinkedBlockingQueue<String>> systemOuts = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
 	private Map<Long, LinkedBlockingQueue<String>> systemErrs = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
-
+	private String address;
+	private String hostname;
+	private Counter startInstanceCounter;
+	private Counter stopInstanceCounter;
+	private Counter killInstanceCounter;
+	
 	@Value("${store.directory}")
 	private String storeDirectory;
 
@@ -75,9 +83,29 @@ public class InstanceService {
 	
 	@Autowired
 	private HealthCheckService healthCheckService;
+	
+	@Autowired
+	private EventService eventService;
+
+	public InstanceService(MeterRegistry registry) {
+		Gauge.builder("instance.running", "/", s -> {
+			try {
+				return getInstances().size();
+			} catch (IOException e) {
+				return 0;
+			}
+		}).register(registry);
+		
+		startInstanceCounter = Counter.builder("instance.start").register(registry);
+		stopInstanceCounter = Counter.builder("instance.stop").register(registry);
+		killInstanceCounter = Counter.builder("instance.kill").register(registry);
+	}
 
 	@PostConstruct
 	public void init() throws IOException {
+		hostname = systemService.getHostname();
+		address = systemService.getAddress();
+		
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
 			FileUtils.forceMkdir(f);
@@ -194,13 +222,17 @@ public class InstanceService {
 	public void killInstances(List<Long> pids) throws IOException {
 		for (Long pid : pids) {
 			// 杀进程树
-			Instance ins = getInstance(pid);
-			Service service = serviceService.getService(ins.getService());
-			killInstanceTree(ins, service.getStopSignal());
+			Instance in = getInstance(pid);
+			Service service = serviceService.getService(in.getService());
+			killInstanceTree(in, service.getStopSignal());
 
 			// 删除登记信息
-			deleteInstance(ins.getPid());
-			log.info("kill instance, pid: {}, service: {}", ins.getPid(), ins.getService());
+			deleteInstance(in.getPid());
+			log.info("kill instance, pid: {}, service: {}", in.getPid(), in.getService());
+			
+			// 报告事件
+			eventService.putKillProcessEvent(in.getService(), in.getPid());
+			killInstanceCounter.increment();
 		}
 	}
 
@@ -254,8 +286,9 @@ public class InstanceService {
 				// 注册健康检查
 				healthCheckService.register(service, in);
 
-				//TODO 报告事件
-				// eventService.putStartProcessEvent(app.getName(), proc.getPid());
+				// 报告事件
+				eventService.putStartProcessEvent(service.getName(), in.getPid());
+				startInstanceCounter.increment();
 			}
 		}
 	}
@@ -311,6 +344,8 @@ public class InstanceService {
 
 		// 创建命令行工具
 		Commandline commandline = new Commandline();
+		commandline.addEnvironment("ADDRESS", address);
+		commandline.addEnvironment("HOSTNAME", hostname);
 
 		// 设置工作目录
 		if (StringUtils.isNotEmpty(service.getWorkDirectory())) {
@@ -399,8 +434,9 @@ public class InstanceService {
 				deleteInstance(in.getPid());
 				log.info("stop process, pid: {}, service name: {}", in.getPid(), in.getService());
 
-				//TODO 报告事件
-				// eventService.putKillProcessEvent(app.getName(), proc.getPid());
+				//报告事件
+				eventService.putKillProcessEvent(service.getName(), in.getPid());
+				killInstanceCounter.increment();
 			}
 		}
 	}
@@ -464,8 +500,9 @@ public class InstanceService {
 				// 删除进程信息
 				deleteInstance(in.getPid());
 
-				//TODO 报告事件
-				// eventService.putStopProcessEvent(app.getName(), pid);
+				// 报告事件
+				eventService.putStopProcessEvent(in.getService(), in.getPid());
+				stopInstanceCounter.increment();
 			} else if (in.getPpid() == 0) {
 				// 没有ppid，补充进程信息
 				if (in.getChildren() == null) {

@@ -16,10 +16,6 @@ public class DiskStat {
 	private double diskQueue;
 	private double diskServiceTime;
 	private double usePercent;
-	private long diskReadsPerSecond;
-	private long diskWritesPerSecond;
-	private long diskReadBytesPerSecond;
-	private long diskWriteBytesPerSecond;
 
 	public String getDirName() {
 		return dirName;
@@ -141,35 +137,4 @@ public class DiskStat {
 		this.usePercent = usePercent;
 	}
 
-	public long getDiskReadsPerSecond() {
-		return diskReadsPerSecond;
-	}
-
-	public void setDiskReadsPerSecond(long diskReadsPerSecond) {
-		this.diskReadsPerSecond = diskReadsPerSecond;
-	}
-
-	public long getDiskWritesPerSecond() {
-		return diskWritesPerSecond;
-	}
-
-	public void setDiskWritesPerSecond(long diskWritesPerSecond) {
-		this.diskWritesPerSecond = diskWritesPerSecond;
-	}
-
-	public long getDiskReadBytesPerSecond() {
-		return diskReadBytesPerSecond;
-	}
-
-	public void setDiskReadBytesPerSecond(long diskReadBytesPerSecond) {
-		this.diskReadBytesPerSecond = diskReadBytesPerSecond;
-	}
-
-	public long getDiskWriteBytesPerSecond() {
-		return diskWriteBytesPerSecond;
-	}
-
-	public void setDiskWriteBytesPerSecond(long diskWriteBytesPerSecond) {
-		this.diskWriteBytesPerSecond = diskWriteBytesPerSecond;
-	}
 }
