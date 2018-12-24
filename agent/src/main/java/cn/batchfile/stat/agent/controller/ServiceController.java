@@ -82,7 +82,7 @@ public class ServiceController {
 	}
 	
 	@PostMapping("/api/v2/service")
-	public ResponseEntity<Boolean> postApp(WebRequest request,
+	public ResponseEntity<Boolean> postService(WebRequest request,
 			@RequestBody Service service) {
 		
 		try {
@@ -92,7 +92,6 @@ public class ServiceController {
 			return new ResponseEntity<Boolean>(Boolean.FALSE, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
 	
 	@PutMapping("/api/v2/service/{name}")
 	public ResponseEntity<Boolean> putService(WebRequest request,

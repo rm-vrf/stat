@@ -1,4 +1,4 @@
-package cn.batchfile.stat.util.cmd;
+package cn.batchfile.stat.agent.util.cmd;
 
 /*
  * Copyright The Codehaus Foundation.
@@ -26,7 +26,7 @@ import java.security.AccessControlException;
  *
  * @author Kristian Rosenvold
  */
-class ShutdownHookUtils
+public class ShutdownHookUtils
 {
 
     public static void addShutDownHook( Thread hook )

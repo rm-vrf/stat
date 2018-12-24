@@ -3,8 +3,6 @@ package cn.batchfile.stat.agent.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.LineNumberReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Field;
@@ -17,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -47,13 +46,13 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
-import cn.batchfile.stat.domain.CpuStat;
+import cn.batchfile.stat.agent.domain.CpuStat;
+import cn.batchfile.stat.agent.domain.DiskStat;
+import cn.batchfile.stat.agent.domain.MemoryStat;
+import cn.batchfile.stat.agent.domain.NetworkStat;
 import cn.batchfile.stat.domain.Disk;
-import cn.batchfile.stat.domain.DiskStat;
 import cn.batchfile.stat.domain.Memory;
-import cn.batchfile.stat.domain.MemoryStat;
 import cn.batchfile.stat.domain.Network;
-import cn.batchfile.stat.domain.NetworkStat;
 import cn.batchfile.stat.domain.Os;
 import cn.batchfile.stat.domain.Process_;
 import io.micrometer.core.instrument.Gauge;
@@ -234,19 +233,22 @@ public class SystemService {
 		}
 	}
 
-	public List<String> execute(String cmd) {
-		try {
-			Process process = Runtime.getRuntime().exec(cmd);
-			LineNumberReader br = new LineNumberReader(new InputStreamReader(process.getInputStream()));
-			String line;
-			List<String> lines = new ArrayList<String>();
-			while ((line = br.readLine()) != null) {
-				lines.add(line);
-			}
-			return lines;
-		} catch (IOException e) {
-			throw new RuntimeException("error when execute cmd: " + cmd, e);
-		}
+	public List<String> execute(String cmd, Map<String, String> env, File workDirectory) {
+		return null;
+//		try {
+//			Process process = Runtime.getRuntime().exec(cmd);
+//			LineNumberReader out = new LineNumberReader(new InputStreamReader(process.getInputStream()));
+//			LineNumberReader err = new LineNumberReader(new InputStreamReader(process.getErrorStream()));
+//			String line;
+//			List<String> lines = new ArrayList<String>();
+//			while ((line = out.readLine()) != null) {
+//				lines.add(line);
+//			}
+//			process.exitValue();
+//			return lines;
+//		} catch (IOException e) {
+//			throw new RuntimeException("error when execute cmd: " + cmd, e);
+//		}
 	}
 
 	public String getHostname() {

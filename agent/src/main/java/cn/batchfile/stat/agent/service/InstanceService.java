@@ -35,16 +35,14 @@ import org.springframework.beans.factory.annotation.Value;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.sun.jna.platform.win32.Kernel32;
-import com.sun.jna.platform.win32.WinNT;
 
+import cn.batchfile.stat.agent.util.PortUtil;
+import cn.batchfile.stat.agent.util.cmd.CommandLineCallable;
+import cn.batchfile.stat.agent.util.cmd.CommandLineExecutor;
 import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Process_;
 import cn.batchfile.stat.domain.Service;
 import cn.batchfile.stat.service.ServiceService;
-import cn.batchfile.stat.util.PortUtil;
-import cn.batchfile.stat.util.cmd.CommandLineCallable;
-import cn.batchfile.stat.util.cmd.CommandLineExecutor;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -68,7 +66,7 @@ public class InstanceService {
 	private Counter startInstanceCounter;
 	private Counter stopInstanceCounter;
 	private Counter killInstanceCounter;
-	
+
 	@Value("${store.directory}")
 	private String storeDirectory;
 
@@ -80,10 +78,10 @@ public class InstanceService {
 
 	@Autowired
 	private ArtifactService artifactService;
-	
+
 	@Autowired
 	private HealthCheckService healthCheckService;
-	
+
 	@Autowired
 	private EventService eventService;
 
@@ -95,7 +93,7 @@ public class InstanceService {
 				return 0;
 			}
 		}).register(registry);
-		
+
 		startInstanceCounter = Counter.builder("instance.start").register(registry);
 		stopInstanceCounter = Counter.builder("instance.stop").register(registry);
 		killInstanceCounter = Counter.builder("instance.kill").register(registry);
@@ -105,7 +103,7 @@ public class InstanceService {
 	public void init() throws IOException {
 		hostname = systemService.getHostname();
 		address = systemService.getAddress();
-		
+
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
 			FileUtils.forceMkdir(f);
@@ -130,7 +128,7 @@ public class InstanceService {
 		}, 5, 5, TimeUnit.SECONDS);
 	}
 
-	private void refresh() throws IOException, SigarException, InterruptedException, CommandLineException {
+	private void refresh() throws IOException, SigarException, InterruptedException, Exception {
 		// 检查文件存储，把废弃的进程号清理掉
 		checkInstanceStore();
 
@@ -229,14 +227,14 @@ public class InstanceService {
 			// 删除登记信息
 			deleteInstance(in.getPid());
 			log.info("kill instance, pid: {}, service: {}", in.getPid(), in.getService());
-			
+
 			// 报告事件
 			eventService.putKillProcessEvent(in.getService(), in.getPid());
 			killInstanceCounter.increment();
 		}
 	}
 
-	public void startScheduleInstance() throws IOException, InterruptedException, CommandLineException {
+	public void startScheduleInstance() throws IOException, InterruptedException, Exception {
 		// 登记应用
 		List<Service> services = serviceService.getServices();
 		log.debug("service count: {}", services.size());
@@ -252,9 +250,7 @@ public class InstanceService {
 		for (Service service : services) {
 			List<Instance> instanceList = groups.get(service.getName());
 			int instanceCount = instanceList == null ? 0 : instanceList.size();
-			int replicas = service == null || service.getDeploy() == null
-					? 0
-					: service.getDeploy().getReplicas();
+			int replicas = service == null || service.getDeploy() == null ? 0 : service.getDeploy().getReplicas();
 			log.debug("schedule service: {}, replicas: {}, instance: {}", service.getName(), replicas, instanceCount);
 
 			// 如果登记的进程比计划的少，启动
@@ -264,19 +260,12 @@ public class InstanceService {
 
 				// 启动进程，得到端口号&进程命令
 				Instance in = new Instance();
-				log.info("start instance of service: {}, #{}", service.getName(), i);
+				log.info("start instance of service: {}#{}", service.getName(), i);
 				long pid = startInstance(service, in);
-
-				// get pid in windows os
-				if (SystemUtils.IS_OS_WINDOWS) {
-					Kernel32 kernel = Kernel32.INSTANCE;
-					WinNT.HANDLE handle = new WinNT.HANDLE();
-					handle.setPointer(com.sun.jna.Pointer.createConstant(pid));
-					pid = kernel.GetProcessId(handle);
-				}
 
 				// 补充进程的基本信息
 				in.setService(service.getName());
+				in.setWorkDirectory(service.getWorkDirectory());
 				in.setPid(pid);
 				in.setStartTime(TIME_FORMAT.get().format(new Date()));
 
@@ -293,20 +282,22 @@ public class InstanceService {
 		}
 	}
 
-	private long startInstance(Service service, Instance instance) throws IOException, CommandLineException {
+	private long startInstance(Service service, Instance instance) throws IOException, Exception {
 		// 构建命令行
 		if (instance.getPorts() == null) {
 			instance.setPorts(new ArrayList<Integer>());
 		}
-		Commandline commandline = composeCommandLine(service, instance.getPorts());
-		instance.setCommand(commandline.toString());
-		log.info("CMD: " + commandline.toString());
+		Commandline cmd = new Commandline();
+
+		String cmdText = composeCommand(cmd, instance.getPorts(), service);
+		instance.setCommand(cmdText);
+		log.info("EXECUTE: {}", cmdText);
 
 		// 构建输出存储器
 		LinkedBlockingQueue<String> systemOut = new LinkedBlockingQueue<String>(CACHE_LINE_COUNT);
 		LinkedBlockingQueue<String> systemErr = new LinkedBlockingQueue<String>(CACHE_LINE_COUNT);
-		
-		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(commandline, null, new StreamConsumer() {
+
+		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
 				if (systemOut.remainingCapacity() < 1) {
@@ -331,66 +322,103 @@ public class InstanceService {
 		return pid;
 	}
 
-	private Commandline composeCommandLine(Service service, List<Integer> ports) throws IOException {
-
-		// 设置通配容器，加入顺序：系统环境变量，进程属性，节点全局环境变量
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.putAll(System.getenv());
-		for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-			if (entry.getKey() != null && entry.getValue() != null) {
-				vars.put(entry.getKey().toString(), entry.getValue().toString());
-			}
-		}
-
-		// 创建命令行工具
-		Commandline commandline = new Commandline();
-		commandline.addEnvironment("ADDRESS", address);
-		commandline.addEnvironment("HOSTNAME", hostname);
+	private String composeCommand(Commandline cmd, List<Integer> ports, Service service) throws Exception {
 
 		// 设置工作目录
 		if (StringUtils.isNotEmpty(service.getWorkDirectory())) {
-			commandline.setWorkingDirectory(new File(service.getWorkDirectory()));
+			cmd.setWorkingDirectory(new File(service.getWorkDirectory()));
 		}
 
+		// 创建通配符容器
+		Map<String, String> vars = createPlaceHolderVars();
+
 		// 选择端口
+		usePorts(ports, service);
+		log.info("PORTS: {}", ports.toString());
+
+		// 把端口加入环境变量
+		for (int i = 0; i < ports.size(); i++) {
+			if (i == 0) {
+				vars.put("PORT", String.valueOf(ports.get(i)));
+			}
+			vars.put(String.format("PORT_%s", i + 1), String.valueOf(ports.get(i)));
+		}
+
+		// 添加vars里面的环境变量
+		for (Entry<String, String> entry : vars.entrySet()) {
+			cmd.addEnvironment(entry.getKey(), entry.getValue());
+		}
+
+		// 添加用户自定义的环境变量
+		if (service.getEnvironment() != null) {
+			for (Entry<String, String> entry : service.getEnvironment().entrySet()) {
+				cmd.addEnvironment(entry.getKey(), replacePlaceholder(entry.getValue(), vars));
+			}
+		}
+
+		// 构建命令内容
+		String cmdText = replacePlaceholder(service.getCommand(), vars);
+
+		// 命令内容写临时文件
+		File cmdFile = writeCommandFile(service.getName(), cmdText);
+		cmd.setExecutable(cmdFile.getAbsolutePath());
+
+		return cmdText;
+	}
+
+	private File writeCommandFile(String name, String text)
+			throws UnsupportedEncodingException, IOException, CommandLineException {
+
+		// create file and write content
+		File tmpDirectory = new File(System.getProperty("java.io.tmpdir", "."));
+		String ext = SystemUtils.IS_OS_WINDOWS ? ".bat" : ".sh";
+		File file = new File(tmpDirectory, name + ext);
+		FileUtils.writeByteArrayToFile(file, text.getBytes("UTF-8"));
+		log.info("shell file: {}", file.getAbsolutePath());
+
+		// chmod
+		if (!SystemUtils.IS_OS_WINDOWS) {
+			Commandline cmd = new Commandline();
+			String[] ary = new String[] {"chmod", "a+x", "'" + file.getAbsolutePath() + "'"};
+			for (String s : ary) {
+				Arg argObject = cmd.createArg();
+				argObject.setValue(s);
+			}
+			CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, null, null, 0);
+			int ret = callable.call();
+			log.info("chmod a+x '{}', ret: {}", file.getAbsolutePath(), ret);
+		}
+
+		return file;
+	}
+
+	private void usePorts(List<Integer> ports, Service service) {
 		for (int i = 0; service.getPorts() != null && i < service.getPorts().size(); i++) {
 			int port = 0;
 			Integer configPort = service.getPorts().get(i);
 			if (configPort == null || configPort == 0) {
 				port = systemService.randomPort();
-				ports.add(port);
 			} else {
 				if (PortUtil.isUsedPort(configPort)) {
 					throw new RuntimeException("Error: The port " + configPort + " is being used");
 				}
 				port = configPort;
-				ports.add(configPort);
 			}
-
-			// 把端口加入环境变量
-			commandline.addEnvironment(String.format("PORT_%s", i + 1), String.valueOf(port));
-			vars.put(String.format("PORT_%s", i + 1), String.valueOf(port));
-			if (i == 0) {
-				commandline.addEnvironment("PORT", String.valueOf(port));
-				vars.put("PORT", String.valueOf(port));
-			}
+			ports.add(port);
 		}
+	}
 
-		// 全局环境变量
-		if (service.getEnvironment() != null) {
-			for (Entry<String, String> env : service.getEnvironment().entrySet()) {
-				commandline.addEnvironment(env.getKey(), replacePlaceholder(env.getValue(), vars));
-			}
+	private Map<String, String> createPlaceHolderVars() {
+		Map<String, String> vars = new HashMap<String, String>();
+		vars.put("ADDRESS", address);
+		vars.put("HOSTNAME", hostname);
+		vars.putAll(System.getenv());
+		for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
+			String key = entry.getKey() == null ? StringUtils.EMPTY : entry.getKey().toString();
+			String value = entry.getValue() == null ? StringUtils.EMPTY : entry.getValue().toString();
+			vars.put(key, value);
 		}
-		
-		//commandline.setExecutable(replacePlaceholder(service.getCommand(), vars));
-		String[] ary = StringUtils.split(service.getCommand(), " ");
-		for (String s : ary) {
-			Arg argObject = commandline.createArg();
-			argObject.setValue(replacePlaceholder(s, vars));
-		}
-
-		return commandline;
+		return vars;
 	}
 
 	private String replacePlaceholder(String s, Map<String, String> vars) {
@@ -420,9 +448,7 @@ public class InstanceService {
 			// 得到计划的进程数量
 			String serviceName = entry.getKey();
 			Service service = serviceService.getService(serviceName);
-			int replicas = service == null || service.getDeploy() == null
-					? 0
-					: service.getDeploy().getReplicas();
+			int replicas = service == null || service.getDeploy() == null ? 0 : service.getDeploy().getReplicas();
 
 			// 杀掉多余的进程
 			for (int i = replicas; i < entry.getValue().size(); i++) {
@@ -432,9 +458,9 @@ public class InstanceService {
 
 				// 删除登记信息
 				deleteInstance(in.getPid());
-				log.info("stop process, pid: {}, service name: {}", in.getPid(), in.getService());
+				log.info("stop instance, pid: {}, service: {}", in.getPid(), in.getService());
 
-				//报告事件
+				// 报告事件
 				eventService.putKillProcessEvent(service.getName(), in.getPid());
 				killInstanceCounter.increment();
 			}

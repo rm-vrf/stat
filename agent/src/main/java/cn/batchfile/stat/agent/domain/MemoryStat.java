@@ -1,4 +1,4 @@
-package cn.batchfile.stat.domain;
+package cn.batchfile.stat.agent.domain;
 
 public class MemoryStat {
 	private long total;

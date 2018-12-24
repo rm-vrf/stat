@@ -1,14 +1,18 @@
-package cn.batchfile.stat.util.cmd;
+package cn.batchfile.stat.agent.util.cmd;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
+import org.apache.commons.lang.SystemUtils;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.codehaus.plexus.util.cli.StreamFeeder;
 import org.codehaus.plexus.util.cli.StreamPumper;
+
+import com.sun.jna.platform.win32.Kernel32;
+import com.sun.jna.platform.win32.WinNT;
 
 public class CommandLineExecutor {
 
@@ -104,17 +108,28 @@ public class CommandLineExecutor {
 			}
 			
 			public long getPid() {
+				long pid = 0;
 				try {
 					Object obj = getFieldValue(p, "pid");
-					return Long.valueOf(obj.toString());
+					pid = Long.valueOf(obj.toString());
 				} catch (NoSuchFieldException e) {
 					try {
 						Object obj = getFieldValue(p, "handle");
-						return Long.valueOf(obj.toString());
+						pid = Long.valueOf(obj.toString());
 					} catch (NoSuchFieldException ex) {
 						throw new RuntimeException("cannot get pid", ex);
 					}
 				}
+				
+				// get pid in windows os
+				if (pid > 0 && SystemUtils.IS_OS_WINDOWS) {
+					Kernel32 kernel = Kernel32.INSTANCE;
+					WinNT.HANDLE handle = new WinNT.HANDLE();
+					handle.setPointer(com.sun.jna.Pointer.createConstant(pid));
+					pid = kernel.GetProcessId(handle);
+				}
+				
+				return pid;
 			}
 			
 			private Object getFieldValue(Object obj, String fieldName) throws NoSuchFieldException {

@@ -1,4 +1,4 @@
-package cn.batchfile.stat.util;
+package cn.batchfile.stat.agent.util;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;

@@ -25,12 +25,17 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.codehaus.plexus.util.cli.Arg;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.codehaus.plexus.util.cli.Commandline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.batchfile.stat.agent.util.Lock;
+import cn.batchfile.stat.agent.util.cmd.CommandLineCallable;
+import cn.batchfile.stat.agent.util.cmd.CommandLineExecutor;
 import cn.batchfile.stat.domain.Artifact;
 import cn.batchfile.stat.domain.Service;
-import cn.batchfile.stat.util.Lock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -63,11 +68,39 @@ public class ArtifactService {
 		List<Artifact> artifacts = service.getArtifacts();
 		String wd = service.getWorkDirectory();
 
+		// 下载部署物
 		if (artifacts != null) {
 			for (Artifact artifact : artifacts) {
 				downloadArtifact(wd, artifact);
 			}
 		}
+		
+		// 运行脚本
+		if (service.getRuns() != null) {
+			for (String cmd : service.getRuns()) {
+				int ret = 0;
+				try {
+					ret = execute(cmd, wd);
+				} catch (Exception e) {
+					ret = -1;
+					LOG.error("error when run command: " + cmd, e);
+				}
+				LOG.info("RUN: {}, RET: {}", cmd, ret);
+			}
+		}
+	}
+
+	private int execute(String cmd, String workDirectory) throws Exception {
+		Commandline command = new Commandline();
+		command.setWorkingDirectory(new File(workDirectory).getAbsolutePath());
+		
+		String[] ary = CommandLineUtils.translateCommandline(cmd);
+		for (String s : ary) {
+			Arg argObject = command.createArg();
+			argObject.setValue(s);
+		}
+		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(command, null, null, null, 0);
+		return callable.call();
 	}
 
 	private void downloadArtifact(String workDirectory, Artifact artifact) throws IOException, InterruptedException {

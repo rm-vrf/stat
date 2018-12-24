@@ -1,4 +1,4 @@
-package cn.batchfile.stat.util.cmd;
+package cn.batchfile.stat.agent.util.cmd;
 
 /*
  * Copyright The Codehaus Foundation.

@@ -10,6 +10,7 @@ import java.util.List;
 public class Instance {
 
 	private String service;
+	private String workDirectory;
 	private long pid;
 	private long ppid;
 	private String uid;
@@ -17,6 +18,7 @@ public class Instance {
 	private String command;
 	private List<Long> children;
 	private List<Integer> ports;
+	private List<String> labels;
 	private String container;
 
 	/**
@@ -33,6 +35,22 @@ public class Instance {
 	 */
 	public void setService(String service) {
 		this.service = service;
+	}
+
+	/**
+	 * 工作目录
+	 * @return 工作目录
+	 */
+	public String getWorkDirectory() {
+		return workDirectory;
+	}
+
+	/**
+	 * 工作目录
+	 * @param workDirectory 工作目录
+	 */
+	public void setWorkDirectory(String workDirectory) {
+		this.workDirectory = workDirectory;
 	}
 
 	/**
@@ -145,6 +163,22 @@ public class Instance {
 	 */
 	public void setPorts(List<Integer> ports) {
 		this.ports = ports;
+	}
+
+	/**
+	 * 标签
+	 * @return 标签
+	 */
+	public List<String> getLabels() {
+		return labels;
+	}
+
+	/**
+	 * 标签
+	 * @param labels 标签
+	 */
+	public void setLabels(List<String> labels) {
+		this.labels = labels;
 	}
 
 	/**
