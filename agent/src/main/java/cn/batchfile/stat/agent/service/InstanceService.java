@@ -50,7 +50,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 @org.springframework.stereotype.Service
 public class InstanceService {
 
-	protected static final Logger log = LoggerFactory.getLogger(InstanceService.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(InstanceService.class);
 	private static final int CACHE_LINE_COUNT = 500;
 	public static final ThreadLocal<DateFormat> TIME_FORMAT = new ThreadLocal<DateFormat>() {
 		@Override
@@ -84,6 +84,9 @@ public class InstanceService {
 
 	@Autowired
 	private EventService eventService;
+	
+	@Autowired
+	private LoggingService loggingService;
 
 	public InstanceService(MeterRegistry registry) {
 		Gauge.builder("instance.running", "/", s -> {
@@ -122,7 +125,7 @@ public class InstanceService {
 				try {
 					refresh();
 				} catch (Exception e) {
-					log.error("error when refresh instance", e);
+					LOG.error("error when refresh instance", e);
 				}
 			}
 		}, 5, 5, TimeUnit.SECONDS);
@@ -226,7 +229,7 @@ public class InstanceService {
 
 			// 删除登记信息
 			deleteInstance(in.getPid());
-			log.info("kill instance, pid: {}, service: {}", in.getPid(), in.getService());
+			LOG.info("kill instance, pid: {}, service: {}", in.getPid(), in.getService());
 
 			// 报告事件
 			eventService.putKillProcessEvent(in.getService(), in.getPid());
@@ -237,11 +240,11 @@ public class InstanceService {
 	public void startScheduleInstance() throws IOException, InterruptedException, Exception {
 		// 登记应用
 		List<Service> services = serviceService.getServices();
-		log.debug("service count: {}", services.size());
+		LOG.debug("service count: {}", services.size());
 
 		// 登记进程
 		List<Instance> ins = getInstances();
-		log.debug("instance count: {}", ins.size());
+		LOG.debug("instance count: {}", ins.size());
 
 		// 按照应用名称归类进程
 		Map<String, List<Instance>> groups = ins.stream().collect(Collectors.groupingBy(in -> in.getService()));
@@ -251,7 +254,7 @@ public class InstanceService {
 			List<Instance> instanceList = groups.get(service.getName());
 			int instanceCount = instanceList == null ? 0 : instanceList.size();
 			int replicas = service == null || service.getDeploy() == null ? 0 : service.getDeploy().getReplicas();
-			log.debug("schedule service: {}, replicas: {}, instance: {}", service.getName(), replicas, instanceCount);
+			LOG.debug("schedule service: {}, replicas: {}, instance: {}", service.getName(), replicas, instanceCount);
 
 			// 如果登记的进程比计划的少，启动
 			for (int i = instanceCount; i < replicas; i++) {
@@ -260,7 +263,7 @@ public class InstanceService {
 
 				// 启动进程，得到端口号&进程命令
 				Instance in = new Instance();
-				log.info("start instance of service: {}#{}", service.getName(), i);
+				LOG.info("start instance of service: {}#{}", service.getName(), i);
 				long pid = startInstance(service, in);
 
 				// 补充进程的基本信息
@@ -291,12 +294,16 @@ public class InstanceService {
 
 		String cmdText = composeCommand(cmd, instance.getPorts(), service);
 		instance.setCommand(cmdText);
-		log.info("EXECUTE: {}", cmdText);
+		LOG.info("EXECUTE: {}", cmdText);
 
 		// 构建输出存储器
 		LinkedBlockingQueue<String> systemOut = new LinkedBlockingQueue<String>(CACHE_LINE_COUNT);
 		LinkedBlockingQueue<String> systemErr = new LinkedBlockingQueue<String>(CACHE_LINE_COUNT);
+		
+		// 创建日志记录器
+		Logger logger = loggingService.createLogger(service.getName(), service.getLogging().getOptions());
 
+		// 启动进程
 		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, new StreamConsumer() {
 			@Override
 			public void consumeLine(String line) {
@@ -304,6 +311,7 @@ public class InstanceService {
 					systemOut.poll();
 				}
 				systemOut.offer(line);
+				logger.info(line);
 			}
 		}, new StreamConsumer() {
 			@Override
@@ -312,6 +320,7 @@ public class InstanceService {
 					systemErr.poll();
 				}
 				systemErr.offer(line);
+				logger.info(line);
 			}
 		}, 0);
 
@@ -334,7 +343,7 @@ public class InstanceService {
 
 		// 选择端口
 		usePorts(ports, service);
-		log.info("PORTS: {}", ports.toString());
+		LOG.info("PORTS: {}", ports.toString());
 
 		// 把端口加入环境变量
 		for (int i = 0; i < ports.size(); i++) {
@@ -374,7 +383,7 @@ public class InstanceService {
 		String ext = SystemUtils.IS_OS_WINDOWS ? ".bat" : ".sh";
 		File file = new File(tmpDirectory, name + ext);
 		FileUtils.writeByteArrayToFile(file, text.getBytes("UTF-8"));
-		log.info("shell file: {}", file.getAbsolutePath());
+		LOG.info("shell file: {}", file.getAbsolutePath());
 
 		// chmod
 		if (!SystemUtils.IS_OS_WINDOWS) {
@@ -386,7 +395,7 @@ public class InstanceService {
 			}
 			CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, null, null, 0);
 			int ret = callable.call();
-			log.info("chmod a+x '{}', ret: {}", file.getAbsolutePath(), ret);
+			LOG.info("chmod a+x '{}', ret: {}", file.getAbsolutePath(), ret);
 		}
 
 		return file;
@@ -458,7 +467,7 @@ public class InstanceService {
 
 				// 删除登记信息
 				deleteInstance(in.getPid());
-				log.info("stop instance, pid: {}, service: {}", in.getPid(), in.getService());
+				LOG.info("stop instance, pid: {}, service: {}", in.getPid(), in.getService());
 
 				// 报告事件
 				eventService.putKillProcessEvent(service.getName(), in.getPid());
@@ -539,7 +548,7 @@ public class InstanceService {
 
 				// 补充子进程信息
 				getTree(in.getChildren(), in.getPid(), ps);
-				log.info("compose ppid, pid: {}, ppid: {}, children: {}", in.getPid(), in.getPpid(),
+				LOG.info("compose ppid, pid: {}, ppid: {}, children: {}", in.getPid(), in.getPpid(),
 						in.getChildren().toString());
 
 				// 保存进程信息

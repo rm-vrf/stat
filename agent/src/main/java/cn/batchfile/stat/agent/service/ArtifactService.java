@@ -328,7 +328,7 @@ public class ArtifactService {
 					FileUtils.forceDelete(f);
 				}
 				if (StringUtils.endsWith(name, "/")) {
-					LOG.debug(" creating: {}", name);
+					LOG.debug("creating: {}", name);
 					FileUtils.forceMkdir(f);
 				} else {
 					LOG.debug("inflating: {}", name);
