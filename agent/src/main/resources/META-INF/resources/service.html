@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>STAT HUB - 服务</title>
+<link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
+<script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+<script src="js/vue.min.js" type="text/javascript"></script>
+<script src="js/vue-resource.min.js" type="text/javascript"></script>
+<script src="js/common.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            var serviceName = getParameter('name').name.replace('#', '');
+            $.get('/api/v2/service/' + serviceName, function(service, status, xhr) {
+                showService(service);
+            });
+        });
+        
+        function showService(service) {
+        	    $('#service_name').text(service.name);
+        	    $('#name').text(service.name);
+        	    
+            //edit satatus
+            $('#stat').val('edit');
+            $('#name').attr("disabled","disabled")
+            
+            //display data
+            $('#start').val(app.start);
+            $('#name').val(app.name);
+            $('#toProcess').val(app.toProcess);
+            $('#workingDirectory').val(app.workingDirectory);
+            if (app.args) {
+                $.each(app.args, function(i, arg) {
+                    add_arg(arg);
+                });
+            }
+            if (app.envs) {
+                $.each(app.envs, function(k, v) {
+                    add_env(k, v);
+                });
+            }
+            if (app.uris) {
+                $.each(app.uris, function(i, uri) {
+                    add_uri(uri);
+                });
+            }
+            $('#killSignal').val(app.killSignal);
+            $('#ports').val(app.ports);
+            
+            if (app.resAlloc) {
+                show_res_alloc(app.resAlloc);
+                $('#resAlloc').val('1');
+                $('#resAllocs').show();
+            } else {
+                $('#resAlloc').val('0');
+                $('#resAllocs').hide();
+            }
+            
+            if (app.healthChecks && app.healthChecks.length > 0) {
+                show_health_check(app.healthChecks[0]);
+                $('#healthCheck').val('1');
+                $('#healthChecks').show();
+            } else {
+                $('#healthCheck').val('0');
+                $('#healthChecks').hide();
+            }
+        }
+        
+        function show_res_alloc(resAlloc) {
+            $('#resAlloc_cpus').val(resAlloc.cpus);
+            $('#resAlloc_mem').val(resAlloc.mem / 1024 / 1024);
+            $('#resAlloc_disk').val(resAlloc.disk / 1024 / 1024);
+        }
+        
+        function show_health_check(healthCheck) {
+            $('#healthCheck_initialDelaySeconds').val(healthCheck.initialDelaySeconds);
+            $('#healthCheck_intervalSeconds').val(healthCheck.intervalSeconds);
+            $('#healthCheck_protocol').val(healthCheck.protocol);
+            $('#healthCheck_path').val(healthCheck.path);
+            $('#healthCheck_portIndex').val(healthCheck.portIndex);
+            $('#healthCheck_timeoutSeconds').val(healthCheck.timeoutSeconds);
+            $('#healthCheck_maxConsecutiveFailures').val(healthCheck.maxConsecutiveFailures);
+        }
+        
+        function add_arg(val) {
+            var max = 0;
+            var es = $('#args').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "arg_" + (max+1);
+            var div = '<div id="' + id + '">'
+            div += '<input type="text" name="arg" size="80" maxlength="200" value="' + val + '" id="arg"/>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#args').append(div);
+        }
+        
+        function add_env(name, val) {
+            var max = 0;
+            var es = $('#envs').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "env_" + (max+1);
+            var div = '<div id="' + id + '">';
+            div += '<input type="text" name="envName" size="30" maxlength="200" value="' + name + '" id="envName"/>';
+            div += ' = ';
+            div += '<input type="text" name="envValue" size="40" maxlength="200" value="' + val + '" id="envValue"/>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#envs').append(div);
+        }
+                                    
+        function add_uri(val) {
+            var max = 0;
+            var es = $('#uris').children();
+            for (var i = 0; i < es.length; i ++) {
+                var id = parseInt(es[i].id.split('_')[1]);
+                if (id > max) {
+                    max = id;
+                }
+            }
+            var id = "uri_" + (max+1);
+            var div = '<div id="' + id + '">'
+            div += '<input type="text" name="uri" size="80" maxlength="200" value="' + val + '" id="uri"/>';
+            div += '<a href="javascript:void(0)" onclick="remove(\'' + id + '\')"><img src="images/11-16.png" align="absmiddle"/></a>';
+            div += '</div>';
+            $('#uris').append(div);
+        }
+        
+        function remove(id) {
+            $('#' + id).remove();
+        }
+    </script>
+</head>
+<body>
+<div id="wrapper">
+
+    <div id="header">
+        <a href="/"><img src="images/stat.png" alt="Status" /></a>
+    </div>
+
+    <div id="content">
+        <div class="hidden" id="statusmessage">&nbsp;</div>
+        <div class="jive-contentBox">
+            <table cellpadding="3" cellspacing="0" border="0">
+                <tbody>
+                    <tr>
+                        <td width="1%" nowrap></td>
+                        <td width="49%" nowrap>
+                            <h3># 名称</h3>
+                            <h3>name: <span id="name"></span></h3>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 构建产物</h3>
+                            <h3>artifacts: </h3>
+                            <div>&nbsp;&nbsp;- uri: http://121.199.25.213/stat/http_server.py</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;path: /Users/bin</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 运行</h3>
+                            <h3>runs: </h3>
+                            <div>&nbsp;&nbsp;- chmod a+x http_server.py</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="1%" nowrap></td>
+                        <td width="49%" nowrap>
+                            <h3># 启动</h3>
+                            <div>uid: root</div>
+                            <div>workDirectory: /Users/bin</div>
+                            <div>command: "./http_server.py ${PORT}"</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="1%" nowrap></td>
+                        <td width="49%" nowrap>
+                            <h3># 停止</h3>
+                            <div>stopSignal: 15</div>
+                            <div>stopGracePeriod: 10</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 端口</h3>
+                            <h3>ports: </h3>
+                            <div>&nbsp;&nbsp;- 0</div>
+                            <div>&nbsp;&nbsp;- 0</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 环境变量</h3>
+                            <h3>environment: </h3>
+                            <div>&nbsp;&nbsp;FOO: BAR</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 部署</h3>
+                            <h3>deploy: </h3>
+                            <div>&nbsp;&nbsp;mode: replicated</div>
+                            <div>&nbsp;&nbsp;replicas: 1</div>
+                            <h4>&nbsp;&nbsp;placement:</h4>
+                            <h4>&nbsp;&nbsp;&nbsp;&nbsp;constraints:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- '*'</div>
+                            <h4>&nbsp;&nbsp;&nbsp;&nbsp;preferences:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- '*'</div>
+                            <h4>&nbsp;&nbsp;resources:</h4>
+                            <h4>&nbsp;&nbsp;&nbsp;&nbsp;limits:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cpus: "0.50"</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memory: 50M</div>
+                            <h4>&nbsp;&nbsp;&nbsp;&nbsp;reservations:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cpus: "0.25"</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;memory: 20M</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 依赖</h3>
+                            <h3>dependsOn: </h3>
+                            <div>&nbsp;&nbsp;- mysql</div>
+                            <div>&nbsp;&nbsp;- redis</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 健康检查</h3>
+                            <h3>healthCheck: </h3>
+                            <div>&nbsp;&nbsp;enabled: true</div>
+                            <div>&nbsp;&nbsp;startPeriod: 30</div>
+                            <div>&nbsp;&nbsp;interval: 30</div>
+                            <div>&nbsp;&nbsp;retries: 3</div>
+                            <h4>&nbsp;&nbsp;httpGet:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;protocol: http</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;uri: /</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;portIndex: 0</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;timeout: 20</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 标签</h3>
+                            <h3>labels: </h3>
+                            <div>&nbsp;&nbsp;- python</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td nowrap></td>
+                        <td nowrap>
+                            <h3># 日志</h3>
+                            <h3>logging: </h3>
+                            <div>&nbsp;&nbsp;driver: file</div>
+                            <h4>&nbsp;&nbsp;options:</h4>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;file: /Users/log/python-test.log</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;file-name-pattern: "/Users/log/python-test-%d{yyyy-MM-dd}.log"</div>
+                            <div>&nbsp;&nbsp;&nbsp;&nbsp;max-history: "30"</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <br/>
+    <div class="push">
+    </div>
+</div>
+
+<div id="footer" class="clr">
+    <div class="left">
+        <a href="/">STAT HUB</a> <span id="supervisor_version">#</span>
+    </div>
+    <div class="right">
+        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
+    </div>
+</div>
+</body>
+</html>

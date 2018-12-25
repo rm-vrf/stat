@@ -14,7 +14,7 @@
 /* =MAIN
 ----------------------------------------------- */
 body, td, input, select, textarea, a {
-  font: 12px/1.5em arial, helvetica, verdana, sans-serif;
+  font: 12px/1.5em Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, sans-serif;
   color: #333;
 }
 html, body, form, fieldset, h1, h2, h3, h4, h5, h6, 
@@ -35,7 +35,7 @@ img, table {
 /* =COLORS
 ----------------------------------------------- */
 body {
-  background-color: #FFFFFF;
+  background-color: #fff;
   color: #333;
 }
 a:link, 

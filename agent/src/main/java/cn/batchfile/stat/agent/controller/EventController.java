@@ -24,7 +24,7 @@ public class EventController {
 		
 		List<Event> events = eventService.getEvents();
 		HttpHeaders headers = new HttpHeaders();
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Event>>(events, headers, HttpStatus.OK);
 	}
 	

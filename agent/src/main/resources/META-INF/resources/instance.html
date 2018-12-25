@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>STAT HUB - 进程列表</title>
+<link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
+<script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+<script src="js/vue.min.js" type="text/javascript"></script>
+<script src="js/vue-resource.min.js" type="text/javascript"></script>
+<script src="js/common.js" type="text/javascript"></script>
+</head>
+<body>
+	<div id="wrapper">
+		<div id="header">
+			<a href="/"><img src="images/stat.png" alt="Status" /></a>
+			<p id="nodestatus">
+				主机：<b>{{ hostname }}</b>
+				CPU：{{ availableProcessors }} 核
+				磁盘：{{diskTotal }} 
+				内存：{{ memoryTotal }}
+			</p>
+		</div>
+		<div id="content">
+			<div class="hidden" id="statusmessage">&nbsp;</div>
+			<ul id="buttons" class="clr">
+				<li id="restart_all"><a onclick="instanceStatus.restartAll()" href="javascript:void(0)">&nbsp;</a></li>
+			</ul>
+			<table cellspacing="0" id="statustable">
+				<tr>
+					<th class="pid">PID</th>
+					<th class="ppid">PPID</th>
+					<th class="stime">开始时间</th>
+					<th class="cmd">命令</th>
+					<th class="port">端口</th>
+					<th class="action">操作</th>
+				</tr>
+				<tr v-for="instance in instances">
+					<td>{{ instance.pid }}</td>
+					<td>{{ instance.ppid }}</td>
+					<td>{{ instance.startTime }}</td>
+					<td>{{ instance.command }}</td>
+					<td class="action">
+						<ul>
+							<li v-for="port in instance.ports">
+								<a v-bind:href="[ 'http://' + address + ':' + port ]" target="_blank">{{ port }}</a>
+							</li>
+						</ul>
+					</td>
+					<td class="action">
+						<ul>
+							<li>
+								<a v-bind:href="['health.html?pid=' + instance.pid]" target="_blank">健康检查</a>
+							</li>
+							<li>
+								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stdout']" target="_blank">OUT</a>
+							</li>
+							<li>
+								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stderr']" target="_blank">ERR</a>
+							</li>
+							<li>
+								<a href="javascript:void(0)" v-on:click="kill(instance.pid)">KILL</a>
+							</li>
+						</ul>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<br />
+		<div class="push"></div>
+	</div>
+
+	<div id="footer" class="clr">
+		<div class="left">
+			<a href="/">STAT HUB</a> <span id="supervisor_version">#</span>
+		</div>
+		<div class="right">
+			&amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
+		</div>
+	</div>
+	
+	<script>
+	var nodeStatus = new Vue({
+		el : '#nodestatus',
+		data : {
+			hostname : null,
+			availableProcessors : null,
+			diskTotal : null,
+			memoryTotal : null
+		},
+		methods : {
+			loadData : function() {
+				// cpu count
+				Vue.http.get('/api/v2/system/os').then(function(ret) {
+					nodeStatus.availableProcessors = ret.body.availableProcessors;
+				});
+				// hostname
+				Vue.http.get('/api/v2/system/hostname').then(function(ret) {
+					nodeStatus.hostname = ret.bodyText;
+				});
+				// disk size
+				Vue.http.get('/actuator/metrics/system.disk.total').then(function(ret) {
+					nodeStatus.diskTotal = byteCountToDisplaySize(ret.body.measurements[0].value * 1024);
+				});
+				// memory size
+				Vue.http.get('/api/v2/system/memory').then(function(ret) {
+					nodeStatus.memoryTotal = byteCountToDisplaySize(ret.body.total);
+				});
+			}
+		}
+	});
+	nodeStatus.loadData();
+	
+	var serviceName = getParameter('service').service.replace('#', '');
+	var instanceStatus = new Vue({
+		el : '#statustable',
+		data: {
+			address: 'address',
+			instances: []
+		},
+		methods : {
+			// load table data
+			loadData : function() {
+				Vue.http.get('/api/v2/system/address').then(function(ret) {
+					instanceStatus.address = ret.bodyText;
+					Vue.http.get('/api/v2/service/' + serviceName + '/instance').then(function(ret) {
+						instanceStatus.instances = ret.body;
+					});
+				});
+			},
+			kill: function(pid) {
+				if (confirm('停止进程，需要继续吗？')) {
+					$.post('/api/v2/instance/' + pid + '/_kill', function(data, status, xhr) {});
+					alert('已经发出停止指令');
+				}
+			},
+			restartAll: function() {
+		        if (confirm('即将重启进程，需要继续吗？')) {
+		        		var instances = instanceStatus.instances;
+		            $.each(instances, function(i, instance) {
+		                $.post('/api/v2/instance/' + instance.pid + '/_kill', function(data, status, xhr) {});
+		            });
+		            alert('已经发出重启指令');
+		        }
+			}
+		}
+	});
+	$(document).ready(function () {
+		instanceStatus.loadData();
+		setInterval(function() {
+			instanceStatus.loadData();
+		}, 5000);
+	});
+	</script>
+</body>
+</html>

@@ -268,6 +268,7 @@ public class InstanceService {
 
 				// 补充进程的基本信息
 				in.setService(service.getName());
+				in.setLabels(service.getLabels());
 				in.setWorkDirectory(service.getWorkDirectory());
 				in.setPid(pid);
 				in.setStartTime(TIME_FORMAT.get().format(new Date()));
@@ -463,14 +464,15 @@ public class InstanceService {
 			for (int i = replicas; i < entry.getValue().size(); i++) {
 				// 杀进程树
 				Instance in = entry.getValue().get(i);
-				killInstanceTree(in, service.getStopSignal());
+				int stopSignal = service == null ? 9 : service.getStopSignal();
+				killInstanceTree(in, stopSignal);
 
 				// 删除登记信息
 				deleteInstance(in.getPid());
 				LOG.info("stop instance, pid: {}, service: {}", in.getPid(), in.getService());
 
 				// 报告事件
-				eventService.putKillProcessEvent(service.getName(), in.getPid());
+				eventService.putKillProcessEvent(in.getService(), in.getPid());
 				killInstanceCounter.increment();
 			}
 		}

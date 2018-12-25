@@ -8,16 +8,16 @@
     <script src="js/common.js" type="text/javascript"></script>
     <script>
         $(document).ready(function () {
-            var pid = get_param('pid').pid.replace('#', '');
-            var out = get_param('out').out.replace('#', '');
+            var pid = getParameter('pid').pid.replace('#', '');
+            var out = getParameter('out').out.replace('#', '');
             $('#tailHeader').text('Log of pid #' + pid + ': ');
             setInterval(function() {
-                log_out(pid, out);
+                logOut(pid, out);
             }, 1000);
         });
         
-        function log_out(pid, out) {
-            $.get('/v1/proc/' + pid + '/_' + out, function(lines, status, xhr) {
+        function logOut(pid, out) {
+            $.get('/api/v2/instance/' + pid + '/' + out, function(lines, status, xhr) {
                 $.each(lines, function(i, line) {
                     $('#tailbody').append(line + '<br/>');
                 });

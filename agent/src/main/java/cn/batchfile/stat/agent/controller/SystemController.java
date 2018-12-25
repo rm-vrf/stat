@@ -39,7 +39,7 @@ public class SystemController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		//headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Process_>>(ps, headers, HttpStatus.OK);
 	}
 
@@ -54,7 +54,7 @@ public class SystemController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		//headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<Process_>(p, headers, HttpStatus.OK);
 	}
 	
@@ -77,6 +77,15 @@ public class SystemController {
 	public ResponseEntity<String> getHostname(WebRequest request) {
 		String hostname = systemService.getHostname();
 		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
+		return new ResponseEntity<String>(hostname, headers, HttpStatus.OK);
+	}
+	
+	@GetMapping(value="/api/v2/system/address")
+	public ResponseEntity<String> getAddress(WebRequest request) {
+		String hostname = systemService.getAddress();
+		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<String>(hostname, headers, HttpStatus.OK);
 	}
 	
@@ -84,6 +93,7 @@ public class SystemController {
 	public ResponseEntity<Os> getOs(WebRequest request) {
 		Os os = systemService.getOs();
 		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<Os>(os, headers, HttpStatus.OK);
 	}
 
@@ -91,6 +101,7 @@ public class SystemController {
 	public ResponseEntity<Memory> getMemory(WebRequest request) throws SigarException {
 		Memory memory = systemService.getMemory();
 		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<Memory>(memory, headers, HttpStatus.OK);
 	}
 
@@ -98,6 +109,7 @@ public class SystemController {
 	public ResponseEntity<List<Disk>> getDisks(WebRequest request) throws SigarException {
 		List<Disk> disks = systemService.getDisks();
 		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Disk>>(disks, headers, HttpStatus.OK);
 	}
 
@@ -105,6 +117,7 @@ public class SystemController {
 	public ResponseEntity<List<Network>> getNetworks(WebRequest request) throws SigarException {
 		List<Network> networks = systemService.getNetworks();
 		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Network>>(networks, headers, HttpStatus.OK);
 	}
 

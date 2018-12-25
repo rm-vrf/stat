@@ -27,7 +27,7 @@ public class HealthCheckController {
 		List<HealthCheckResult> list = healthCheckService.getResults(pid);
 		
 		HttpHeaders headers = new HttpHeaders();
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<HealthCheckResult>>(list, headers, HttpStatus.OK);
 	}
 

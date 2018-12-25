@@ -54,7 +54,7 @@ public class ServiceController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Service>>(ss, headers, HttpStatus.OK);
 	}
 	
@@ -77,7 +77,7 @@ public class ServiceController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<Service>(s, headers, HttpStatus.OK);
 	}
 	

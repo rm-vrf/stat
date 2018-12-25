@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
@@ -40,7 +40,7 @@ public class InstanceController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Instance>>(ins, headers, HttpStatus.OK);
 	}
 	
@@ -56,7 +56,7 @@ public class InstanceController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Instance>>(ins, headers, HttpStatus.OK);
 		
 	}
@@ -74,7 +74,7 @@ public class InstanceController {
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<Instance>(in, headers, HttpStatus.OK);
 	}
 	
@@ -85,7 +85,7 @@ public class InstanceController {
 		List<String> list = instanceService.getSystemOut(pid);
 		
 		HttpHeaders headers = new HttpHeaders();
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<String>>(list, headers, HttpStatus.OK);
 	}
 
@@ -96,7 +96,7 @@ public class InstanceController {
 		List<String> list = instanceService.getSystemErr(pid);
 		
 		HttpHeaders headers = new HttpHeaders();
-		//headers.setCacheControl("no-cache");
+		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<String>>(list, headers, HttpStatus.OK);
 	}
 	
@@ -113,17 +113,23 @@ public class InstanceController {
 		}
 	}
 
-	@DeleteMapping("/api/v2/instance")
-	public ResponseEntity<Boolean> killInstances(WebRequest request,
-			@RequestBody Long[] pids) throws IOException {
-		
-		HttpHeaders headers = new HttpHeaders();
-		try {
-			instanceService.killInstances(Arrays.asList(pids));
-			return new ResponseEntity<Boolean>(Boolean.TRUE, headers, HttpStatus.OK);
-		} catch (Exception e) {
-			return new ResponseEntity<Boolean>(Boolean.FALSE, headers, HttpStatus.INTERNAL_SERVER_ERROR);
-		}
+	@PostMapping("/api/v2/instance/{pid}/_kill")
+	public ResponseEntity<Boolean> postKillInstance(WebRequest request,
+			@PathVariable("pid") Long pid) throws IOException {
+		return killInstance(request, pid);
 	}
+	
+//	@DeleteMapping("/api/v2/instance")
+//	public ResponseEntity<Boolean> killInstances(WebRequest request,
+//			@RequestBody Long[] pids) throws IOException {
+//		
+//		HttpHeaders headers = new HttpHeaders();
+//		try {
+//			instanceService.killInstances(Arrays.asList(pids));
+//			return new ResponseEntity<Boolean>(Boolean.TRUE, headers, HttpStatus.OK);
+//		} catch (Exception e) {
+//			return new ResponseEntity<Boolean>(Boolean.FALSE, headers, HttpStatus.INTERNAL_SERVER_ERROR);
+//		}
+//	}
 
 }
