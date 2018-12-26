@@ -19,11 +19,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.codehaus.plexus.util.cli.Arg;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
@@ -181,13 +186,8 @@ public class ArtifactService {
 			// 创建文件写入流
 			out = new FileOutputStream(distFile);
 
-			// 构建请求对象
-			RequestConfig config = RequestConfig.custom().setConnectTimeout(20000).build();
-
 			// 执行请求
-			httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
-			
-			// TODO HTTP 请求要加上权限认证
+			httpClient = createHttpClient(artifact);
 			HttpGet req = new HttpGet(artifact.getUri());
 			resp = httpClient.execute(req);
 
@@ -260,20 +260,36 @@ public class ArtifactService {
 		}
 		return fileBaseName;
 	}
+	
+	private CloseableHttpClient createHttpClient(Artifact artifact) {
+		//设置超时
+		RequestConfig config = RequestConfig.custom().setConnectTimeout(20000).build();
+		HttpClientBuilder builder = HttpClients.custom();
+		builder.setDefaultRequestConfig(config);
+		
+		//加上权限认证
+		if (StringUtils.equalsIgnoreCase(artifact.getAuthorization(), Artifact.AUTHORIZATION_BASIC)) {
+			CredentialsProvider provider = new BasicCredentialsProvider();
+			AuthScope scope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT, AuthScope.ANY_REALM);
+			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(artifact.getUserName(), artifact.getPassword());
+			provider.setCredentials(scope, credentials);
+			builder.setDefaultCredentialsProvider(provider);
+		}
+
+		CloseableHttpClient httpClient = builder.build();
+		return httpClient;
+	}
 
 	private String getRemoteLastModified(Artifact artifact) throws IOException {
 		String lastModified = StringUtils.EMPTY;
 
 		// 构建请求对象
-		RequestConfig config = RequestConfig.custom().setConnectTimeout(20000).build();
-		CloseableHttpClient httpClient = null;
 		CloseableHttpResponse resp = null;
-
+		CloseableHttpClient httpClient = null;
+		
 		try {
-			// 执行请求
-			httpClient = HttpClients.custom().setDefaultRequestConfig(config).build();
-			// TODO HTTP 请求要加上权限认证
-			
+			// 发起请求
+			httpClient = createHttpClient(artifact);
 			HttpHead req = new HttpHead(artifact.getUri());
 			resp = httpClient.execute(req);
 
