@@ -52,13 +52,13 @@
 								<a v-bind:href="['health.html?pid=' + instance.pid]" target="_blank">健康检查</a>
 							</li>
 							<li>
-								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stdout']" target="_blank">OUT</a>
+								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stdout']" target="_blank">标准输出</a>
 							</li>
 							<li>
-								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stderr']" target="_blank">ERR</a>
+								<a v-bind:href="['tail.html?pid=' + instance.pid + '&out=stderr']" target="_blank">错误输出</a>
 							</li>
 							<li>
-								<a href="javascript:void(0)" v-on:click="kill(instance.pid)">KILL</a>
+								<a href="javascript:void(0)" v-on:click="kill(instance.pid)">停止</a>
 							</li>
 						</ul>
 					</td>
