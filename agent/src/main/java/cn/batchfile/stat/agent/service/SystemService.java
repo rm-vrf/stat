@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -81,7 +80,13 @@ public class SystemService {
 
 	@Value("${store.directory}")
 	private String storeDirectory;
-
+	
+	@Value("${agent.address:}")
+	private String agentAddress;
+	
+	@Value("${agent.hostname:}")
+	private String agentHostname;
+	
 	public SystemService(MeterRegistry registry) {
 		
 		// 设置指标
@@ -233,40 +238,31 @@ public class SystemService {
 		}
 	}
 
-	public List<String> execute(String cmd, Map<String, String> env, File workDirectory) {
-		return null;
-//		try {
-//			Process process = Runtime.getRuntime().exec(cmd);
-//			LineNumberReader out = new LineNumberReader(new InputStreamReader(process.getInputStream()));
-//			LineNumberReader err = new LineNumberReader(new InputStreamReader(process.getErrorStream()));
-//			String line;
-//			List<String> lines = new ArrayList<String>();
-//			while ((line = out.readLine()) != null) {
-//				lines.add(line);
-//			}
-//			process.exitValue();
-//			return lines;
-//		} catch (IOException e) {
-//			throw new RuntimeException("error when execute cmd: " + cmd, e);
-//		}
-	}
-
 	public String getHostname() {
-		try {
-			InetAddress ip = InetAddress.getLocalHost();
-			return ip.getHostName();
-		} catch (UnknownHostException e) {
-			throw new RuntimeException("error when get hostname", e);
+		if (StringUtils.isEmpty(agentHostname)) {
+			try {
+				InetAddress ip = InetAddress.getLocalHost();
+				return ip.getHostName();
+			} catch (UnknownHostException e) {
+				throw new RuntimeException("error when get hostname", e);
+			}
+		} else {
+			return agentHostname;
 		}
 	}
 
 	public String getAddress() {
-		try {
-			InetAddress inetAddress = InetAddress.getLocalHost();
-			return inetAddress.getHostAddress();
-		} catch (UnknownHostException e) {
-			throw new RuntimeException("error when get address", e);
+		if (StringUtils.isEmpty(agentAddress) 
+				&& !StringUtils.equalsIgnoreCase(agentAddress, "localhost")) {
+			try {
+				InetAddress inetAddress = InetAddress.getLocalHost();
+				return inetAddress.getHostAddress();
+			} catch (UnknownHostException e) {
+				throw new RuntimeException("error when get address", e);
+			}
 		}
+		
+		return agentAddress;
 	}
 
 	public Os getOs() {

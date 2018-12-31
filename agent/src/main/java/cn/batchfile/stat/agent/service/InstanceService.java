@@ -338,7 +338,7 @@ public class InstanceService {
 		if (StringUtils.isNotEmpty(service.getWorkDirectory())) {
 			cmd.setWorkingDirectory(new File(service.getWorkDirectory()));
 		}
-
+		
 		// 创建通配符容器
 		Map<String, String> vars = createPlaceHolderVars();
 
@@ -370,36 +370,54 @@ public class InstanceService {
 		String cmdText = replacePlaceholder(service.getCommand(), vars);
 
 		// 命令内容写临时文件
-		File cmdFile = writeCommandFile(service.getName(), cmdText);
-		cmd.setExecutable(cmdFile.getAbsolutePath());
+		List<File> cmdFiles = writeCommandFiles(service, cmdText);
+		cmd.setExecutable(cmdFiles.get(0).getAbsolutePath());
 
 		return cmdText;
 	}
 
-	private File writeCommandFile(String name, String text)
+	private List<File> writeCommandFiles(Service service, String cmdText)
 			throws UnsupportedEncodingException, IOException, CommandLineException {
 
-		// create file and write content
-		File tmpDirectory = new File(System.getProperty("java.io.tmpdir", "."));
-		String ext = SystemUtils.IS_OS_WINDOWS ? ".bat" : ".sh";
-		File file = new File(tmpDirectory, name + ext);
-		FileUtils.writeByteArrayToFile(file, text.getBytes("UTF-8"));
-		LOG.info("shell file: {}", file.getAbsolutePath());
-
-		// chmod
-		if (!SystemUtils.IS_OS_WINDOWS) {
-			Commandline cmd = new Commandline();
-			String[] ary = new String[] {"chmod", "a+x", "'" + file.getAbsolutePath() + "'"};
-			for (String s : ary) {
-				Arg argObject = cmd.createArg();
-				argObject.setValue(s);
-			}
-			CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, null, null, 0);
-			int ret = callable.call();
-			LOG.info("chmod a+x '{}', ret: {}", file.getAbsolutePath(), ret);
+		List<File> files = new ArrayList<>();
+		File tmpDir = new File(System.getProperty("java.io.tmpdir", "."));
+		String ext = SystemUtils.IS_OS_WINDOWS ? "bat" : "sh";
+		
+		// write command file
+		File cmdFile = new File(tmpDir, service.getName() + "-cmd." + ext);
+		FileUtils.writeByteArrayToFile(cmdFile, cmdText.getBytes("UTF-8"));
+		LOG.info("command file: {}", cmdFile.getAbsolutePath());
+		files.add(0, cmdFile);
+		
+		// sudo file
+		if (StringUtils.isNotEmpty(service.getUid()) 
+				&& SystemUtils.IS_OS_LINUX) {
+			
+			File suFile = new File(tmpDir, service.getName() + "-su." + ext);
+			String suText = String.format("/bin/su -s /bin/sh -c '%s' '%s'", 
+					files.get(0).getAbsolutePath(), service.getUid());
+			
+			FileUtils.writeByteArrayToFile(suFile, suText.getBytes("UTF-8"));
+			LOG.info("su file: {}", suFile.getAbsolutePath());
+			files.add(0, suFile);
 		}
 
-		return file;
+		// chmod files
+		if (!SystemUtils.IS_OS_WINDOWS) {
+			for (File file : files) {
+				Commandline cmd = new Commandline();
+				String[] ary = new String[] {"chmod", "a+x", "'" + file.getAbsolutePath() + "'"};
+				for (String s : ary) {
+					Arg argObject = cmd.createArg();
+					argObject.setValue(s);
+				}
+				CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, null, null, 0);
+				int ret = callable.call();
+				LOG.info("{}, RET: {}", cmd.toString(), ret);
+			}
+		}
+
+		return files;
 	}
 
 	private void usePorts(List<Integer> ports, Service service) {
@@ -550,7 +568,7 @@ public class InstanceService {
 
 				// 补充子进程信息
 				getTree(in.getChildren(), in.getPid(), ps);
-				LOG.info("compose ppid, pid: {}, ppid: {}, children: {}", in.getPid(), in.getPpid(),
+				LOG.info("compose process, pid: {}, ppid: {}, children: {}", in.getPid(), in.getPpid(),
 						in.getChildren().toString());
 
 				// 保存进程信息
