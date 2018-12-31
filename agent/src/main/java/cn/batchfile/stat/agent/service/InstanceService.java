@@ -225,7 +225,9 @@ public class InstanceService {
 			// 杀进程树
 			Instance in = getInstance(pid);
 			Service service = serviceService.getService(in.getService());
-			killInstanceTree(in, service.getStopSignal());
+			int stopSignal = service == null ? 9 : service.getStopSignal();
+			int stopGracePeriod = service == null ? 0 : service.getStopGracePeriod();
+			killInstanceTree(in, stopSignal, stopGracePeriod);
 
 			// 删除登记信息
 			deleteInstance(in.getPid());
@@ -483,7 +485,8 @@ public class InstanceService {
 				// 杀进程树
 				Instance in = entry.getValue().get(i);
 				int stopSignal = service == null ? 9 : service.getStopSignal();
-				killInstanceTree(in, stopSignal);
+				int stopGracePeriod = service == null ? 0 : service.getStopGracePeriod();
+				killInstanceTree(in, stopSignal, stopGracePeriod);
 
 				// 删除登记信息
 				deleteInstance(in.getPid());
@@ -496,20 +499,58 @@ public class InstanceService {
 		}
 	}
 
-	private void killInstanceTree(Instance instance, int signal) {
+	private void killInstanceTree(Instance instance, int stopSignal, int stopGracePeriod) {
 		// 杀子进程
 		for (int i = instance.getChildren() == null ? 0 : instance.getChildren().size() - 1; i >= 0; i--) {
 			try {
-				systemService.kill(instance.getChildren().get(i), signal);
+				systemService.kill(instance.getChildren().get(i), stopSignal);
 			} catch (Exception e) {
+				//LOG.error("error when kill instance", e);
 			}
 		}
-
+		
 		// 杀进程
 		try {
-			systemService.kill(instance.getPid(), signal);
+			systemService.kill(instance.getPid(), stopSignal);
 		} catch (Exception e) {
+			//LOG.error("error when kill instance", e);
 		}
+
+		// 等待一段时间试试看
+		int sum = 0;
+		while (stopGracePeriod > 0 && sum < stopGracePeriod * 1000) {
+			if (instanceTreeIsAliving(instance)) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+				}
+				sum += 500;
+			} else {
+				LOG.info("instance killed, pid: {}", instance.getPid());
+				break;
+			}
+		}
+		
+		// 再杀一次
+		if (stopGracePeriod > 0 && instanceTreeIsAliving(instance)) {
+			killInstanceTree(instance, 9, 0);
+		}
+	}
+	
+	private boolean instanceTreeIsAliving(Instance instance) {
+		if (systemService.ps(instance.getPid()) != null) {
+			return true;
+		}
+		
+		if (instance.getChildren() != null) {
+			for (Long pid : instance.getChildren()) {
+				if (systemService.ps(pid) != null) {
+					return true;
+				}
+			}
+		}
+		
+		return false;
 	}
 
 	private List<String> getOutputCache(long pid, Map<Long, LinkedBlockingQueue<String>> queues) {
@@ -550,7 +591,8 @@ public class InstanceService {
 				// 为了保险，把进程杀干净
 				Service service = serviceService.getService(in.getService());
 				int signal = service == null ? 9 : service.getStopSignal();
-				killInstanceTree(in, signal);
+				int stopGracePeriod = service == null ? 0 : service.getStopGracePeriod();
+				killInstanceTree(in, signal, stopGracePeriod);
 
 				// 删除进程信息
 				deleteInstance(in.getPid());
