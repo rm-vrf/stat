@@ -9,8 +9,6 @@ import java.util.Map;
  */
 public class Logging {
 	
-	public static final String DRIVER_FILE = "file";
-
 	private String driver;
 	private Map<String, String> options;
 

@@ -299,7 +299,7 @@ public class InstanceService {
 		LinkedBlockingQueue<String> systemErr = new LinkedBlockingQueue<String>(CACHE_LINE_COUNT);
 		
 		// 创建日志记录器
-		Logger logger = loggingService.createLogger(service.getName(), service.getLogging().getOptions());
+		Logger logger = loggingService.createLogger(service);
 
 		// 启动进程
 		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(cmd, null, new StreamConsumer() {
@@ -309,7 +309,9 @@ public class InstanceService {
 					systemOut.poll();
 				}
 				systemOut.offer(line);
-				logger.info(line);
+				if (logger != null) {
+					logger.info(line);
+				}
 			}
 		}, new StreamConsumer() {
 			@Override
@@ -318,7 +320,9 @@ public class InstanceService {
 					systemErr.poll();
 				}
 				systemErr.offer(line);
-				logger.info(line);
+				if (logger != null) {
+					logger.info(line);
+				}
 			}
 		}, 0);
 

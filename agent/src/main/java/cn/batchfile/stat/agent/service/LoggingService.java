@@ -1,36 +1,60 @@
 package cn.batchfile.stat.agent.service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
+import cn.batchfile.stat.domain.Service;
 
-@Service
+@org.springframework.stereotype.Service
 public class LoggingService {
 	
-	private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(LoggingService.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LoggingService.class);
+	private static Map<String, Function<Service, Logger>> DRIVERS = new HashMap<String, Function<Service, Logger>>();
+	static {
+		DRIVERS.put("time-based-rolling-file", LoggingService::createTimeBasedRollingFileLogger);
+		DRIVERS.put("file", LoggingService::createTimeBasedRollingFileLogger);
+		DRIVERS.put("log-file", LoggingService::createTimeBasedRollingFileLogger);
+	};
 	private Map<String, Logger> loggers = new ConcurrentHashMap<>();
 
-	public Logger createLogger(String name, Map<String, String> options) {
-		if (!loggers.containsKey(name)) {
+	public Logger createLogger(Service service) {
+		if (!loggers.containsKey(service.getName())) {
 			synchronized (loggers) {
-				if (!loggers.containsKey(name)) {
-					LOG.info("create logger, name: {}, options: {}", name, options);
-					Logger logger = create(name, options);
-					loggers.put(name, logger);
+				if (!loggers.containsKey(service.getName())) {					
+					Logger logger = null;
+					
+					// 寻找 function，创建 logger
+					if (service.getLogging() != null) {
+						LOG.info("LOGGING, driver: {}, options: {}", 
+								service.getLogging().getDriver(), service.getLogging().getOptions());
+						
+						Function<Service, Logger> function = DRIVERS.get(service.getLogging().getDriver());
+						if (function != null) {
+							logger = function.apply(service);
+						}
+					} 
+					
+					// 设置 logger
+					if (logger == null) {
+						loggers.put(service.getName(), LOG);
+					} else {
+						loggers.put(service.getName(), logger);
+					}
 				}
 			}
 		}
-		return loggers.get(name);
+		return loggers.get(service.getName());
 	}
 	
 	public Logger getLogger(String name) {
@@ -38,10 +62,12 @@ public class LoggingService {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Logger create(String name, Map<String, String> options) {
-		String file = options.get("file");
-		String fileNamePattern = options.get("file-name-pattern");
-		String maxHistory = options.get("max-history");
+	protected static Logger createTimeBasedRollingFileLogger(Service service) {
+		Map<String, String> options = service.getLogging().getOptions();
+		
+		String file = options == null ? null : options.get("file");
+		String fileNamePattern = options == null ? null : options.get("file-name-pattern");
+		String maxHistory = options == null ? null : options.get("max-history");
 		
 		LoggerContext logCtx = (LoggerContext) LoggerFactory.getILoggerFactory();
 		
@@ -53,7 +79,7 @@ public class LoggingService {
 		@SuppressWarnings("rawtypes")
 		RollingFileAppender logFileAppender = new RollingFileAppender();
 		logFileAppender.setContext(logCtx);
-		logFileAppender.setName(name);
+		logFileAppender.setName(service.getName());
 		logFileAppender.setEncoder(logEncoder);
 		logFileAppender.setAppend(true);
 		if (StringUtils.isNotEmpty(file)) {
@@ -75,7 +101,7 @@ public class LoggingService {
 		logFileAppender.setRollingPolicy(logFilePolicy);
 		logFileAppender.start();
 		
-		Logger log = logCtx.getLogger(name);
+		ch.qos.logback.classic.Logger log = logCtx.getLogger(service.getName());
 		log.setAdditive(false);
 		log.setLevel(Level.INFO);
 		log.addAppender(logFileAppender);
