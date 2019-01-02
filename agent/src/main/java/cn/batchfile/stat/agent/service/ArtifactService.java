@@ -11,6 +11,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -30,15 +31,12 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
-import org.codehaus.plexus.util.cli.Arg;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.codehaus.plexus.util.cli.Commandline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import cn.batchfile.stat.agent.util.Lock;
-import cn.batchfile.stat.agent.util.cmd.CommandLineCallable;
-import cn.batchfile.stat.agent.util.cmd.CommandLineExecutor;
+import cn.batchfile.stat.agent.util.cmd.CommandLineUtils;
 import cn.batchfile.stat.domain.Artifact;
 import cn.batchfile.stat.domain.Service;
 import io.micrometer.core.instrument.Counter;
@@ -52,6 +50,9 @@ public class ArtifactService {
 	private Counter downloadCounter;
 	private Counter downloadSize;
 	private Timer downloadResponseTime;
+	
+	@Autowired
+	private SystemService systemService;
 	
 	public ArtifactService(MeterRegistry registry) {
 		downloadCounter = Counter.builder("artifact.download.file").register(registry);
@@ -84,28 +85,20 @@ public class ArtifactService {
 		if (service.getRuns() != null) {
 			for (String cmd : service.getRuns()) {
 				int ret = 0;
+				StringBuilder out = new StringBuilder(StringUtils.EMPTY);
+				StringBuilder err = new StringBuilder(StringUtils.EMPTY);
 				try {
-					ret = execute(cmd, wd);
+					Map<String, String> vars = systemService.createVars(null, service.getEnvironment());
+					ret = CommandLineUtils.execute(cmd, wd, vars, 0, out, err);
 				} catch (Exception e) {
-					ret = -1;
+					if (ret == 0) {
+						ret = -1;
+					}
 					LOG.error("error when run command: " + cmd, e);
 				}
-				LOG.info("RUN: {}, RET: {}", cmd, ret);
+				LOG.info("RUN: {}, RET: {}, OUT: {}, ERR: {}", cmd, ret, out, err);
 			}
 		}
-	}
-
-	private int execute(String cmd, String workDirectory) throws Exception {
-		Commandline command = new Commandline();
-		command.setWorkingDirectory(new File(workDirectory).getAbsolutePath());
-		
-		String[] ary = CommandLineUtils.translateCommandline(cmd);
-		for (String s : ary) {
-			Arg argObject = command.createArg();
-			argObject.setValue(s);
-		}
-		CommandLineCallable callable = CommandLineExecutor.executeCommandLine(command, null, null, null, 0);
-		return callable.call();
 	}
 
 	private void downloadArtifact(String workDirectory, Artifact artifact) throws IOException, InterruptedException {

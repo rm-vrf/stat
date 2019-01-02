@@ -13,7 +13,6 @@ public class HttpGet {
 	private String protocol;
 	private String uri;
 	private int portIndex;
-	private int timeout;
 
 	/**
 	 * 协议
@@ -63,20 +62,4 @@ public class HttpGet {
 		this.portIndex = portIndex;
 	}
 
-	/**
-	 * 超时时间
-	 * @return 超时时间
-	 */
-	public int getTimeout() {
-		return timeout;
-	}
-
-	/**
-	 * 超时时间
-	 * @param timeout 超时时间
-	 */
-	public void setTimeout(int timeout) {
-		this.timeout = timeout;
-	}
-	
 }

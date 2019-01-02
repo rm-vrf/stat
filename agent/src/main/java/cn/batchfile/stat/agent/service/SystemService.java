@@ -14,7 +14,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -337,6 +340,39 @@ public class SystemService {
 		}
 
 		return networks;
+	}
+	
+	public Map<String, String> createVars(List<Integer> ports, Map<String, String> envs) {
+		Map<String, String> vars = new HashMap<String, String>();
+		vars.put("ADDRESS", getAddress());
+		vars.put("HOSTNAME", getHostname());
+
+		// 添加系统环境变量
+		vars.putAll(System.getenv());
+		
+		// 添加应用属性
+		for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
+			String key = entry.getKey() == null ? StringUtils.EMPTY : entry.getKey().toString();
+			String value = entry.getValue() == null ? StringUtils.EMPTY : entry.getValue().toString();
+			vars.put(key, value);
+		}
+		
+		// 添加端口
+		for (int i = 0; ports != null && i < ports.size(); i++) {
+			if (i == 0) {
+				vars.put("PORT", String.valueOf(ports.get(i)));
+			}
+			vars.put(String.format("PORT_%s", i + 1), String.valueOf(ports.get(i)));
+		}
+		
+		// 服务自定义变量
+		if (envs != null) {
+			for (Entry<String, String> entry : envs.entrySet()) {
+				vars.put(entry.getKey(), entry.getValue());
+			}
+		}
+
+		return vars;
 	}
 
 	private void getDiskStats() throws SigarException {

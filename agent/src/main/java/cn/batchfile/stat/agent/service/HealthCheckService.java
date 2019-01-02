@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import cn.batchfile.stat.agent.util.cmd.CommandLineUtils;
 import cn.batchfile.stat.domain.HealthCheckResult;
 import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Service;
@@ -56,7 +57,10 @@ public class HealthCheckService {
 	
 	@Autowired
 	private EventService eventService;
-	
+
+	@Autowired
+	private SystemService systemService;
+
 	@PostConstruct
 	public void init() {
 		//启动定时器
@@ -136,19 +140,23 @@ public class HealthCheckService {
 		
 		log.debug("health check service: {}, pid: {}", service.getName(), in.getPid());
 		HealthCheckHandler handler = handlers.get(in.getPid());
-
-		//执行检查
 		HealthCheckResult ret = null;
+
+		//检查 HTTP 端口
 		if (service.getHealthCheck().getHttpGet() != null) {
 			cn.batchfile.stat.domain.HttpGet hg = service.getHealthCheck().getHttpGet();
-			ret = sendHttpRequest(service.getName(), 
-					in.getPid(), 
+			ret = checkHttpRequest(service, in, 
 					hg.getProtocol(), 
 					in.getPorts().get(hg.getPortIndex()), 
 					hg.getUri(), 
-					hg.getTimeout() * 1000);
-		} else if (service.getHealthCheck().getCommand() != null) {
-			// TODO
+					service.getHealthCheck().getTimeout() * 1000);
+		} 
+
+		//检查命令行
+		if (service.getHealthCheck().getCommand() != null) {
+			String test = service.getHealthCheck().getCommand().getTest();
+			String check = service.getHealthCheck().getCommand().getCheck();
+			ret = checkCommand(service, in, test, check, service.getHealthCheck().getTimeout());
 		}
 		
 		if (ret == null) {
@@ -183,11 +191,35 @@ public class HealthCheckService {
 			}
 		}
 	}
-
-	private HealthCheckResult sendHttpRequest(String service, long pid, String protocal, int port, String path, int timeout) {
+	
+	private HealthCheckResult checkCommand(Service service, Instance instance, 
+			String command, String check, int timeoutInSeconds) throws Exception {
+		
 		HealthCheckResult ret = new HealthCheckResult();
-		ret.setService(service);
-		ret.setPid(pid);
+		ret.setService(service.getName());
+		ret.setPid(instance.getPid());
+		ret.setTime(new Date());
+		
+		StringBuilder out = new StringBuilder(StringUtils.EMPTY);
+		StringBuilder err = new StringBuilder(StringUtils.EMPTY);
+		Map<String, String> vars = systemService.createVars(instance.getPorts(), service.getEnvironment());
+		
+		long beginTime = System.currentTimeMillis();
+		int i = CommandLineUtils.execute(command, service.getWorkDirectory(), vars, timeoutInSeconds, out, err);
+		ret.setResponseTime(System.currentTimeMillis() - beginTime);
+		
+		ret.setEndpoint(command);
+		String message = String.format("RET: %s, OUT: %s, ERR: %s", i, out.toString(), err.toString());
+		ret.setMessage(message);
+		ret.setOk(StringUtils.contains(out.toString(), check));
+		
+		return ret;
+	}
+
+	private HealthCheckResult checkHttpRequest(Service service, Instance instance, String protocal, int port, String path, int timeout) {
+		HealthCheckResult ret = new HealthCheckResult();
+		ret.setService(service.getName());
+		ret.setPid(instance.getPid());
 		ret.setTime(new Date());
 		
 		String uri = String.format("%s://%s:%s%s", StringUtils.lowerCase(protocal), "127.0.0.1", port, path);

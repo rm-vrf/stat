@@ -13,6 +13,7 @@ public class HealthCheck {
 	private int startPeriod;
 	private int retries;
 	private int interval;
+	private int timeout;
 
 	/**
 	 * 启用
@@ -110,4 +111,20 @@ public class HealthCheck {
 		this.interval = interval;
 	}
 
+	/**
+	 * 超时时间
+	 * @return 超时时间
+	 */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * 超时时间
+	 * @param timeout 超时时间
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+	
 }

@@ -7,7 +7,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,6 +38,7 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import cn.batchfile.stat.agent.util.PortUtil;
 import cn.batchfile.stat.agent.util.cmd.CommandLineCallable;
 import cn.batchfile.stat.agent.util.cmd.CommandLineExecutor;
+import cn.batchfile.stat.agent.util.cmd.CommandLineUtils;
 import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Process_;
 import cn.batchfile.stat.domain.Service;
@@ -61,8 +61,6 @@ public class InstanceService {
 	private File instanceStoreDirectory;
 	private Map<Long, LinkedBlockingQueue<String>> systemOuts = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
 	private Map<Long, LinkedBlockingQueue<String>> systemErrs = new ConcurrentHashMap<Long, LinkedBlockingQueue<String>>();
-	private String address;
-	private String hostname;
 	private Counter startInstanceCounter;
 	private Counter stopInstanceCounter;
 	private Counter killInstanceCounter;
@@ -104,9 +102,6 @@ public class InstanceService {
 
 	@PostConstruct
 	public void init() throws IOException {
-		hostname = systemService.getHostname();
-		address = systemService.getAddress();
-
 		File f = new File(storeDirectory);
 		if (!f.exists()) {
 			FileUtils.forceMkdir(f);
@@ -341,35 +336,20 @@ public class InstanceService {
 			cmd.setWorkingDirectory(new File(service.getWorkDirectory()));
 		}
 		
-		// 创建通配符容器
-		Map<String, String> vars = createPlaceHolderVars();
-
 		// 选择端口
 		usePorts(ports, service);
 		LOG.info("PORTS: {}", ports.toString());
 
-		// 把端口加入环境变量
-		for (int i = 0; i < ports.size(); i++) {
-			if (i == 0) {
-				vars.put("PORT", String.valueOf(ports.get(i)));
-			}
-			vars.put(String.format("PORT_%s", i + 1), String.valueOf(ports.get(i)));
-		}
+		// 创建通配符容器
+		Map<String, String> vars = systemService.createVars(ports, service.getEnvironment());
 
-		// 添加vars里面的环境变量
+		// 设置环境变量
 		for (Entry<String, String> entry : vars.entrySet()) {
-			cmd.addEnvironment(entry.getKey(), entry.getValue());
-		}
-
-		// 添加用户自定义的环境变量
-		if (service.getEnvironment() != null) {
-			for (Entry<String, String> entry : service.getEnvironment().entrySet()) {
-				cmd.addEnvironment(entry.getKey(), replacePlaceholder(entry.getValue(), vars));
-			}
+			cmd.addEnvironment(entry.getKey(), CommandLineUtils.replacePlaceholder(entry.getValue(), vars));
 		}
 
 		// 构建命令内容
-		String cmdText = replacePlaceholder(service.getCommand(), vars);
+		String cmdText = CommandLineUtils.replacePlaceholder(service.getCommand(), vars);
 
 		// 命令内容写临时文件
 		List<File> cmdFiles = writeCommandFiles(service, cmdText);
@@ -436,34 +416,6 @@ public class InstanceService {
 			}
 			ports.add(port);
 		}
-	}
-
-	private Map<String, String> createPlaceHolderVars() {
-		Map<String, String> vars = new HashMap<String, String>();
-		vars.put("ADDRESS", address);
-		vars.put("HOSTNAME", hostname);
-		vars.putAll(System.getenv());
-		for (Entry<Object, Object> entry : System.getProperties().entrySet()) {
-			String key = entry.getKey() == null ? StringUtils.EMPTY : entry.getKey().toString();
-			String value = entry.getValue() == null ? StringUtils.EMPTY : entry.getValue().toString();
-			vars.put(key, value);
-		}
-		return vars;
-	}
-
-	private String replacePlaceholder(String s, Map<String, String> vars) {
-		String ret = s;
-		String[] phs = StringUtils.substringsBetween(ret, "${", "}");
-		if (phs != null) {
-			for (String ph : phs) {
-				// 替换环境变量
-				String t = vars.get(ph);
-				if (StringUtils.isNotEmpty(t)) {
-					ret = StringUtils.replace(ret, String.format("${%s}", ph), t);
-				}
-			}
-		}
-		return ret;
 	}
 
 	private void checkRunningInstance() throws IOException {
