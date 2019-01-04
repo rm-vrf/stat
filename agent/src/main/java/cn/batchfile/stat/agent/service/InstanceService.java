@@ -223,6 +223,7 @@ public class InstanceService {
 			int stopSignal = service == null ? 9 : service.getStopSignal();
 			int stopGracePeriod = service == null ? 0 : service.getStopGracePeriod();
 			killInstanceTree(in, stopSignal, stopGracePeriod);
+			in.setStatus(Instance.STATUS_KILL);
 
 			// 删除登记信息
 			deleteInstance(in.getPid());
@@ -269,6 +270,7 @@ public class InstanceService {
 				in.setWorkDirectory(service.getWorkDirectory());
 				in.setPid(pid);
 				in.setStartTime(TIME_FORMAT.get().format(new Date()));
+				in.setStatus(Instance.STATUS_UP);
 
 				// 保存进程信息
 				putInstance(in);
@@ -443,6 +445,7 @@ public class InstanceService {
 				int stopSignal = service == null ? 9 : service.getStopSignal();
 				int stopGracePeriod = service == null ? 0 : service.getStopGracePeriod();
 				killInstanceTree(in, stopSignal, stopGracePeriod);
+				in.setStatus(Instance.STATUS_KILL);
 
 				// 删除登记信息
 				deleteInstance(in.getPid());
@@ -544,6 +547,7 @@ public class InstanceService {
 		for (Instance in : ins) {
 			// 有一种异常的情况：主进程已经没了，孩子进程还在，全部重启
 			if (!runningProc(in, ps)) {
+				in.setStatus(Instance.STATUS_STOP);
 				// 为了保险，把进程杀干净
 				Service service = serviceService.getService(in.getService());
 				int signal = service == null ? 9 : service.getStopSignal();

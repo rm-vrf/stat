@@ -1,58 +1,50 @@
-//package cn.batchfile.stat.server.service;
-//
-//import java.io.IOException;
-//import java.util.ArrayList;
-//import java.util.Date;
-//import java.util.HashMap;
-//import java.util.Iterator;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.concurrent.ConcurrentHashMap;
-//import java.util.concurrent.Executors;
-//import java.util.concurrent.ScheduledExecutorService;
-//import java.util.concurrent.TimeUnit;
-//import java.util.stream.Collectors;
-//
-//import javax.annotation.PostConstruct;
-//
-//import org.apache.commons.lang.StringUtils;
-//import org.elasticsearch.action.delete.DeleteResponse;
-//import org.elasticsearch.action.get.GetResponse;
-//import org.elasticsearch.action.index.IndexResponse;
-//import org.elasticsearch.action.search.SearchRequestBuilder;
-//import org.elasticsearch.action.search.SearchResponse;
-//import org.elasticsearch.common.xcontent.XContentType;
-//import org.elasticsearch.index.IndexNotFoundException;
-//import org.elasticsearch.index.query.QueryBuilders;
-//import org.elasticsearch.search.SearchHit;
-//import org.elasticsearch.search.sort.SortOrder;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.HttpEntity;
-//import org.springframework.http.HttpHeaders;
-//import org.springframework.http.HttpMethod;
-//import org.springframework.http.HttpStatus;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.stereotype.Service;
-//import org.springframework.web.client.ResourceAccessException;
-//import org.springframework.web.client.RestTemplate;
-//
-//import com.alibaba.fastjson.JSON;
-//
-//import cn.batchfile.stat.domain.Choreo;
-//import cn.batchfile.stat.domain.Node;
-//import cn.batchfile.stat.domain.PaginationList;
-//import cn.batchfile.stat.domain.Proc;
-//
-//@Service
-//public class NodeService {
-//	protected static final Logger log = LoggerFactory.getLogger(NodeService.class);
-//	public static final String INDEX_NAME = "node-data";
-//	public static final String TYPE_NAME_UP = "up";
-//	public static final String TYPE_NAME_DOWN = "down";
-//	private Map<String, Date> timestamps = new HashMap<String, Date>();
-//	
+package cn.batchfile.stat.server.service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
+import com.alibaba.fastjson.JSON;
+
+import de.codecentric.boot.admin.client.registration.ApplicationRegistrator;
+import de.codecentric.boot.admin.server.domain.entities.Instance;
+import de.codecentric.boot.admin.server.eventstore.InstanceEventStore;
+import de.codecentric.boot.admin.server.services.InstanceRegistry;
+import reactor.core.publisher.Flux;
+
+@Service
+public class NodeService {
+	protected static final Logger LOG = LoggerFactory.getLogger(NodeService.class);
+	//public static final String INDEX_NAME = "node-data";
+	//public static final String TYPE_NAME_UP = "up";
+	//public static final String TYPE_NAME_DOWN = "down";
+	//private Map<String, Date> timestamps = new HashMap<String, Date>();
+	
 //	@Autowired
 //	private ElasticService elasticService;
 //	
@@ -64,24 +56,38 @@
 //	
 //	@Autowired
 //	private ProcService procService;
-//	
-//	@Autowired
-//	private RestTemplate restTemplate;
-//	
-//	@PostConstruct
-//	public void init() {
-//		//启动定时器
-//		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-//		es.scheduleWithFixedDelay(() -> {
-//			try {
-//				refresh();
-//			} catch (Exception e) {
-//				//pass
-//			}
-//		}, 30, 1, TimeUnit.SECONDS);
-//	}
-//	
-//	private void refresh() throws IOException {
+	
+	@Autowired
+	private InstanceRegistry registry;
+	
+	@Autowired
+    private InstanceEventStore eventStore;
+	
+	@Autowired
+	private ApplicationRegistrator applicationRegistrator;
+	
+	@Autowired
+	private RestTemplate restTemplate;
+	
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(() -> {
+			try {
+				refresh();
+			} catch (Exception e) {
+				LOG.error("error when refresh data", e);
+			}
+		}, 30, 1, TimeUnit.SECONDS);
+	}
+	
+	private void refresh() throws IOException {
+		Flux<Instance> instances = registry.getInstances().filter(Instance::isRegistered);
+		//instances.toStream().forEach(instance -> {
+		//	LOG.info("{}, {}", instance.getId(), instance.getRegistration().getName());
+		//});
+//		LOG.info("self id: {}", applicationRegistrator.getRegisteredId());
 //		//得到所有在线节点
 //		long begin = System.currentTimeMillis();
 //		List<Node> nodes = getUpNodes();
@@ -205,7 +211,7 @@
 //		if (downNodes.size() > 0 || changeNodes.size() > 0) {
 //			log.info("==timestamp: {}", timestamps);
 //		}
-//	}
+	}
 //	
 //	public void putNode(Node node) {
 //		
@@ -384,4 +390,4 @@
 //		
 //		log.info("Node down: {'id':'{}', 'hostname':'{}', 'agentAddress':'{}'}", id, node.getHostname(), agentAddress);
 //	}
-//}
+}

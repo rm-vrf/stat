@@ -4,7 +4,7 @@ public class Os {
 	private String name;
 	private String architecture;
 	private String version;
-	private int availableProcessors;
+	private int cpus;
 	private double systemLoadAverage;
 
 	public String getName() {
@@ -31,12 +31,12 @@ public class Os {
 		this.version = version;
 	}
 
-	public int getAvailableProcessors() {
-		return availableProcessors;
+	public int getCpus() {
+		return cpus;
 	}
 
-	public void setAvailableProcessors(int availableProcessors) {
-		this.availableProcessors = availableProcessors;
+	public void setCpus(int cpus) {
+		this.cpus = cpus;
 	}
 
 	public double getSystemLoadAverage() {

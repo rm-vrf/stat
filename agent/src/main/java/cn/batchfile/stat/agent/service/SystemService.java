@@ -274,7 +274,7 @@ public class SystemService {
 		os.setName(oper.getName());
 		os.setVersion(oper.getVersion());
 		os.setArchitecture(oper.getArch());
-		os.setAvailableProcessors(oper.getAvailableProcessors());
+		os.setCpus(oper.getAvailableProcessors());
 		os.setSystemLoadAverage(oper.getSystemLoadAverage());
 		return os;
 	}

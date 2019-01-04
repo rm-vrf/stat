@@ -8,9 +8,14 @@ import java.util.List;
  *
  */
 public class Instance {
+	
+	public static final String STATUS_UP = "UP";
+	public static final String STATUS_STOP = "STOP";
+	public static final String STATUS_KILL = "KILL";
 
 	private String service;
 	private String workDirectory;
+	private String status; 
 	private long pid;
 	private long ppid;
 	private String uid;
@@ -51,6 +56,22 @@ public class Instance {
 	 */
 	public void setWorkDirectory(String workDirectory) {
 		this.workDirectory = workDirectory;
+	}
+
+	/**
+	 * 状态
+	 * @return 状态
+	 */
+	public String getStatus() {
+		return status;
+	}
+
+	/**
+	 * 状态
+	 * @param status 状态
+	 */
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 	/**
