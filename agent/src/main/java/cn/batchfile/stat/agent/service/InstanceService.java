@@ -43,6 +43,7 @@ import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Process_;
 import cn.batchfile.stat.domain.Service;
 import cn.batchfile.stat.service.ServiceService;
+import de.codecentric.boot.admin.client.registration.ApplicationRegistrator;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -68,6 +69,9 @@ public class InstanceService {
 	@Value("${store.directory}")
 	private String storeDirectory;
 
+	@Autowired
+	private ApplicationRegistrator applicationRegistrator;
+	
 	@Autowired
 	private ServiceService serviceService;
 
@@ -169,9 +173,10 @@ public class InstanceService {
 			if (!StringUtils.startsWith(file.getName(), ".") && StringUtils.isNumeric(file.getName())) {
 				String json = FileUtils.readFileToString(file, "UTF-8");
 				if (StringUtils.isNotEmpty(json)) {
-					Instance ins = JSON.parseObject(json, Instance.class);
-					if (ins != null) {
-						list.add(ins);
+					Instance in = JSON.parseObject(json, Instance.class);
+					if (in != null) {
+						in.setNode(applicationRegistrator.getRegisteredId());
+						list.add(in);
 					}
 				}
 			}
@@ -180,15 +185,16 @@ public class InstanceService {
 	}
 
 	public Instance getInstance(long pid) throws IOException {
-		Instance ins = null;
+		Instance in = null;
 		File f = new File(instanceStoreDirectory, String.valueOf(pid));
 		if (f.exists()) {
 			String json = FileUtils.readFileToString(f, "UTF-8");
 			if (StringUtils.isNotEmpty(json)) {
-				ins = JSON.parseObject(json, Instance.class);
+				in = JSON.parseObject(json, Instance.class);
+				in.setNode(applicationRegistrator.getRegisteredId());
 			}
 		}
-		return ins;
+		return in;
 	}
 
 	public List<Instance> getInstacnces(String service) throws IOException {

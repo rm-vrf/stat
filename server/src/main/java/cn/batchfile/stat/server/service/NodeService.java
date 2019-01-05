@@ -1,6 +1,7 @@
 package cn.batchfile.stat.server.service;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,7 +32,6 @@ import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
 
-import de.codecentric.boot.admin.client.registration.ApplicationRegistrator;
 import de.codecentric.boot.admin.server.domain.entities.Instance;
 import de.codecentric.boot.admin.server.eventstore.InstanceEventStore;
 import de.codecentric.boot.admin.server.services.InstanceRegistry;
@@ -64,9 +64,6 @@ public class NodeService {
     private InstanceEventStore eventStore;
 	
 	@Autowired
-	private ApplicationRegistrator applicationRegistrator;
-	
-	@Autowired
 	private RestTemplate restTemplate;
 	
 	@PostConstruct
@@ -75,18 +72,23 @@ public class NodeService {
 		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
 		es.scheduleWithFixedDelay(() -> {
 			try {
-				refresh();
+				refreshNodes();
 			} catch (Exception e) {
 				LOG.error("error when refresh data", e);
 			}
 		}, 30, 1, TimeUnit.SECONDS);
 	}
 	
-	private void refresh() throws IOException {
+	private void refreshNodes() throws IOException {
 		Flux<Instance> instances = registry.getInstances().filter(Instance::isRegistered);
-		//instances.toStream().forEach(instance -> {
-		//	LOG.info("{}, {}", instance.getId(), instance.getRegistration().getName());
-		//});
+		instances.toStream().forEach(instance -> {
+			LOG.debug("refresh node: {}, {}", instance.getId(), instance.getRegistration().getName());
+			if (StringUtils.equals(instance.getRegistration().getName(), "stat_agent")) {
+				Instant in = instance.getStatusTimestamp();
+				long timsatamp = in.getEpochSecond();
+				//in.get
+			}
+		});
 //		LOG.info("self id: {}", applicationRegistrator.getRegisteredId());
 //		//得到所有在线节点
 //		long begin = System.currentTimeMillis();

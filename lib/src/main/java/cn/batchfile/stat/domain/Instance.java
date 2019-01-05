@@ -14,6 +14,7 @@ public class Instance {
 	public static final String STATUS_KILL = "KILL";
 
 	private String service;
+	private String node;
 	private String workDirectory;
 	private String status; 
 	private long pid;
@@ -40,6 +41,22 @@ public class Instance {
 	 */
 	public void setService(String service) {
 		this.service = service;
+	}
+
+	/**
+	 * 节点
+	 * @return 节点
+	 */
+	public String getNode() {
+		return node;
+	}
+
+	/**
+	 * 节点
+	 * @param node 节点
+	 */
+	public void setNode(String node) {
+		this.node = node;
 	}
 
 	/**

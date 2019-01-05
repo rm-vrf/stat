@@ -66,11 +66,11 @@
 			<artifactId>spring-boot-admin-starter-server</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-		<dependency>
-			<groupId>de.codecentric</groupId>
-			<artifactId>spring-boot-admin-starter-client</artifactId>
-			<version>2.0.0</version>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>de.codecentric</groupId> -->
+<!-- 			<artifactId>spring-boot-admin-starter-client</artifactId> -->
+<!-- 			<version>2.0.0</version> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger2</artifactId>
@@ -86,30 +86,34 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch</artifactId>
+			<version>5.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch.plugin</groupId>
+			<artifactId>transport-netty4-client</artifactId>
+			<version>5.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch.plugin</groupId>
+			<artifactId>transport-netty3-client</artifactId>
+			<version>5.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.7</version>
+		</dependency>
 		<!-- <dependency> -->
-		<!-- <groupId>org.elasticsearch</groupId> -->
-		<!-- <artifactId>elasticsearch</artifactId> -->
-		<!-- <version>5.6.1</version> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.elasticsearch.plugin</groupId> -->
-		<!-- <artifactId>transport-netty4-client</artifactId> -->
-		<!-- <version>5.6.1</version> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.elasticsearch.plugin</groupId> -->
-		<!-- <artifactId>transport-netty3-client</artifactId> -->
-		<!-- <version>5.6.1</version> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.apache.logging.log4j</groupId> -->
-		<!-- <artifactId>log4j-api</artifactId> -->
-		<!-- <version>2.7</version> -->
-		<!-- </dependency> -->
-		<!-- <dependency> -->
-		<!-- <groupId>org.apache.logging.log4j</groupId> -->
-		<!-- <artifactId>log4j-core</artifactId> -->
-		<!-- <version>2.7</version> -->
+		<!-- <groupId>org.springframework.boot</groupId> -->
+		<!-- <artifactId>spring-boot-starter-data-elasticsearch</artifactId> -->
 		<!-- </dependency> -->
 		<!-- <dependency> -->
 		<!-- <groupId>org.springframework.cloud</groupId> -->
