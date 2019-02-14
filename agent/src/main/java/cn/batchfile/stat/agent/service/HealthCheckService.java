@@ -155,8 +155,8 @@ public class HealthCheckService {
 		//检查命令行
 		if (service.getHealthCheck().getCommand() != null) {
 			String test = service.getHealthCheck().getCommand().getTest();
-			String check = service.getHealthCheck().getCommand().getCheck();
-			ret = checkCommand(service, in, test, check, service.getHealthCheck().getTimeout());
+			//String check = service.getHealthCheck().getCommand().getCheck();
+			ret = checkCommand(service, in, test, service.getHealthCheck().getTimeout());
 		}
 		
 		if (ret == null) {
@@ -193,7 +193,7 @@ public class HealthCheckService {
 	}
 	
 	private HealthCheckResult checkCommand(Service service, Instance instance, 
-			String command, String check, int timeoutInSeconds) throws Exception {
+			String command, int timeoutInSeconds) throws Exception {
 		
 		HealthCheckResult ret = new HealthCheckResult();
 		ret.setService(service.getName());
@@ -211,7 +211,7 @@ public class HealthCheckService {
 		ret.setEndpoint(command);
 		String message = String.format("RET: %s, OUT: %s, ERR: %s", i, out.toString(), err.toString());
 		ret.setMessage(message);
-		ret.setOk(StringUtils.contains(out.toString(), check));
+		ret.setOk(i == 0);
 		
 		return ret;
 	}

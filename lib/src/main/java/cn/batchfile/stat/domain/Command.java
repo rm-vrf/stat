@@ -8,7 +8,6 @@ package cn.batchfile.stat.domain;
 public class Command {
 
 	private String test;
-	private String check;
 
 	/**
 	 * 测试命令
@@ -24,22 +23,6 @@ public class Command {
 	 */
 	public void setTest(String test) {
 		this.test = test;
-	}
-
-	/**
-	 * 检查内容
-	 * @return 检查内容
-	 */
-	public String getCheck() {
-		return check;
-	}
-
-	/**
-	 * 检查内容
-	 * @param check 检查内容
-	 */
-	public void setCheck(String check) {
-		this.check = check;
 	}
 
 }

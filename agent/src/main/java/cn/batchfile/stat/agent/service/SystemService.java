@@ -129,7 +129,7 @@ public class SystemService {
 		} else {
 			libPath = String.format("%s%s%s", sigarPath.getAbsolutePath(), File.pathSeparatorChar, libPath);
 		}
-		log.info("lib path: {}", libPath);
+		log.debug("lib path: {}", libPath);
 		System.setProperty("java.library.path", libPath);
 
 		// set sys_paths to null
@@ -589,7 +589,7 @@ public class SystemService {
 		Resource[] resources = resourcePatternResolver.getResources("sigar/*");
 
 		for (Resource resource : resources) {
-			log.info("find so file: {}, [{}]", resource.toString(), resource.getClass().getName());
+			log.debug("find so file: {}, [{}]", resource.toString(), resource.getClass().getName());
 
 			// get file name
 			String path = getPathOfResource(resource);
@@ -601,7 +601,7 @@ public class SystemService {
 			if (!dist.exists()) {
 				// get file content
 				byte[] content = getContentOfResource(resource);
-				log.info("get so: {}, length: {}", fileName, content.length);
+				log.debug("get so: {}, length: {}", fileName, content.length);
 
 				FileUtils.writeByteArrayToFile(dist, content);
 			}

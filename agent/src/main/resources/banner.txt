@@ -1,0 +1,15 @@
+
+ __________________________________________
+/ "Out of clutter, find simplicity. From   \
+| disorder, find harmony. In the middle of |
+| difficult lies opportunity. "            |
+|                                          |
+\ - Albert Einstein                        /
+ ------------------------------------------
+           \   ^__^
+            \  (oo)\_______
+               (__)\       )\/\
+                   ||----w |
+                   ||     ||
+
+:: Spring Boot :: ${spring-boot.formatted-version}

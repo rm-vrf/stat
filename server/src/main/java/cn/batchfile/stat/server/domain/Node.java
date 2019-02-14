@@ -20,7 +20,6 @@ public class Node {
 	private String id;
 	private String hostname;
 	private String address;
-	private String serviceUrl;
 	private String status;
 	private Os os;
 	private Memory memory;
@@ -28,7 +27,7 @@ public class Node {
 	private List<Disk> disks;
 	private long diskTotal;
 	private List<String> tags;
-	private Map<String, Object> metadata;
+	private Map<String, String> metadata;
 
 	public String getId() {
 		return id;
@@ -52,14 +51,6 @@ public class Node {
 
 	public void setAddress(String address) {
 		this.address = address;
-	}
-
-	public String getServiceUrl() {
-		return serviceUrl;
-	}
-
-	public void setServiceUrl(String serviceUrl) {
-		this.serviceUrl = serviceUrl;
 	}
 
 	public String getStatus() {
@@ -118,11 +109,11 @@ public class Node {
 		this.tags = tags;
 	}
 
-	public Map<String, Object> getMetadata() {
+	public Map<String, String> getMetadata() {
 		return metadata;
 	}
 
-	public void setMetadata(Map<String, Object> metadata) {
+	public void setMetadata(Map<String, String> metadata) {
 		this.metadata = metadata;
 	}
 

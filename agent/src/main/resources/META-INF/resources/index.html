@@ -15,7 +15,7 @@
 			<a href="/"><img src="images/stat.png" alt="Status" /></a>
 			<p id="nodestatus">
 				主机：<b>{{ hostname }}</b>
-				CPU：{{ availableProcessors }} 核
+				CPU：{{ cpus }} 核
 				磁盘：{{diskTotal }} 
 				内存：{{ memoryTotal }}
 			</p>
@@ -66,7 +66,7 @@
 		el : '#nodestatus',
 		data : {
 			hostname : null,
-			availableProcessors : null,
+			cpus : null,
 			diskTotal : null,
 			memoryTotal : null
 		},
@@ -74,7 +74,7 @@
 			loadData : function() {
 				// cpu count
 				Vue.http.get('/api/v2/system/os').then(function(ret) {
-					nodeStatus.availableProcessors = ret.body.availableProcessors;
+					nodeStatus.cpus = ret.body.cpus;
 				});
 				// hostname
 				Vue.http.get('/api/v2/system/hostname').then(function(ret) {

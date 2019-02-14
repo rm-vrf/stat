@@ -4,7 +4,8 @@ html{
 	font-size:100%;
 }
 body {
-    font: 14px 'Helvetica Neue','Microsoft YaHei','Hiragino Sans GB','WenQuanYi Micro Hei',Helvetica,Arial,Sans-serif;
+    _font: 14px 'Helvetica Neue','Microsoft YaHei','Hiragino Sans GB','WenQuanYi Micro Hei',Helvetica,Arial,Sans-serif;
+    font: 12px/1.5em Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, sans-serif;
     line-height: 1.428571429;
     color: #444;
     margin:0px;
