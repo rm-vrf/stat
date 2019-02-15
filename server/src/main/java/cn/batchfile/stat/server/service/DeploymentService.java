@@ -1,6 +1,5 @@
 package cn.batchfile.stat.server.service;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -16,30 +16,25 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
-
 import cn.batchfile.stat.domain.ControlGroup;
 import cn.batchfile.stat.domain.Deploy;
+import cn.batchfile.stat.domain.Deployment;
 import cn.batchfile.stat.domain.PaginationList;
 import cn.batchfile.stat.domain.Placement;
 import cn.batchfile.stat.domain.Resources;
 import cn.batchfile.stat.domain.Service;
-import cn.batchfile.stat.server.domain.Deployment;
 import cn.batchfile.stat.server.domain.Node;
 import cn.batchfile.stat.service.ServiceService;
 
 @org.springframework.stereotype.Service
-public class DeploymentService {
+public class DeploymentService extends cn.batchfile.stat.service.DeploymentService {
 	protected static final Logger LOG = LoggerFactory.getLogger(DeploymentService.class);
-	private File storeDirectory;
 	
 	@Autowired
 	private NodeService nodeService;
@@ -49,17 +44,7 @@ public class DeploymentService {
 
 	@Value("${store.directory}")
 	public void setStoreDirectory(String storeDirectory) throws IOException {
-		File f = new File(storeDirectory);
-		if (!f.exists()) {
-			FileUtils.forceMkdir(f);
-		}
-		
-		this.storeDirectory = new File(f, "deployment");
-		if (this.storeDirectory.exists()) {
-			FileUtils.deleteQuietly(this.storeDirectory);
-		}
-		
-		FileUtils.forceMkdir(this.storeDirectory);
+		super.setStoreDirectory(storeDirectory);
 	}
 	
 	@PostConstruct
@@ -75,71 +60,6 @@ public class DeploymentService {
 		}, 20, 10, TimeUnit.SECONDS);
 	}
 
-	public long getLastModified() {
-		long l = storeDirectory.lastModified();
-		for (File f : storeDirectory.listFiles()) {
-			if (!StringUtils.startsWith(f.getName(), ".")) {
-				if (f.lastModified() > l) {
-					l = f.lastModified();
-				}
-			}
-		}
-		return l;
-	}
-	
-	public long getLastModified(String servie) {
-		File f = new File(storeDirectory, servie);
-		if (f.exists()) {
-			return f.lastModified();
-		} else {
-			return -1;
-		}
-	}
-
-	public List<Deployment> getDeployments() throws IOException {
-		List<Deployment> ds = new ArrayList<>();
-		File[] files = storeDirectory.listFiles();
-		for (File file : files) {
-			if (!StringUtils.startsWith(file.getName(), ".")) {
-				String json = FileUtils.readFileToString(file, "UTF-8");
-				if (StringUtils.isNotEmpty(json)) {
-					List<Deployment> list = JSON.parseArray(json, Deployment.class);
-					if (list != null) {
-						ds.addAll(list);
-					}
-				}
-			}
-		}
-		return ds;
-	}
-	
-	public List<Deployment> getDeployments(String servie) throws IOException {
-		List<Deployment> list = null;
-		File f = new File(storeDirectory, servie);
-		if (f.exists()) {
-			String json = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(json)) {
-				list = JSON.parseArray(json, Deployment.class);
-			}
-		}
-		
-		if (list == null) {
-			list = new ArrayList<>();
-		}
-		return list;
-	}
-	
-	public void putDeployments(String service, List<Deployment> deployments) throws IOException {
-		String json = JSON.toJSONString(deployments, SerializerFeature.PrettyFormat);
-		File f = new File(storeDirectory, service);
-		FileUtils.writeByteArrayToFile(f, json.getBytes("UTF-8"));
-	}
-	
-	public void deleteDeployment(String servie) {
-		File f = new File(storeDirectory, servie);
-		FileUtils.deleteQuietly(f);
-	}
-	
 	private void refresh() throws IOException {
 		//得到服务列表
 		List<Service> services = serviceService.getServices();
@@ -161,23 +81,23 @@ public class DeploymentService {
 		}
 		
 		//删除多余的部署数据
-		File[] files = storeDirectory.listFiles();
-		for (File file : files) {
-			String name = file.getName();
-			if (!StringUtils.startsWith(name, ".")) {
-				if (!serviceNames.contains(name)) {
-					//清理已经不存在的服务
-					FileUtils.deleteQuietly(file);
-					LOG.info("delete deployment, name: {}", name);
-				} else {
-					//清理下线的节点
-					List<Deployment> ds = getDeployments(name);
-					int count = ds.size();
-					ds = ds.stream().filter(d -> nodeIds.contains(d.getNode())).collect(Collectors.toList());
-					if (ds.size() < count) {
-						putDeployments(name, ds);
-						LOG.info("remove deployment of down nodes, name: {}", name);
-					}
+		List<Deployment> deployments = getDeployments();
+		Map<String, List<Deployment>> map = deployments.stream().collect(Collectors.groupingBy(d -> d.getService()));
+		for (Entry<String, List<Deployment>> entry : map.entrySet()) {
+			String serviceName = entry.getKey();
+			List<Deployment> ds = entry.getValue();
+			
+			if (!serviceNames.contains(serviceName)) {
+				//清理已经不存在的服务
+				deleteDeployment(serviceName);
+				LOG.info("delete deployment, name: {}", serviceName);
+			} else {
+				//清理下线的节点
+				int count = ds.size();
+				ds = ds.stream().filter(d -> nodeIds.contains(d.getNode())).collect(Collectors.toList());
+				if (ds.size() < count) {
+					putDeployments(serviceName, ds);
+					LOG.info("remove deployment of down nodes, name: {}", serviceName);
 				}
 			}
 		}

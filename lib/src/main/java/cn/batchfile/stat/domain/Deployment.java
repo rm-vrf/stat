@@ -1,6 +1,4 @@
-package cn.batchfile.stat.server.domain;
-
-import cn.batchfile.stat.domain.ControlGroup;
+package cn.batchfile.stat.domain;
 
 public class Deployment {
 

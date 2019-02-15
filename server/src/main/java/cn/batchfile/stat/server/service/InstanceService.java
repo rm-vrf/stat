@@ -62,11 +62,9 @@ public class InstanceService {
 		}
 		
 		this.storeDirectory = new File(f, "instance");
-		if (this.storeDirectory.exists()) {
-			FileUtils.deleteQuietly(this.storeDirectory);
+		if (!this.storeDirectory.exists()) {
+			FileUtils.forceMkdir(this.storeDirectory);
 		}
-		
-		FileUtils.forceMkdir(this.storeDirectory);
 	}
 	
 	@PostConstruct
