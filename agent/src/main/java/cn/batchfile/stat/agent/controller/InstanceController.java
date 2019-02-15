@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -100,8 +99,8 @@ public class InstanceController {
 		return new ResponseEntity<List<String>>(list, headers, HttpStatus.OK);
 	}
 	
-	@DeleteMapping("/api/v2/instance/{pid}")
-	public ResponseEntity<Boolean> killInstance(WebRequest request,
+	@PostMapping("/api/v2/instance/{pid}/_kill")
+	public ResponseEntity<Boolean> postKillInstance(WebRequest request,
 			@PathVariable("pid") Long pid) throws IOException {
 		
 		HttpHeaders headers = new HttpHeaders();
@@ -112,24 +111,5 @@ public class InstanceController {
 			return new ResponseEntity<Boolean>(Boolean.FALSE, headers, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
-	@PostMapping("/api/v2/instance/{pid}/_kill")
-	public ResponseEntity<Boolean> postKillInstance(WebRequest request,
-			@PathVariable("pid") Long pid) throws IOException {
-		return killInstance(request, pid);
-	}
 	
-//	@DeleteMapping("/api/v2/instance")
-//	public ResponseEntity<Boolean> killInstances(WebRequest request,
-//			@RequestBody Long[] pids) throws IOException {
-//		
-//		HttpHeaders headers = new HttpHeaders();
-//		try {
-//			instanceService.killInstances(Arrays.asList(pids));
-//			return new ResponseEntity<Boolean>(Boolean.TRUE, headers, HttpStatus.OK);
-//		} catch (Exception e) {
-//			return new ResponseEntity<Boolean>(Boolean.FALSE, headers, HttpStatus.INTERNAL_SERVER_ERROR);
-//		}
-//	}
-
 }

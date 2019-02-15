@@ -112,28 +112,56 @@ public class InstanceService {
 		return instances;
 	}
 	
-	public void putInstancesOfNode(String node, List<Instance> instances) throws IOException {
-		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
-		File file = new File(storeDirectory, PREFIX_NODE + node);
-		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
+	public void killInstance(String node, long pid) {
+		Node n = nodeService.getNode(node);
+		if (n != null) {
+			String url = String.format("%s/api/v2/instance/%s/_kill", n.getAddress(), pid);
+			restTemplate.postForLocation(url, null);
+		}
 	}
 	
-	public void putInstancesOfService(String service, List<Instance> instances) throws IOException {
-		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
-		File file = new File(storeDirectory, PREFIX_SERVICE + service);
-		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
-	}
-	
-	public void deleteInstancesOfNode(String node) {
-		File file = new File(storeDirectory, PREFIX_NODE + node);
-		FileUtils.deleteQuietly(file);
-	}
-	
-	public void deleteInstancesOfService(String service) {
-		File file = new File(storeDirectory, PREFIX_SERVICE + service);
-		FileUtils.deleteQuietly(file);
+	public String[] getSystemOut(String node, long pid) {
+		Node n = nodeService.getNode(node);
+		if (n != null) {
+			String url = String.format("%s/api/v2/instance/%s/stdout", n.getAddress(), pid);
+			return restTemplate.getForObject(url, String[].class);
+		} else {
+			return new String[] {};
+		}
 	}
 
+	public String[] getSystemErr(String node, long pid) {
+		Node n = nodeService.getNode(node);
+		if (n != null) {
+			String url = String.format("%s/api/v2/instance/%s/stderr", n.getAddress(), pid);
+			return restTemplate.getForObject(url, String[].class);
+		} else {
+			return new String[] {};
+		}
+	}
+	
+	private void putInstancesOfNode(String node, List<Instance> instances) throws IOException {
+		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
+		File file = new File(storeDirectory, PREFIX_NODE + node);
+		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
+	}
+	
+	private void putInstancesOfService(String service, List<Instance> instances) throws IOException {
+		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
+		File file = new File(storeDirectory, PREFIX_SERVICE + service);
+		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
+	}
+	
+	private void deleteInstancesOfNode(String node) {
+		File file = new File(storeDirectory, PREFIX_NODE + node);
+		FileUtils.deleteQuietly(file);
+	}
+	
+	private void deleteInstancesOfService(String service) {
+		File file = new File(storeDirectory, PREFIX_SERVICE + service);
+		FileUtils.deleteQuietly(file);
+	}
+	
 	private void refresh() throws IOException {
 		
 		//获取所有的服务
