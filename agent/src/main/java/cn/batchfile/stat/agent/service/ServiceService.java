@@ -77,6 +77,7 @@ public class ServiceService extends cn.batchfile.stat.service.ServiceService {
 			return;
 		}
 		Service[] remoteServices = resp.getBody();
+		LOG.info("get service list from master, count: {}", remoteServices.length);
 
 		//得到本地存储的服务
 		Service[] localServices = getServices().toArray(new Service[] {});
@@ -85,7 +86,7 @@ public class ServiceService extends cn.batchfile.stat.service.ServiceService {
 		for (Service remoteService : remoteServices) {
 			if (exist(localServices, remoteService)) {
 				putService(remoteService);
-				LOG.info("change service: {}", remoteService.getName());
+				LOG.info("put service: {}", remoteService.getName());
 			} else {
 				postService(remoteService);
 				LOG.info("add service: {}", remoteService.getName());

@@ -1,9 +1,14 @@
 package cn.batchfile.stat.agent.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -20,8 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import cn.batchfile.stat.domain.Service;
-import cn.batchfile.stat.service.ServiceService;
+import cn.batchfile.stat.domain.Deployment;
 import de.codecentric.boot.admin.client.registration.ApplicationRegistrator;
 
 @org.springframework.stereotype.Service
@@ -35,9 +39,6 @@ public class DeploymentService extends cn.batchfile.stat.service.DeploymentServi
 
 	@Autowired
 	private RestTemplate restTemplate;
-	
-	@Autowired
-	private ServiceService serviceService;
 	
 	@Value("${master.schema}")
 	private String masterSchema;
@@ -53,78 +54,73 @@ public class DeploymentService extends cn.batchfile.stat.service.DeploymentServi
 		super.setStoreDirectory(storeDirectory);
 	}
 	
-//	@PostConstruct
-//	public void init() {
-//		//启动定时器
-//		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
-//		es.scheduleWithFixedDelay(() -> {
-//			try {
-//				//refresh();
-//			} catch (Exception e) {
-//				LOG.error("error when refresh data", e);
-//			}
-//		}, 5, 5, TimeUnit.SECONDS);
-//	}
-//	
-//	private void refresh() throws IOException {
-//		LOG.debug("self id: {}", applicationRegistrator.getRegisteredId());
-//		String registeredId = applicationRegistrator.getRegisteredId();
-//		if (StringUtils.isEmpty(registeredId)) {
-//			return;
-//		}
-//		
-//		//得到应用名称，添加时间戳消息头
-//		HttpHeaders headers = new HttpHeaders();
-//		headers.setIfModifiedSince(timestamp);
-//		HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
-//		String url = String.format("%s://%s:%s/api/v2/service", 
-//				masterSchema, masterAddress, masterPort);
-//		ResponseEntity<Service[]> resp = null;
-//		try {
-//			resp = restTemplate.exchange(url, HttpMethod.GET, entity, Service[].class);
-//		} catch (ResourceAccessException e) {
-//			return;
-//		}
-//		
-//		//如果没有返回实际内容，退出操作
-//		if (resp.getStatusCode() != HttpStatus.OK) {
-//			return;
-//		}
-//		Service[] remoteServices = resp.getBody();
-//
-//		//得到本地存储的服务
-//		Service[] localServices = serviceService.getServices().toArray(new Service[] {});
-//		
-//		//循环判断每一个远程应用，更新或者添加应用
-//		for (Service remoteService : remoteServices) {
-//			if (exist(localServices, remoteService)) {
-//				serviceService.putService(remoteService);
-//				LOG.info("change service: {}", remoteService.getName());
-//			} else {
-//				serviceService.postService(remoteService);
-//				LOG.info("add service: {}", remoteService.getName());
-//			}
-//		}
-//		
-//		//循环判断每一个本地应用，删除不存在的应用
-//		for (Service localService : localServices) {
-//			if (!exist(remoteServices, localService)) {
-//				serviceService.deleteService(localService.getName());
-//				LOG.info("delete service: {}", localService.getName());
-//			}
-//		}
-//		
-//		//更新时间戳
-//		timestamp = resp.getHeaders().getLastModified();
-//	}
-//	
-//	private boolean exist(Service[] list, Service element) {
-//		for (Service service : list) {
-//			if (StringUtils.equals(service.getName(), element.getName())) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
+	@PostConstruct
+	public void init() {
+		//启动定时器
+		ScheduledExecutorService es = Executors.newScheduledThreadPool(1);
+		es.scheduleWithFixedDelay(() -> {
+			try {
+				refresh();
+			} catch (Exception e) {
+				LOG.error("error when refresh data", e);
+			}
+		}, 5, 5, TimeUnit.SECONDS);
+	}
+	
+	private void refresh() throws IOException {
+		LOG.debug("self id: {}", applicationRegistrator.getRegisteredId());
+		String registeredId = applicationRegistrator.getRegisteredId();
+		if (StringUtils.isEmpty(registeredId)) {
+			return;
+		}
+		
+		//得到部署计划，添加时间戳消息头
+		HttpHeaders headers = new HttpHeaders();
+		headers.setIfModifiedSince(timestamp);
+		HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
+		String url = String.format("%s://%s:%s/api/v2/deployment?node=%s", masterSchema, masterAddress, masterPort, registeredId);
+		ResponseEntity<Deployment[]> resp = null;
+		try {
+			resp = restTemplate.exchange(url, HttpMethod.GET, entity, Deployment[].class);
+		} catch (ResourceAccessException e) {
+			return;
+		}
+		
+		//如果没有返回实际内容，退出操作
+		if (resp.getStatusCode() != HttpStatus.OK) {
+			return;
+		}
+		List<Deployment> remoteDeployments = new ArrayList<>();
+		for (Deployment d : resp.getBody()) {
+			remoteDeployments.add(d);
+		}
+		LOG.info("get deployment list from master, count: {}", remoteDeployments.size());
+		
+		//得到本地存储的服务
+		List<Deployment> localDeployments = getDeployments();
+		
+		//转换数据结构
+		Map<String, List<Deployment>> remoteMap = remoteDeployments.stream().collect(Collectors.groupingBy(d -> d.getService()));
+		Map<String, List<Deployment>> localMap = localDeployments.stream().collect(Collectors.groupingBy(d -> d.getService()));
+		
+		//更新远程数据
+		for (Entry<String, List<Deployment>> entry : remoteMap.entrySet()) {
+			String serviceName = entry.getKey();
+			List<Deployment> deployments = entry.getValue();
+			putDeployments(serviceName, deployments);
+			LOG.info("put deployments, service: {}, count: {}", serviceName, deployments.size());
+		}
+		
+		//删除多余的数据
+		for (String serviceName : localMap.keySet()) {
+			if (!remoteMap.containsKey(serviceName)) {
+				deleteDeployment(serviceName);
+				LOG.info("delete deployments, service: {}", serviceName);
+			}
+		}
+		
+		//更新时间戳
+		timestamp = resp.getHeaders().getLastModified();
+	}
 
 }

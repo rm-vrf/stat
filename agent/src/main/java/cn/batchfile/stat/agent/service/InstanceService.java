@@ -39,6 +39,7 @@ import cn.batchfile.stat.agent.util.PortUtil;
 import cn.batchfile.stat.agent.util.cmd.CommandLineCallable;
 import cn.batchfile.stat.agent.util.cmd.CommandLineExecutor;
 import cn.batchfile.stat.agent.util.cmd.CommandLineUtils;
+import cn.batchfile.stat.domain.Deployment;
 import cn.batchfile.stat.domain.Instance;
 import cn.batchfile.stat.domain.Process_;
 import cn.batchfile.stat.domain.Service;
@@ -89,6 +90,9 @@ public class InstanceService {
 	
 	@Autowired
 	private LoggingService loggingService;
+	
+	@Autowired
+	private DeploymentService deploymentService;
 
 	public InstanceService(MeterRegistry registry) {
 		Gauge.builder("instance.running", "/", s -> {
@@ -257,7 +261,9 @@ public class InstanceService {
 		for (Service service : services) {
 			List<Instance> instanceList = groups.get(service.getName());
 			int instanceCount = instanceList == null ? 0 : instanceList.size();
-			int replicas = service == null || service.getDeploy() == null ? 0 : service.getDeploy().getReplicas();
+			
+			List<Deployment> deployments = deploymentService.getDeployments(service.getName());
+			int replicas = deployments == null ? 0 : deployments.size();
 			LOG.debug("schedule service: {}, replicas: {}, instance: {}", service.getName(), replicas, instanceCount);
 
 			// 如果登记的进程比计划的少，启动
@@ -442,7 +448,9 @@ public class InstanceService {
 			// 得到计划的进程数量
 			String serviceName = entry.getKey();
 			Service service = serviceService.getService(serviceName);
-			int replicas = service == null || service.getDeploy() == null ? 0 : service.getDeploy().getReplicas();
+			
+			List<Deployment> deployments = deploymentService.getDeployments(serviceName);
+			int replicas = deployments == null ? 0 : deployments.size();
 
 			// 杀掉多余的进程
 			for (int i = replicas; i < entry.getValue().size(); i++) {

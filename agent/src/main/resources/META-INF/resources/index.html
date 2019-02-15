@@ -105,26 +105,29 @@
 				Vue.http.get('/api/v2/service').then(function(ret) {
 					var services = ret.body;
 					$.each(services, function(i, service) {
-						service.replicas = service.deploy == null ? 0 : service.deploy.replicas;
+						service.replicas = 0;
 						service.ps = 0;
 						service.statusClass = '';
 						service.statusName = '';
-						Vue.http.get('/api/v2/service/' + service.name + '/instance').then(function(ps) {
-							service.ps = ps.body.length;
-							var statusCode = 0;
-							if (service.replicas) {
-								if (service.ps >= service.replicas) {
-									statusCode = 2;
-								} else if (service.replicas > service.ps && service.ps > 0) {
-									statusCode = 0;
-								} else if (service.ps == 0) {
-									statusCode = 3;
+						Vue.http.get('/api/v2/service/' + service.name + '/deployment/count').then(function(count) {
+							service.replicas = count.body;
+							Vue.http.get('/api/v2/service/' + service.name + '/instance').then(function(ps) {
+								service.ps = ps.body.length;
+								var statusCode = 0;
+								if (service.replicas) {
+									if (service.ps >= service.replicas) {
+										statusCode = 2;
+									} else if (service.replicas > service.ps && service.ps > 0) {
+										statusCode = 0;
+									} else if (service.ps == 0) {
+										statusCode = 3;
+									}
+								} else {
+									statusCode = 1;
 								}
-							} else {
-								statusCode = 1;
-							}
-							service.statusClass = 'status' + statusCode;
-							service.statusName = STATUS_NAMES[statusCode];
+								service.statusClass = 'status' + statusCode;
+								service.statusName = STATUS_NAMES[statusCode];
+							});
 						});
 					});
 					serviceStatus.services = services;
