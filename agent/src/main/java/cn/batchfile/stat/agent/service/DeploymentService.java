@@ -25,9 +25,9 @@ import cn.batchfile.stat.service.ServiceService;
 import de.codecentric.boot.admin.client.registration.ApplicationRegistrator;
 
 @org.springframework.stereotype.Service
-public class ReplicasService {
+public class DeploymentService {
 	
-	protected static final Logger LOG = LoggerFactory.getLogger(ReplicasService.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(DeploymentService.class);
 	private long timestamp = 0;
 	
 	@Autowired
@@ -72,8 +72,8 @@ public class ReplicasService {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setIfModifiedSince(timestamp);
 		HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
-		String url = String.format("%s://%s:%s/api/v2/service?registeredId=%s", 
-				masterSchema, masterAddress, masterPort, registeredId);
+		String url = String.format("%s://%s:%s/api/v2/service", 
+				masterSchema, masterAddress, masterPort);
 		ResponseEntity<Service[]> resp = null;
 		try {
 			resp = restTemplate.exchange(url, HttpMethod.GET, entity, Service[].class);

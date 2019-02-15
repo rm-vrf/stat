@@ -2,7 +2,6 @@ package cn.batchfile.stat.server.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -82,7 +82,182 @@ public class InstanceService {
 		}, 20, 10, TimeUnit.SECONDS);
 	}
 	
-	public List<Instance> getInstances() throws IOException {
+	public List<Instance> getInstancesOfNode(String node) throws IOException {
+		List<Instance> instances = null;
+		File f = new File(storeDirectory, PREFIX_NODE + node);
+		if (f.exists()) {
+			String json = FileUtils.readFileToString(f, "UTF-8");
+			if (StringUtils.isNotEmpty(json)) {
+				instances = JSON.parseArray(json, Instance.class);
+			}
+		}
+		
+		if (instances == null) {
+			instances = new ArrayList<>();
+		}
+		return instances;
+	}
+	
+	public List<Instance> getInstancesOfService(String service) throws IOException {
+		List<Instance> instances = null;
+		File f = new File(storeDirectory, PREFIX_SERVICE + service);
+		if (f.exists()) {
+			String json = FileUtils.readFileToString(f, "UTF-8");
+			if (StringUtils.isNotEmpty(json)) {
+				instances = JSON.parseArray(json, Instance.class);
+			}
+		}
+		
+		if (instances == null) {
+			instances = new ArrayList<>();
+		}
+		return instances;
+	}
+	
+	public void putInstancesOfNode(String node, List<Instance> instances) throws IOException {
+		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
+		File file = new File(storeDirectory, PREFIX_NODE + node);
+		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
+	}
+	
+	public void putInstancesOfService(String service, List<Instance> instances) throws IOException {
+		String json = JSON.toJSONString(instances, SerializerFeature.PrettyFormat);
+		File file = new File(storeDirectory, PREFIX_SERVICE + service);
+		FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
+	}
+	
+	public void deleteInstancesOfNode(String node) {
+		File file = new File(storeDirectory, PREFIX_NODE + node);
+		FileUtils.deleteQuietly(file);
+	}
+	
+	public void deleteInstancesOfService(String service) {
+		File file = new File(storeDirectory, PREFIX_SERVICE + service);
+		FileUtils.deleteQuietly(file);
+	}
+
+	private void refresh() throws IOException {
+		
+		//获取所有的服务
+		List<cn.batchfile.stat.domain.Service> services = serviceService.getServices();
+		
+		//获取所有的在线节点
+		List<Node> nodes = nodeService.getNodes(Node.STATUS_UP);
+		
+		//更新变动的进程
+		boolean change = updateInstancesOfNodes(nodes);
+		
+		//删除已经不存在的节点和服务
+		change = change || deleteInstances(nodes, services);
+		
+		//如果发生了更新，重新聚合数据
+		if (change) {
+			List<Instance> instances = getInstances();
+			groupByService(instances, services);
+		}
+	}
+
+	private boolean deleteInstances(List<Node> nodes, List<cn.batchfile.stat.domain.Service> services) {
+		boolean change = false;
+		
+		// 转换列表的数据结构
+		List<String> nodeIds = nodes.stream().map(node -> node.getId()).collect(Collectors.toList());
+		List<String> serviceNames = services.stream().map(service -> service.getName()).collect(Collectors.toList());
+		
+		// 删掉多余的数据
+		File[] files = storeDirectory.listFiles();
+		for (File file : files) {
+			String name = file.getName();
+			if (StringUtils.startsWith(name, PREFIX_NODE)) {
+				String nodeId = StringUtils.substring(name, PREFIX_NODE.length());
+				if (!nodeIds.contains(nodeId)) {
+					deleteInstancesOfNode(nodeId);
+					LOG.info("delete instances of node: {}", nodeId);
+					change = true;
+				}
+			} else if (StringUtils.startsWith(name, PREFIX_SERVICE)) {
+				String serviceName = StringUtils.substring(name, PREFIX_SERVICE.length());
+				if (!serviceNames.contains(serviceName)) {
+					deleteInstancesOfService(serviceName);
+					LOG.info("delete instances of servie: {}", serviceName);
+					change = true;
+				}
+			}
+		}
+		
+		return change;
+	}
+
+	private void groupByService(List<Instance> instances, List<cn.batchfile.stat.domain.Service> services) throws IOException {
+		
+		// 按照服务名称归类
+		Map<String, List<Instance>> collector = instances.stream().collect(Collectors.groupingBy(in -> in.getService()));
+		for (Entry<String, List<Instance>> entry : collector.entrySet()) {
+			String service = entry.getKey();
+			List<Instance> ins = entry.getValue();
+			if (ins == null) {
+				ins = new ArrayList<>();
+			}
+			putInstancesOfService(service, ins);
+			LOG.info("update instance list, service: {}, count: {}", service, ins.size());
+		}
+
+		// 对缺失的进程设置空集合
+		for (cn.batchfile.stat.domain.Service service : services) {
+			if (!collector.containsKey(service.getName())) {
+				putInstancesOfService(service.getName(), new ArrayList<>());
+				LOG.info("update instance list, service: {}, count: {}", service.getName(), 0);
+			}
+		}
+	}
+
+	private boolean updateInstancesOfNodes(List<Node> nodes) {
+		Map<String, Long> timestamps = new HashMap<>();
+		AtomicBoolean change = new AtomicBoolean(false);
+		
+		nodes.parallelStream().forEach(node -> {
+			String url = String.format("%s/api/v2/instance", node.getAddress());
+			try {
+				//向节点发出询问消息，带时间戳
+				HttpHeaders headers = new HttpHeaders();
+				headers.setIfModifiedSince(this.timestamps.containsKey(node.getId()) ? this.timestamps.get(node.getId()) : 0L);
+				HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
+				ResponseEntity<Instance[]> resp = restTemplate.exchange(url, HttpMethod.GET, entity, Instance[].class);
+				
+				//如果有实际内容，加入进程列表
+				if (resp.getStatusCode() == HttpStatus.OK) {
+					LOG.info("GET {} {}", url, entity.toString());
+					List<Instance> ins = new ArrayList<>();
+					for (Instance in : resp.getBody()) {
+						in.setNode(node.getId());
+						ins.add(in);
+					}
+					
+					//更新进程列表
+					putInstancesOfNode(node.getId(), ins);
+					LOG.info("update instance list, node: {}, count: {}", node.getId(), ins.size());
+					change.set(true);
+				}
+				
+				//更新变动节点的时间戳
+				timestamps.put(node.getId(), resp.getHeaders().getLastModified());
+				
+			} catch (ResourceAccessException e) {
+				LOG.error("error when get instance list, id: " + node.getId() + ", address: " + node.getAddress(), e);
+			} catch (IOException e) {
+				LOG.error("error when update list, id: " + node.getId() + ", address: " + node.getAddress(), e);
+			}
+		});
+		
+		//更新所有的时间戳
+		this.timestamps.clear();
+		this.timestamps.putAll(timestamps);
+		
+		//返回值
+		return change.get();
+	}
+
+	private List<Instance> getInstances() throws IOException {
 		List<Instance> instances = new ArrayList<>();
 		File[] files = storeDirectory.listFiles();
 		for (File file : files) {
@@ -99,151 +274,4 @@ public class InstanceService {
 		return instances;
 	}
 	
-	public List<Instance> getInstancesOfNode(String nodeId) throws IOException {
-		List<Instance> instances = null;
-		File f = new File(storeDirectory, PREFIX_NODE + nodeId);
-		if (f.exists()) {
-			String json = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(json)) {
-				instances = JSON.parseArray(json, Instance.class);
-			}
-		}
-		
-		if (instances == null) {
-			instances = new ArrayList<>();
-		}
-		return instances;
-	}
-	
-	public List<Instance> getInstancesOfService(String serviceName) throws IOException {
-		List<Instance> instances = null;
-		File f = new File(storeDirectory, PREFIX_SERVICE + serviceName);
-		if (f.exists()) {
-			String json = FileUtils.readFileToString(f, "UTF-8");
-			if (StringUtils.isNotEmpty(json)) {
-				instances = JSON.parseArray(json, Instance.class);
-			}
-		}
-		
-		if (instances == null) {
-			instances = new ArrayList<>();
-		}
-		return instances;
-	}
-	
-	private void refresh() throws IOException {
-		
-		//得到当前的进程
-		List<Instance> instances = getInstances();
-		LOG.debug("get instances from store, size: {}", instances.size());
-		
-		//得到变动的进程
-		List<Node> nodes = nodeService.getNodes(Node.STATUS_UP);
-		List<Instance> changeInstances = getChangeInstances(nodes);
-		LOG.debug("get change instances, size: {}", changeInstances.size());
-		
-		//合并进程列表
-		instances = mergeInstances(instances, changeInstances);
-		LOG.debug("merge instance list, size: {}", instances.size());
-		
-		//得到所有的服务
-		List<cn.batchfile.stat.domain.Service> services = serviceService.getServices();
-		
-		//更新进程表
-		updateInstances(instances, nodes, services);
-	}
-
-	private void updateInstances(List<Instance> instances, List<Node> nodes,
-			List<cn.batchfile.stat.domain.Service> services) throws UnsupportedEncodingException, IOException {
-		
-		// 转换列表的数据结构
-		List<String> nodeIds = nodes.stream().map(node -> node.getId()).collect(Collectors.toList());
-		List<String> serviceNames = services.stream().map(service -> service.getName()).collect(Collectors.toList());
-		
-		// 删掉多余的数据
-		File[] files = storeDirectory.listFiles();
-		for (File file : files) {
-			String name = file.getName();
-			if (StringUtils.startsWith(name, PREFIX_NODE)) {
-				String nodeId = StringUtils.substring(name, PREFIX_NODE.length());
-				if (!nodeIds.contains(nodeId)) {
-					FileUtils.deleteQuietly(file);
-					LOG.info("delete instance file: {}", file.getName());
-				}
-			} else if (StringUtils.startsWith(name, PREFIX_SERVICE)) {
-				String serviceName = StringUtils.substring(name, PREFIX_SERVICE.length());
-				if (!serviceNames.contains(serviceName)) {
-					FileUtils.deleteQuietly(file);
-					LOG.info("delete instance file: {}", file.getName());
-				}
-			}
-		}
-		
-		// 按照节点代号归类
-		Map<String, List<Instance>> collector = instances.stream().collect(Collectors.groupingBy(in -> in.getNode()));
-		for (Entry<String, List<Instance>> entry : collector.entrySet()) {
-			String json = JSON.toJSONString(entry.getValue(), SerializerFeature.PrettyFormat);
-			File file = new File(storeDirectory, PREFIX_NODE + entry.getKey());
-			FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
-		}
-
-		// 按照服务名称归类
-		collector = instances.stream().collect(Collectors.groupingBy(in -> in.getService()));
-		for (Entry<String, List<Instance>> entry : collector.entrySet()) {
-			String json = JSON.toJSONString(entry.getValue(), SerializerFeature.PrettyFormat);
-			File file = new File(storeDirectory, PREFIX_SERVICE + entry.getKey());
-			FileUtils.writeByteArrayToFile(file, json.getBytes("UTF-8"));
-		}
-	}
-
-	private List<Instance> mergeInstances(List<Instance> list1, List<Instance> list2) {
-		Map<String, Instance> map = new HashMap<>();
-		for (Instance e : list1) {
-			map.put(String.format("%s %s", e.getNode(), e.getPid()), e);
-		}
-		
-		for (Instance e : list2) {
-			map.put(String.format("%s %s", e.getNode(), e.getPid()), e);
-		}
-		
-		return map.values().stream().collect(Collectors.toList());
-	}
-	
-	private List<Instance> getChangeInstances(List<Node> nodes) {
-		List<Instance> instances = new ArrayList<>();
-		Map<String, Long> timestamps = new HashMap<>();
-		
-		nodes.parallelStream().forEach(node -> {
-			String url = String.format("%s/api/v2/instance", node.getAddress());
-			try {
-				//向节点发出询问消息，带时间戳
-				HttpHeaders headers = new HttpHeaders();
-				headers.setIfModifiedSince(this.timestamps.containsKey(node.getId()) ? this.timestamps.get(node.getId()) : 0L);
-				HttpEntity<?> entity = new HttpEntity<>("parameters", headers);
-				ResponseEntity<Instance[]> resp = restTemplate.exchange(url, HttpMethod.GET, entity, Instance[].class);
-				
-				//如果有实际内容，加入进程列表
-				if (resp.getStatusCode() == HttpStatus.OK) {
-					LOG.info("GET {} {}", url, entity.toString());
-					for (Instance in : resp.getBody()) {
-						in.setNode(node.getId());
-						instances.add(in);
-					}
-				}
-				
-				//更新变动节点的时间戳
-				timestamps.put(node.getId(), resp.getHeaders().getLastModified());
-			} catch (ResourceAccessException e) {
-				LOG.error("error when get instance list, id: " + node.getId() + ", address: " + node.getAddress(), e);
-			}
-		});
-		
-		//更新所有的时间戳
-		this.timestamps.clear();
-		this.timestamps.putAll(timestamps);
-		
-		//返回值
-		return instances;
-	}
-
 }
