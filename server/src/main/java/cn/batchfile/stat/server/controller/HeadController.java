@@ -1,112 +1,144 @@
 package cn.batchfile.stat.server.controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import cn.batchfile.stat.server.service.MimeTypes;
 
 @Controller
 public class HeadController {
 	private static final String SCRIPT = "var base_uri = location.href.replace(/_plugin\\/.*/, '');";
-	private Map<String, byte[]> contents = new ConcurrentHashMap<>(); 
-	
+	private static final Map<String, String> DIRECTORIES = new HashMap<String, String>();
+	private static final String INDEX = "index.html";
+	private Map<String, byte[]> contents = new ConcurrentHashMap<>();
+	private MimeTypes mimeTypes;
+
+	@Value("${document.root:}")
+	private String documentRoot;
+
 	@Value("${elasticsearch.http.port}")
-	public int httpPort;
-	
-//	@RequestMapping("/ui")
-//	public void uiIndex(HttpServletRequest request, HttpServletResponse response) throws IOException {
-//		response.sendRedirect("/ui/index.html");
-//	}
-//	
-//	@RequestMapping("/ui/{name}")
-//	public void ui(HttpServletRequest request, HttpServletResponse response,
-//			@PathVariable("name") String name) throws IOException {
-//		
-//		byte[] bytes = getContent(name);
-//		response.getOutputStream().write(bytes);
-//	}
-//	
-//	@RequestMapping("/ui/{dir}/{name}")
-//	public void ui(HttpServletRequest request, HttpServletResponse response,
-//			@PathVariable("dir") String dir,
-//			@PathVariable("name") String name) throws IOException {
-//		
-//		byte[] bytes = getContent(dir + "/" + name);
-//		response.getOutputStream().write(bytes);
-//	}
-//
-//	@RequestMapping("/ui/{dir}/{dir2}/{name}")
-//	public void ui(HttpServletRequest request, HttpServletResponse response,
-//			@PathVariable("dir") String dir,
-//			@PathVariable("dir2") String dir2,
-//			@PathVariable("name") String name) throws IOException {
-//		
-//		byte[] bytes = getContent(dir + "/" + dir2 + "/" + name);
-//		response.getOutputStream().write(bytes);
-//	}
-//	
-	@RequestMapping("/_plugin/head")
-	public void headIndex(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.sendRedirect("/_plugin/head/index.html");
+	private int httpPort;
+
+	static {
+		DIRECTORIES.put("/_plugin/head", "");
+		DIRECTORIES.put("/_plugin/head/", "");
+		DIRECTORIES.put("/admin", "");
+		DIRECTORIES.put("/admin/", "");
+	};
+
+	@PostConstruct
+	private void init() {
+		mimeTypes = new MimeTypes();
 	}
-	
-	@RequestMapping("/_plugin/head/{name}")
-	public void head(HttpServletRequest request, HttpServletResponse response,
-			@PathVariable("name") String name) throws IOException {
-		
-		byte[] bytes = getContent("_plugin/head/" + name);
-		if (StringUtils.equals(name, "index.html")) {
-			URL url = new URL(request.getRequestURL().toString());
-			String protocol = url.getProtocol();
-			String host = url.getHost();
-			String replacement = String.format("var base_uri = \"%s://%s:%s/\";", protocol, host, httpPort);
-			
-			String s = new String(bytes);
-			s = StringUtils.replace(s, SCRIPT, replacement);
-			
-			bytes = s.getBytes();
+
+	@RequestMapping(path = { "/_plugin/**", "/admin/**" })
+	public void plugin(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String path = request.getRequestURI();
+		if (DIRECTORIES.containsKey(path)) {
+			if (StringUtils.endsWith(path, "/")) {
+				path += INDEX;
+			} else {
+				response.sendRedirect(path + "/");
+				return;
+			}
 		}
-		
+
+		byte[] bytes = getContent(request, path);
+		if (bytes == null || bytes.length == 0) {
+			response.sendError(HttpStatus.NOT_FOUND.value());
+			return;
+		}
+
+		String mimeType = mimeTypes.getMimeByExtension(path);
+		if (StringUtils.equals("text/html", mimeType)) {
+			mimeType += "; charset=UTF-8";
+		}
+		response.addHeader("Content-Type", mimeType);
 		response.getOutputStream().write(bytes);
 	}
-//	
-//	@RequestMapping("/_plugin/head/{dir}/{name}")
-//	public void head(HttpServletRequest request, HttpServletResponse response,
-//			@PathVariable("dir") String dir,
-//			@PathVariable("name") String name) throws IOException {
-//		
-//		byte[] bytes = getContent("_plugin/head/" + dir + "/" + name);
-//		response.getOutputStream().write(bytes);
-//	}
+
+	private byte[] getContent(HttpServletRequest request, String path) throws IOException {
+		byte[] bytes = null;
+		if (StringUtils.isEmpty(documentRoot)) {
+			bytes = getClasspathContent(request, path);
+		} else {
+			bytes = getFileContent(request, path);
+		}
+		return bytes;
+	}
 	
-	private byte[] getContent(String path) throws IOException {
+	private byte[] getFileContent(HttpServletRequest request, String path) throws IOException {
+		File file = new File(documentRoot + path);
+		if (!file.exists() || !file.isFile()) {
+			return null;
+		}
+		byte[] buff = FileUtils.readFileToByteArray(file);
+		buff = replaceContent(request, path, buff);
+		return buff;
+	}
+	
+	private byte[] getClasspathContent(HttpServletRequest request, String path) throws IOException {
 		if (!contents.containsKey(path)) {
 			InputStream stream = null;
 			Reader reader = null;
 			try {
-				stream = getClass().getClassLoader().getResourceAsStream("META-INF/resources/" + path);
-				reader = new InputStreamReader(stream);
-				byte[] buff = IOUtils.toByteArray(reader);
-				contents.put(path, buff);
+				stream = getClass().getClassLoader().getResourceAsStream("META-INF/resources" + path);
+				if (stream != null) {
+					byte[] buff = new byte[stream.available()];
+					IOUtils.readFully(stream, buff, 0, stream.available());
+					buff = replaceContent(request, path, buff);
+					contents.put(path, buff);
+				} else {
+					contents.put(path, new byte[] {});
+				}
 			} finally {
-				try {reader.close();} catch (Exception e) {}
-				try {stream.close();} catch (Exception e) {}
+				try {
+					reader.close();
+				} catch (Exception e) {
+				}
+				try {
+					stream.close();
+				} catch (Exception e) {
+				}
 			}
 		}
 		return contents.get(path);
+	}
+
+	private byte[] replaceContent(HttpServletRequest request, String path, byte[] bytes)
+			throws MalformedURLException, UnsupportedEncodingException {
+		if (StringUtils.equals(path, "/_plugin/head/index.html")) {
+			URL url = new URL(request.getRequestURL().toString());
+			String protocol = url.getProtocol();
+			String host = url.getHost();
+			String replacement = String.format("var base_uri = \"%s://%s:%s/\";", protocol, host, httpPort);
+
+			String s = new String(bytes);
+			s = StringUtils.replace(s, SCRIPT, replacement);
+
+			bytes = s.getBytes("UTF-8");
+		}
+		return bytes;
 	}
 
 }
