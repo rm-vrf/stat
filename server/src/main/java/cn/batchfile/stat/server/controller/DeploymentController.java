@@ -1,7 +1,6 @@
 package cn.batchfile.stat.server.controller;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,13 +42,11 @@ public class DeploymentController {
 		}
 
 		List<Deployment> deployments = deploymentService.getDeployments();
-		if (deployments == null) {
-			return new ResponseEntity<List<Deployment>>(HttpStatus.NOT_FOUND);
+		if (StringUtils.isNotEmpty(node)) {
+			deployments = deployments.stream()
+					.filter(d -> StringUtils.equals(d.getNode(), node))
+					.collect(Collectors.toList());
 		}
-
-		deployments = deployments.stream()
-				.filter(d -> StringUtils.isEmpty(node) || StringUtils.equals(d.getNode(), node))
-				.collect(Collectors.toList());
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setLastModified(lastModified);
@@ -58,36 +55,49 @@ public class DeploymentController {
 	}
 
 	@GetMapping("/api/v2/service/{name}/deployment")
-	public ResponseEntity<List<Deployment>> getDeployments(WebRequest request, @PathVariable("name") String name,
-			@RequestParam(value = "node", required = false) String node) throws IOException {
+	public ResponseEntity<List<Deployment>> getDeploymentsOfService(WebRequest request, @PathVariable("name") String name) throws IOException {
 
 		List<Deployment> deployments = deploymentService.getDeployments(name);
-		if (deployments != null) {
-			deployments = deployments.stream()
-					.filter(d -> StringUtils.isEmpty(node) || StringUtils.equals(d.getNode(), node))
-					.collect(Collectors.toList());
-		} else {
-			deployments = new ArrayList<>();
-		}
-
 		HttpHeaders headers = new HttpHeaders();
 		headers.setCacheControl("no-cache");
 		return new ResponseEntity<List<Deployment>>(deployments, headers, HttpStatus.OK);
 	}
 
 	@GetMapping("/api/v2/service/{name}/deployment/count")
-	public ResponseEntity<Integer> getDeploymentsCount(WebRequest request, @PathVariable("name") String name,
-			@RequestParam(value = "node", required = false) String node) throws IOException {
+	public ResponseEntity<Integer> getDeploymentsCountOfService(WebRequest request, @PathVariable("name") String name) throws IOException {
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setCacheControl("no-cache");
 
 		List<Deployment> deployments = deploymentService.getDeployments(name);
-		if (deployments != null) {
-			deployments = deployments.stream()
-					.filter(d -> StringUtils.isEmpty(node) || StringUtils.equals(d.getNode(), node))
-					.collect(Collectors.toList());
-		}
+		int count = deployments == null ? 0 : deployments.size();
+
+		return new ResponseEntity<Integer>(count, headers, HttpStatus.OK);
+	}
+
+	@GetMapping("/api/v2/node/{id}/deployment")
+	public ResponseEntity<List<Deployment>> getDeploymentsOfNode(WebRequest request, @PathVariable("id") String nodeId) throws IOException {
+
+		List<Deployment> deployments = deploymentService.getDeployments();
+		deployments = deployments.stream()
+				.filter(d -> StringUtils.equals(d.getNode(), nodeId))
+				.collect(Collectors.toList());
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
+		return new ResponseEntity<List<Deployment>>(deployments, headers, HttpStatus.OK);
+	}
+
+	@GetMapping("/api/v2/node/{id}/deployment/count")
+	public ResponseEntity<Integer> getDeploymentsCountOfNode(WebRequest request, @PathVariable("id") String nodeId) throws IOException {
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
+
+		List<Deployment> deployments = deploymentService.getDeployments();
+		deployments = deployments.stream()
+				.filter(d -> StringUtils.equals(d.getNode(), nodeId))
+				.collect(Collectors.toList());
 		int count = deployments == null ? 0 : deployments.size();
 
 		return new ResponseEntity<Integer>(count, headers, HttpStatus.OK);

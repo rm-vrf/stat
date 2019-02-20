@@ -2,6 +2,7 @@ package cn.batchfile.stat.server.controller;
 
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +45,7 @@ public class NodeController {
 	
 	@PostMapping("/api/v2/node/_search")
 	public ResponseEntity<PaginationList<Node>> searchNodes(@RequestParam(name="query", defaultValue="*") String query,
-			@RequestParam(name="status", defaultValue="*") String status,
+			@RequestParam(name="status", defaultValue=StringUtils.EMPTY) String status,
 			@RequestParam(name="from", defaultValue="0") int from, 
 			@RequestParam(name="size", defaultValue="20") int size) {
 		

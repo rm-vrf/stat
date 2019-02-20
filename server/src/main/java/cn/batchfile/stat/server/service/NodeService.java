@@ -118,7 +118,7 @@ public class NodeService {
 		// 构建查询条件
 		BoolQueryBuilder bool = QueryBuilders.boolQuery();
 		bool.must(QueryBuilders.queryStringQuery(query));
-		if (StringUtils.isNotEmpty(status)) {
+		if (StringUtils.isNotEmpty(status) && !StringUtils.equals(status, "*")) {
 			bool.must(QueryBuilders.termQuery("status", StringUtils.lowerCase(status)));
 		}
 

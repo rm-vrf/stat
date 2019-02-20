@@ -98,7 +98,7 @@ public class ElasticService {
 		node = new RunnerNode(settings, plugins).start();
 
 		// 放入索引模板
-		putIndexTemplate();
+		//putIndexTemplate();
 		log.info("elastic node started, {}", node.toString());
 	}
 
@@ -125,6 +125,7 @@ public class ElasticService {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void putIndexTemplate() throws InterruptedException, ExecutionException, IOException {
 		// 判断是否设置了映射路径
 		if (StringUtils.isEmpty(mappingResourcePath)) {

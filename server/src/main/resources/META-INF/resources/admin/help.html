@@ -1,0 +1,68 @@
+<!doctype html>
+<html class="no-js">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>STAT HUB MASTER</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="renderer" content="webkit">
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+<meta name="apple-mobile-web-app-title" content="Amaze UI" />
+<link rel="stylesheet" href="assets/css/amazeui.min.css" />
+<link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+<!--[if lte IE 9]>
+<p class="browsehappy">你正在使用<strong>过时</strong>的浏览器，STAT HUB 暂不支持。 请 <a href="http://browsehappy.com/" target="_blank">升级浏览器</a>
+  以获得更好的体验！</p>
+<![endif]-->
+
+<header class="am-topbar admin-header">
+	<div class="am-topbar-brand">
+		<strong>STAT HUB</strong> <small>后台管理</small>
+	</div>
+	<button class="am-topbar-btn am-topbar-toggle am-btn am-btn-sm am-btn-success am-show-sm-only" data-am-collapse="{target: '#topbar-collapse'}">
+		<span class="am-sr-only">导航切换</span> <span class="am-icon-bars"></span>
+	</button>
+</header>
+
+<div class="am-cf admin-main">
+	<!-- content start -->
+	<div class="admin-content">
+
+		<div class="am-cf am-padding">
+			<div class="am-fl am-cf">
+				<strong class="am-text-primary am-text-lg">帮助</strong> / <small>help</small>
+			</div>
+		</div>
+		<div class="am-g">
+			<div class="am-u-sm-12">
+				<h3>查询语法</h3>
+				<p>使用全文检索语法进行查询，最简单的检索条件是一个词，比如 <code>hostname1</code>、<code>appserver</code>。也可以使用通配符，比如查询所有的节点：</p>
+				<pre><code>*</code></pre>
+				<p>用下面的通配符，可以返回所有以 <code>hostname</code> 开头的节点</p>
+				<pre><code>hostname*</code></pre>
+				<p>可以使用通配符查询 IP 地址段：</p>
+				<pre><code>192.168.1.*</code></pre>
+				<p>可以对某个属性查询，这样更加精确：</p>
+				<pre><code>networks.address:192.168.1.165</code></pre>
+				<p>也可以查询一个地址段，这样：</p>
+				<pre><code>networks.address:[192.168.1.100 TO 192.168.1.150]</code></pre>
+				<p>对数值属性可以查询数值范围，比如要查询 CPU 大于 8 核的节点：</p>
+				<pre><code>os.cpus:&gt;8</code></pre>
+				<p>可以使用 <code>AND</code>、<code>OR</code> 关联组合多个查询条件，比如要查询内存大于 8G，并且地址在某个段内的节点，可以这样：</p>
+				<pre><code>memory.total:&gt;8000000000 AND networks.address:[192.168.1.100 TO 192.168.1.150]</code></pre>
+				<p>可以用标签属性查询：</p>
+				<pre><code>tags:appserver AND tags:hpc</code></pre>
+			</div>
+		</div>
+	</div>
+	<!-- content end -->
+</div>
+
+<footer>
+	<hr>
+	<p class="am-padding-left">&copy; 2014 STAT HUB lane.cn@gmail.com https://github.com/lane-cn/stat</p>
+</footer>
+</body>
+</html>

@@ -42,6 +42,26 @@ public class InstanceController {
 		return new ResponseEntity<List<Instance>>(ins, headers, HttpStatus.OK);
 	}
 	
+	@GetMapping("/api/v2/node/{id}/instance/count")
+	public ResponseEntity<Integer> getInstancesOfNodeCount(WebRequest request,
+			@PathVariable("id") String id) throws IOException {
+		
+		List<Instance> ins = instanceService.getInstancesOfNode(id);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
+		return new ResponseEntity<Integer>(ins.size(), headers, HttpStatus.OK);
+	}
+	
+	@GetMapping("/api/v2/service/{name}/instance/count")
+	public ResponseEntity<Integer> getInstancesOfServiceCount(WebRequest request,
+			@PathVariable("name") String name) throws IOException {
+		
+		List<Instance> ins = instanceService.getInstancesOfService(name);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setCacheControl("no-cache");
+		return new ResponseEntity<Integer>(ins.size(), headers, HttpStatus.OK);
+	}
+	
 	@GetMapping("/api/v2/node/{id}/instance/{pid}/stdout")
 	public ResponseEntity<String[]> getSystemOut(WebRequest request,
 			@PathVariable("id") String node, 
