@@ -104,7 +104,7 @@
 						  <td>{{ node.index }}</td>
 						  <td>{{ node.hostname }}</td>
 						  <td><span v-bind:class="[ node.statusClass ]">{{ node.status }}</span></td>
-						  <td><a v-bind:href="[ node.address ]">{{ node.address }}</a></td>
+						  <td><a v-bind:href="[ node.address ]" target="_blank">{{ node.address }}</a></td>
 						  <td>{{ node.deploymentCount }}</td>
 						  <td><span v-bind:class="[ node.instanceClass ]">{{ node.instanceCount }}</span></td>
 						  <td>
