@@ -35,3 +35,25 @@ function getParameter(name) {
     }
     return vars;
 }
+
+var topbar = new Vue({
+	el : '#topbar-collapse',
+	data : {
+		messageCount: ''
+	},
+	methods: {
+		refresh: function() {
+			Vue.http.get('/v1/event/count').then(function(ret) {
+				var count = ret.body;
+				topbar.messageCount = count > 1024 ? count + '+' : count;
+			});
+		}
+	}
+});
+
+$(document).ready(function () {
+	topbar.refresh();
+	setInterval(function() {
+		topbar.refresh();
+	}, 5000);
+});

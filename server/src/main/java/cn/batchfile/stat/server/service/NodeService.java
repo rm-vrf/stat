@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.alibaba.fastjson.JSON;
@@ -58,6 +59,9 @@ public class NodeService {
 
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@Autowired
+	private EventService eventService;
 
 	@PostConstruct
 	public void init() {
@@ -148,38 +152,50 @@ public class NodeService {
 	}
 
 	private void refresh() throws IOException {
+		// update instance
 		Flux<Instance> flux = registry.getInstances().filter(Instance::isRegistered);
 		List<Instance> instances = flux.toStream().collect(Collectors.toList());
 		instances.parallelStream().forEach(instance -> {
-			String nodeId = instance.getId().toString();
-			LOG.debug("refresh node: {}, {}", nodeId, instance.getRegistration().getName());
+			String id = instance.getId().toString();
+			String status = instance.getStatusInfo().getStatus();
+			LOG.debug("refresh node: {}, {}", id, instance.getRegistration().getName());
 			if (StringUtils.equals(instance.getRegistration().getName(), APPLICATION_NAME)) {
 				long timestamp = instance.getStatusTimestamp().getEpochSecond();
-				if (timestamps.get(nodeId) == null || timestamps.get(nodeId) < timestamp) {
-					LOG.info("node status change, id: {}, status: {}", nodeId, instance.getStatusInfo().getStatus());
-					if (StringUtils.equalsIgnoreCase(instance.getStatusInfo().getStatus(), Node.STATUS_UP)) {
-						up(instance);
+				if (timestamps.get(id) == null || timestamps.get(id) < timestamp) {
+					LOG.info("node status change, id: {}, status: {}", id, status);
+					if (StringUtils.equalsIgnoreCase(status, Node.STATUS_UP)) {
+						String address = instance.getRegistration().getServiceUrl();
+						Map<String, String> metadata = instance.getRegistration().getMetadata();
+						up(id, address, status, metadata);
 					} else {
-						down(instance);
+						down(id, status);
 					}
-					timestamps.put(nodeId, timestamp);
+					timestamps.put(id, timestamp);
 				}
+			}
+		});
+		
+		// update status
+		List<Node> nodes = getNodes(Node.STATUS_UP);
+		nodes.parallelStream().forEach(node -> {
+			try {
+				String url = String.format("%s/api/v2/system/os", node.getAddress());
+				restTemplate.getForEntity(url, Os.class);
+			} catch (ResourceAccessException e) {
+				LOG.error("cannot get node info, address: " + node.getAddress());
+				down(node.getId(), Node.STATUS_UNKNOWN);
 			}
 		});
 	}
 
-	private void up(Instance instance) {
+	private void up(String id, String address, String status, Map<String, String> metadata) {
 		Node node = new Node();
 
-		String id = instance.getId().toString();
-		String address = instance.getRegistration().getServiceUrl();
 		if (StringUtils.endsWith(address, "/")) {
 			address = StringUtils.left(address, StringUtils.length(address) - 1);
 		}
 
-		String status = instance.getStatusInfo().getStatus();
 		LOG.info("node up, address: {}, id: {}, status: {}", address, id, status);
-		Map<String, String> metadata = instance.getRegistration().getMetadata();
 
 		node.setId(id);
 		node.setAddress(address);
@@ -218,14 +234,14 @@ public class NodeService {
 				.setSource(json, XContentType.JSON).execute().actionGet();
 		long version = resp.getVersion();
 		LOG.info("index node, id: {}, version: {}", id, version);
+		
+		// send event
+		eventService.putNodeUpEvent(node);
 	}
 
-	private void down(Instance instance) {
+	private void down(String id, String status) {
 		//设置索引状态
-		String id = instance.getId().toString();
-		String status = instance.getStatusInfo().getStatus();
 		LOG.info("node down, id: {}, status: {}", id, status);
-
 		GetResponse resp = elasticService.getNode().prepareGet().setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id)
 				.execute().actionGet();
 
@@ -238,6 +254,9 @@ public class NodeService {
 					.setId(id).setSource(json, XContentType.JSON).execute().actionGet();
 			long version = resp2.getVersion();
 			LOG.info("index node, id: {}, version: {}", id, version);
+			
+			//send event
+			eventService.putNodeDownEvent(node);
 		}
 	}
 

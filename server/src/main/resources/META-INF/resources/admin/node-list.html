@@ -171,25 +171,6 @@ $(document).ready(function () {
 	});
 });
 
-var topbar = new Vue({
-	el : '#topbar-collapse',
-	data : {
-		messageCount: ''
-	},
-	methods: {
-		refresh: function() {
-			topbar.messageCount = 'N/A';
-		}
-	}
-});
-
-$(document).ready(function () {
-	topbar.refresh();
-	setInterval(function() {
-		topbar.refresh();
-	}, 5000);
-});
-
 var nodesTable = new Vue({
 	el : '#nodes-table',
 	data : {

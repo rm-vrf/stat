@@ -67,11 +67,9 @@ public class ElasticService {
 	@SuppressWarnings({ "resource", "unchecked" })
 	@PostConstruct
 	public void init() throws NodeValidationException, InterruptedException, ExecutionException, IOException {
-		// 清空工作目录
-		File dataPath = new File(new File(storeDirectory), "index");
-		FileUtils.deleteQuietly(dataPath);
 
-		// 启动elasticsearch
+		// 创建工作目录
+		File dataPath = new File(new File(storeDirectory), "index");
 		log.info("start elastic, tcp port: {}, http port: {}, path: {}", tcpPort, httpPort, dataPath);
 
 		// 构建设置
