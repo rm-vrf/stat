@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,19 @@ public class NodeController {
 		return new ResponseEntity<Node>(node, headers, HttpStatus.OK);
 	}
 	
+	@DeleteMapping("/api/v2/node/{id}")
+	public ResponseEntity<Boolean> deleteNode(WebRequest request,
+			@PathVariable("id") String id) {
+		
+		boolean success = nodeService.deleteNode(id);
+		if (!success) {
+			return new ResponseEntity<Boolean>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		
+		HttpHeaders headers = new HttpHeaders();
+		return new ResponseEntity<Boolean>(Boolean.TRUE, headers, HttpStatus.OK);
+	}
+	
 	@PostMapping("/api/v2/node/_search")
 	public ResponseEntity<PaginationList<Node>> searchNodes(@RequestParam(name="query", defaultValue="*") String query,
 			@RequestParam(name="status", defaultValue=StringUtils.EMPTY) String status,
@@ -60,13 +74,10 @@ public class NodeController {
 			@PathVariable("id") String id,
 			@RequestBody List<String> tags) {
 		
-		Node node = nodeService.getNode(id);
-		if (node == null) {
-			return new ResponseEntity<List<String>>(HttpStatus.NOT_FOUND);
+		boolean success = nodeService.putTags(id, tags);
+		if (!success) {
+			return new ResponseEntity<List<String>>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		
-		node.setTags(tags);
-		nodeService.putNode(node);
 		
 		HttpHeaders headers = new HttpHeaders();
 		return new ResponseEntity<List<String>>(tags, headers, HttpStatus.OK);

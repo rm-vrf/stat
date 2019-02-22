@@ -14,12 +14,14 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -149,6 +151,64 @@ public class NodeService {
 		} catch (IndexNotFoundException e) {
 			return new PaginationList<Node>(0, nodes);
 		}
+	}
+	
+	public boolean putTags(String id, List<String> tags) {
+		for (int i = 0; i < 10; i ++) {
+			GetResponse get = elasticService.getNode().prepareGet()
+					.setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id)
+					.execute().actionGet();
+			
+			if (get.isExists()) {
+				Node node = JSON.parseObject(get.getSourceAsString(), Node.class);
+				long version = get.getVersion();
+				node.setTags(tags);
+				try {
+					String json = JSON.toJSONString(node);
+					IndexResponse index = elasticService.getNode().prepareIndex()
+							.setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id).setVersion(version)
+							.setSource(json, XContentType.JSON)
+							.execute().actionGet();
+					
+					LOG.info("update tags, id: {}, version: {}", id, index.getVersion());
+					return true;
+				} catch (VersionConflictEngineException e) {
+					LOG.debug("cannot update tags, try again");
+				}
+			}
+		}
+		
+		LOG.error("cannot update tags, id: {}", id);
+		return false;
+	}
+	
+	public boolean deleteNode(String id) {
+		for (int i = 0; i < 10; i ++) {
+			GetResponse get = elasticService.getNode().prepareGet()
+					.setIndex(INDEX_NAME).setType(TYPE_NAME).setId(id)
+					.execute().actionGet();
+			
+			if (get.isExists()) {
+				Object status = get.getSourceAsMap().get("status");
+				if (StringUtils.equals("" + status, Node.STATUS_UP)) {
+					throw new RuntimeException("cannot delete online node");
+				}
+				
+				long version = get.getVersion();
+				try {
+					DeleteResponse delete = elasticService.getNode().prepareDelete()
+							.setIndex(INDEX_NAME).setType(INDEX_NAME).setId(id).setVersion(version)
+							.execute().actionGet();
+					LOG.info("deleted node, id: {}, version: {}", id, delete.getVersion());
+					return true;
+				} catch (VersionConflictEngineException e) {
+					LOG.debug("cannot delete node, try again");
+				}
+			}
+		}
+		
+		LOG.error("cannot delete node, id: {}", id);
+		return false;
 	}
 
 	private void refresh() throws IOException {
