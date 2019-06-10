@@ -8,6 +8,7 @@ public class Disk {
 	private String sysTypeName;
 	private int type;
 	private String typeName;
+	private long total;
 
 	public String getDirName() {
 		return dirName;
@@ -65,4 +66,11 @@ public class Disk {
 		this.typeName = typeName;
 	}
 
+	public long getTotal() {
+		return total;
+	}
+	
+	public void setTotal(long total) {
+		this.total = total;
+	}
 }

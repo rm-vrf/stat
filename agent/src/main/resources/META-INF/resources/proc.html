@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>STAT HUB - 进程列表</title>
+    <link href="stylesheets/stat.css" rel="stylesheet" type="text/css" />
+    <script src="js/jquery-3.3.1.min.js" type="text/javascript"></script>
+    <script src="js/common.js" type="text/javascript"></script>
+    <script>
+        $(document).ready(function () {
+            $.get('/v1/node', function(node, status, xhr) {
+                $('#hostname').text(node.hostname);
+                $('#address').text(get_hostname(node));
+                var os = node.os;
+                if (os) {
+                    $('#cpucore').text(os.cpus);
+                }
+                var disk_total = 0;
+                $.each(node.disks, function(i, disk) {
+                    disk_total += disk.total / 1024 / 1024 / 1024;
+                });
+                $('#diskspace').text(parseInt(disk_total));
+                var memory = node.memory;
+                if (memory) {
+                    memory = memory.total / 1024 / 1024 / 1024;
+                    $('#memory').text(parseInt(memory));
+                } else {
+                    $('#memory').text(0);
+                }
+            });
+            
+            var app = get_param('app').app.replace('#', '');
+            
+            $.get('/v1/node', function(node, status, xhr) {
+                var hostname = get_hostname(node);
+                refresh_list(app, hostname);
+                setInterval(function() {
+                    refresh_list(app, hostname);
+                }, 5000);
+            });
+        });
+        
+        function kill_all() {
+            if (confirm('重新启动所有进程，需要继续吗？')) {
+                var keys = get_table_keys();
+                $.each(keys, function(i, key) {
+                    $.post('/v1/proc/' + key + '/_kill', function(data, status, xhr) {});
+                });
+                alert('已经发出重启指令');
+            }
+        }
+        
+        function kill(pid) {
+            if (confirm('停止进程，需要继续吗？')) {
+                $.post('/v1/proc/' + pid + '/_kill', function(data, status, xhr) {});
+                alert('已经发出停止指令');
+            }
+        }
+
+        function refresh_list(app, hostname) {
+            $.get('/v1/app/' + app + '/proc', function(pids, status, xhr) {
+                //remove deleted row
+                var keys = get_table_keys();
+                $.each(keys, function(i, key) {
+                    if ($.inArray(key, pids) < 0) {
+                        remove_row(key);
+                    }
+                });
+                
+                //add new row
+                $.each(pids, function(i, pid) {
+                    if ($.inArray(pid, keys) < 0) {
+                        add_row(pid);
+                        refresh_row(pid, hostname);
+                    }
+                });
+            });
+        }
+        
+        function get_table_keys() {
+            var keys = new Array();
+            var key = '';
+            $("#statustable tr td:nth-child(1)").each(function () {
+                key = $(this).text();
+                if (key) {
+                    keys.push(parseInt(key));
+                }
+            });
+            return keys;
+        }
+        
+        function refresh_row(pid, hostname) {
+            $.get('/v1/proc/' + pid, function(p, status, xhr) {
+                update_row(p, hostname);
+            });
+        }
+        
+        function update_row(p, hostname) {
+            var text = new Array();
+            $.each(p.ports, function(i, port) {
+                text.push('<a href="http://' + hostname + ':' + port + '" target="_blank">' + port + '</a>');
+            });
+            
+            $('#ppid_' + p.pid).text(p.ppid);
+            $('#stime_' + p.pid).text(p.startTime);
+            $('#cmd_' + p.pid).text(p.cmd);
+            $('#port_' + p.pid).html(text.join(', '));
+        }
+        
+        function add_row(pid) {
+            var row = '<tr id="tr_' + pid + '" class="">';
+            row += '<td class="hidden">' + pid + '</td>';
+            row += '<td><span id="pid_' + pid + '">' + pid + '</span></td>';
+            row += '<td><span id="ppid_' + pid + '"></span></td>';
+            row += '<td><span id="stime_' + pid + '"></span></td>';
+            row += '<td><span id="cmd_' + pid + '"></span></td>';
+            row += '<td><span id="port_' + pid + '"></span></td>';
+            row += '<td class="action">';
+            row += '<ul>';
+            row += '<li">';
+            row += '<a href="health.html?pid=' + pid + '" id="action_health" target="_blank">健康检查日志</a> ';
+            row += '</li>';
+            row += '<li">';
+            row += '<a href="tail.html?pid=' + pid + '&out=stdout" id="action_stdout" target="_blank">STDOUT</a> ';
+            row += '</li>';
+            row += '<li">';
+            row += '<a href="tail.html?pid=' + pid + '&out=stderr" id="action_stderr" target="_blank">STDERR</a> ';
+            row += '</li>';
+            row += '<li">';
+            row += '<a href="javascript:void(0)" onclick="kill(' + pid + ')" id="action_kill">KILL</a> ';
+            row += '</li>';
+            row += '</ul>';
+            row += '</td>';
+            row += '</tr>';
+            $("#statustable tr:last").after(row);
+        }
+        
+        function remove_row(name) {
+            var keys = get_table_keys();
+            var pos = $.inArray(name, keys);
+            if (pos >= 0) {
+                $("#statustable tr:gt(0):eq(" + pos + ")").remove();
+            }
+        }
+    </script>
+</head>
+<body>
+<div id="wrapper">
+
+    <div id="header">
+        <a href="/"><img src="images/stat.png" alt="Status" /></a>
+        <p id="nodestatus">
+            主机：<strong><span id="hostname"></span></strong> <span id="address"></span> - 
+            CPU：<span id="cpucore"></span> 核 - 
+            磁盘：<span id="diskspace"></span> GB - 
+            内存：<span id="memory"></span> GB
+        </p>
+    </div>
+
+    <div id="content">
+        <div class="hidden" id="statusmessage">&nbsp;</div>
+        <ul id="buttons" class="clr">
+            <li id="restart_all"><a onclick="kill_all()" href="javascript:void(0)">&nbsp;</a></li>
+        </ul>
+        <table cellspacing="0" id="statustable">
+            <tr>
+                <th class="hidden"></th>
+                <th class="pid">PID</th>
+                <th class="ppid">PPID</th>
+                <th class="stime">开始时间</th>
+                <th class="cmd">命令</th>
+                <th class="port">端口</th>
+                <th class="action">操作</th>
+            </tr>
+        </table>
+    </div>
+    <br/>
+    <div class="push">
+    </div>
+</div>
+
+<div id="footer" class="clr">
+    <div class="left">
+        <a href="/">STAT HUB</a> <span id="supervisor_version">#</span>
+    </div>
+    <div class="right">
+        &amp;copy; 2006-<span id="copyright_date">#</span> <strong>lane.cn@gmail.com</strong>
+    </div>
+</div>
+</body>
+</html>

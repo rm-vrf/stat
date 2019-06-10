@@ -1,15 +1,12 @@
 package cn.batchfile.stat.server.controller;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,70 +14,103 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.WebRequest;
 
+import cn.batchfile.stat.domain.Node;
 import cn.batchfile.stat.domain.PaginationList;
-import cn.batchfile.stat.server.domain.Node;
+import cn.batchfile.stat.domain.RestResponse;
 import cn.batchfile.stat.server.service.NodeService;
 
 @RestController
 public class NodeController {
-	
-	protected static final Logger log = LoggerFactory.getLogger(NodeController.class);
 
 	@Autowired
 	private NodeService nodeService;
 	
-	@GetMapping("/api/v2/node/{id}")
-	public ResponseEntity<Node> getNode(WebRequest request,
+	@PutMapping("/v1/node")
+	public RestResponse<String> putNode(HttpServletResponse response,
+			@RequestBody Node node) throws IOException {
+		
+		RestResponse<String> resp = new RestResponse<String>();
+		try {
+			nodeService.putNode(node);
+			resp.setOk(true);
+			resp.setBody(node.getId());
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.sendError(500, e.getMessage());
+		}
+		return resp;
+	}
+	
+	@GetMapping("/v1/node/{id}")
+	public Node getNode(HttpServletResponse response,
 			@PathVariable("id") String id) {
 		
 		Node node = nodeService.getNode(id);
 		if (node == null) {
-			return new ResponseEntity<Node>(HttpStatus.NOT_FOUND);
+			response.setStatus(404);
 		}
-		
-		HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<Node>(node, headers, HttpStatus.OK);
+		return node;
 	}
 	
-	@DeleteMapping("/api/v2/node/{id}")
-	public ResponseEntity<Boolean> deleteNode(WebRequest request,
-			@PathVariable("id") String id) {
-		
-		boolean success = nodeService.deleteNode(id);
-		if (!success) {
-			return new ResponseEntity<Boolean>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		
-		HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<Boolean>(Boolean.TRUE, headers, HttpStatus.OK);
+	@GetMapping("/v1/node/{id}/env")
+	public Map<String, String> getEnvs(@PathVariable("id") String id) {
+		return nodeService.getEnvs(id);
 	}
 	
-	@PostMapping("/api/v2/node/_search")
-	public ResponseEntity<PaginationList<Node>> searchNodes(@RequestParam(name="query", defaultValue="*") String query,
-			@RequestParam(name="status", defaultValue=StringUtils.EMPTY) String status,
+	@PutMapping("/v1/node/{id}/env")
+	public RestResponse<String> putEnvs(HttpServletResponse response,
+			@PathVariable("id") String id,
+			@RequestBody Map<String, String> envs) throws IOException {
+		
+		RestResponse<String> resp = new RestResponse<String>();
+		try {
+			nodeService.putEnvs(id, envs);
+			resp.setOk(true);
+			resp.setBody(id);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.sendError(500, e.getMessage());
+		}
+		return resp;
+	}
+	
+	@PutMapping("/v1/node/{id}/tag")
+	public RestResponse<String> putTag(HttpServletResponse response,
+			@PathVariable("id") String id,
+			@RequestBody List<String> tags) throws IOException {
+		
+		RestResponse<String> resp = new RestResponse<String>();
+		try {
+			nodeService.putTags(id, tags);
+			resp.setOk(true);
+			resp.setBody(id);
+		} catch (Exception e) {
+			resp.setOk(false);
+			resp.setMessage(e.getMessage());
+			response.sendError(500, e.getMessage());
+		}
+		return resp;
+	}
+	
+	@PutMapping("/v1/node/{id}/tags")
+	@Deprecated
+	public RestResponse<String> putTags(HttpServletResponse response,
+			@PathVariable("id") String id,
+			@RequestBody List<String> tags) throws IOException {
+	
+		return putTag(response, id, tags);
+	}
+	
+	@PostMapping("/v1/node/_search")
+	public PaginationList<Node> searchNodes(@RequestBody String query, 
 			@RequestParam(name="from", defaultValue="0") int from, 
-			@RequestParam(name="size", defaultValue="20") int size) {
+			@RequestParam(name="size", defaultValue="20") int size,
+			@RequestParam(name="includeDownNode", defaultValue="true") boolean includeDownNode) {
 		
-		PaginationList<Node> list = nodeService.searchNodes(query, status, from, size);
-		
-		HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<PaginationList<Node>>(list, headers, HttpStatus.OK);
+		return nodeService.searchNodes(query, from, size, includeDownNode);
 	}
 
-	@PutMapping("/api/v2/node/{id}/tag")
-	public ResponseEntity<List<String>> putTags(
-			@PathVariable("id") String id,
-			@RequestBody List<String> tags) {
-		
-		boolean success = nodeService.putTags(id, tags);
-		if (!success) {
-			return new ResponseEntity<List<String>>(HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-		
-		HttpHeaders headers = new HttpHeaders();
-		return new ResponseEntity<List<String>>(tags, headers, HttpStatus.OK);
-	}
-	
 }

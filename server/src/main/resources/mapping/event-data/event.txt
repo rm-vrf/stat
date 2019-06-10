@@ -1,0 +1,30 @@
+{
+    "event": {
+        "properties": {
+            "action": {
+                "type": "string"
+            },
+            "timestamp": {
+                "type": "date"
+            },
+            "node": {
+                "type": "string"
+            },
+            "hostname": {
+                "type": "string"
+            },
+            "address": {
+                "type": "string"
+            },
+            "app": {
+                "type": "string"
+            },
+            "pid": {
+                "type": "long"
+            },
+            "desc": {
+                "type": "string"
+            }
+        }
+    }
+}

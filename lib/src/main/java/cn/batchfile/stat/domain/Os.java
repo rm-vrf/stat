@@ -2,27 +2,18 @@ package cn.batchfile.stat.domain;
 
 public class Os {
 	private String name;
-	private String architecture;
 	private String version;
 	private int cpus;
-	private double systemLoadAverage;
+	private String architecture;
 
 	public String getName() {
 		return name;
 	}
-
+	
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public String getArchitecture() {
-		return architecture;
-	}
-
-	public void setArchitecture(String architecture) {
-		this.architecture = architecture;
-	}
-
+	
 	public String getVersion() {
 		return version;
 	}
@@ -34,17 +25,16 @@ public class Os {
 	public int getCpus() {
 		return cpus;
 	}
-
+	
 	public void setCpus(int cpus) {
 		this.cpus = cpus;
 	}
-
-	public double getSystemLoadAverage() {
-		return systemLoadAverage;
+	
+	public String getArchitecture() {
+		return architecture;
 	}
-
-	public void setSystemLoadAverage(double systemLoadAverage) {
-		this.systemLoadAverage = systemLoadAverage;
+	
+	public void setArchitecture(String architecture) {
+		this.architecture = architecture;
 	}
-
 }

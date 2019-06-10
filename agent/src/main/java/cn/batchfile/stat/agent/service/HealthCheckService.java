@@ -11,7 +11,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -25,42 +24,31 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
-import cn.batchfile.stat.agent.util.cmd.CommandLineUtils;
+import cn.batchfile.stat.domain.App;
+import cn.batchfile.stat.domain.HealthCheck;
 import cn.batchfile.stat.domain.HealthCheckResult;
-import cn.batchfile.stat.domain.Instance;
-import cn.batchfile.stat.domain.Service;
-import cn.batchfile.stat.service.ServiceService;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
+import cn.batchfile.stat.domain.Proc;
 
-@org.springframework.stereotype.Service
+@Service
 public class HealthCheckService {
 	protected static final Logger log = LoggerFactory.getLogger(HealthCheckService.class);
-	private static final int CACHE_LINE_COUNT = 500;
 	private Map<Long, HealthCheckHandler> handlers = new ConcurrentHashMap<Long, HealthCheckHandler>();
-	private Counter okCounter;
-	private Counter failCounter;
 	
-	public HealthCheckService(MeterRegistry registry) {
-		okCounter = Counter.builder("health.check.ok").register(registry);
-		failCounter = Counter.builder("health.check.fail").register(registry);
-		Gauge.builder("health.check.running", "/", s -> handlers.size()).register(registry);
-	}
+	@Value("${out.cache.line.count:500}")
+	private int outCacheLineCount;
+
+	@Autowired
+	private AppService appService;
 	
 	@Autowired
-	private ServiceService serviceService;
-	
-	@Autowired
-	private InstanceService instanceService;
+	private ProcService procService;
 	
 	@Autowired
 	private EventService eventService;
-
-	@Autowired
-	private SystemService systemService;
-
+	
 	@PostConstruct
 	public void init() {
 		//启动定时器
@@ -71,7 +59,7 @@ public class HealthCheckService {
 				try {
 					refresh();
 				} catch (Exception e) {
-					log.error("error when health check", e);
+					//pass
 				}
 			}
 		}, 5, 5, TimeUnit.SECONDS);
@@ -79,11 +67,11 @@ public class HealthCheckService {
 	
 	private void refresh() throws IOException {
 		//移除多余的健康检查器
-		List<Instance> ins = instanceService.getInstances();
-		cleanHealthCheck(ins);
+		List<Long> pids = procService.getProcs();
+		cleanHealthCheck(pids);
 		
 		//寻找本地的所有进程，重建健康检查
-		restoreHealthCheck(ins);
+		restoreHealthCheck(pids);
 	}
 	
 	public List<HealthCheckResult> getResults(long pid) {
@@ -101,10 +89,13 @@ public class HealthCheckService {
 		return list;
 	}
 	
-	public void register(Service service, Instance instance) throws IOException {
+	public void register(App app, Proc p) throws IOException {
 		
-		if (service.getHealthCheck() == null || !service.getHealthCheck().getEnabled()) {
-			log.info("no health check for app: {}", service.getName());
+		HealthCheck hc = app.getHealthChecks() == null || app.getHealthChecks().size() == 0 ? 
+				null : app.getHealthChecks().get(0);
+
+		if (hc == null) {
+			log.info("no health check for app: {}", app.getName());
 			return;
 		}
 		
@@ -114,57 +105,37 @@ public class HealthCheckService {
 					@Override
 					public void run() {
 						try {
-							check(service, instance);
+							check(app, hc, p);
 						} catch (Exception e) {}
 					}
 				},  
-	            service.getHealthCheck().getStartPeriod(),
-	            service.getHealthCheck().getInterval(),  
+	            hc.getInitialDelaySeconds(),  
+	            hc.getIntervalSeconds(),  
 	            TimeUnit.SECONDS);
 		
 		HealthCheckHandler handler = new HealthCheckHandler();
 		handler.consecutiveFailures = 0;
-		handler.results = new LinkedBlockingQueue<HealthCheckResult>(CACHE_LINE_COUNT);
+		handler.results = new LinkedBlockingQueue<HealthCheckResult>(outCacheLineCount);
 		handler.timer = timer;
 		
-		handlers.put(instance.getPid(), handler);
+		handlers.put(p.getPid(), handler);
 	}
 	
-	private void check(Service service, Instance in) throws Exception {
-		if (service == null 
-				|| service.getHealthCheck() == null 
-				|| !service.getHealthCheck().getEnabled() 
-				|| in == null) {
+	private void check(App app, HealthCheck hc, Proc p) throws Exception {
+		if (p == null || hc == null || app == null) {
 			return;
 		}
 		
-		log.debug("health check service: {}, pid: {}", service.getName(), in.getPid());
-		HealthCheckHandler handler = handlers.get(in.getPid());
-		HealthCheckResult ret = null;
+		log.debug("health check app: {}, pid: {}", app.getName(), p.getPid());
+		HealthCheckHandler handler = handlers.get(p.getPid());
 
-		//检查 HTTP 端口
-		if (service.getHealthCheck().getHttpGet() != null) {
-			cn.batchfile.stat.domain.HttpGet hg = service.getHealthCheck().getHttpGet();
-			ret = checkHttpRequest(service, in, 
-					hg.getProtocol(), 
-					in.getPorts().get(hg.getPortIndex()), 
-					hg.getUri(), 
-					service.getHealthCheck().getTimeout() * 1000);
-		} 
-
-		//检查命令行
-		if (service.getHealthCheck().getCommand() != null) {
-			String test = service.getHealthCheck().getCommand().getTest();
-			//String check = service.getHealthCheck().getCommand().getCheck();
-			ret = checkCommand(service, in, test, service.getHealthCheck().getTimeout());
-		}
+		//执行检查
+		String protocal = hc.getProtocol();
+		int port = p.getPorts().get(hc.getPortIndex());
+		String path = hc.getPath();
+		int timeout = hc.getTimeoutSeconds() * 1000;
+		HealthCheckResult ret = sendRequest(app.getName(), p.getPid(), protocal, port, path, timeout);
 		
-		if (ret == null) {
-			//无效的检查设置
-			return;
-		}
-		log.debug("health check, service: {}, pid: {}, result: {}", service.getName(), in.getPid(), ret.getMessage());
-
 		//保存检查结果
 		if (handler.results.remainingCapacity() < 1) {
 			handler.results.poll();
@@ -175,9 +146,7 @@ public class HealthCheckService {
 		if (ret.isOk()) {
 			//计数器归零
 			handler.consecutiveFailures = 0;
-			okCounter.increment();
 		} else {
-			failCounter.increment();
 			//累加计数器
 			handler.consecutiveFailures ++;
 			
@@ -185,41 +154,17 @@ public class HealthCheckService {
 			eventService.putHealthCheckFailEvent(ret);
 			
 			//超过失败次数，杀进程
-			if (handler.consecutiveFailures >= service.getHealthCheck().getRetries()) {
-				log.info("EXCEED MAX CONSECUTIVE FAILURES, KILL PROCESS: {}, SERVICE: {}", in.getPid(), service.getName());
-				instanceService.killInstances(Arrays.asList(new Long[] {in.getPid()}));
+			if (handler.consecutiveFailures > hc.getMaxConsecutiveFailures()) {
+				log.info("EXCEED MAX CONSECUTIVE FAILURES, KILL PROCESS: {}, APP: {}", p.getPid(), app.getName());
+				procService.killProcs(Arrays.asList(new Long[] {p.getPid()}));
 			}
 		}
 	}
-	
-	private HealthCheckResult checkCommand(Service service, Instance instance, 
-			String command, int timeoutInSeconds) throws Exception {
-		
-		HealthCheckResult ret = new HealthCheckResult();
-		ret.setService(service.getName());
-		ret.setPid(instance.getPid());
-		ret.setTime(new Date());
-		
-		StringBuilder out = new StringBuilder(StringUtils.EMPTY);
-		StringBuilder err = new StringBuilder(StringUtils.EMPTY);
-		Map<String, String> vars = systemService.createVars(instance.getPorts(), service.getEnvironment());
-		
-		long beginTime = System.currentTimeMillis();
-		int i = CommandLineUtils.execute(command, service.getWorkDirectory(), vars, timeoutInSeconds, out, err);
-		ret.setResponseTime(System.currentTimeMillis() - beginTime);
-		
-		ret.setEndpoint(command);
-		String message = String.format("RET: %s, OUT: %s, ERR: %s", i, out.toString(), err.toString());
-		ret.setMessage(message);
-		ret.setOk(i == 0);
-		
-		return ret;
-	}
 
-	private HealthCheckResult checkHttpRequest(Service service, Instance instance, String protocal, int port, String path, int timeout) {
+	private HealthCheckResult sendRequest(String app, long pid, String protocal, int port, String path, int timeout) {
 		HealthCheckResult ret = new HealthCheckResult();
-		ret.setService(service.getName());
-		ret.setPid(instance.getPid());
+		ret.setApp(app);
+		ret.setPid(pid);
 		ret.setTime(new Date());
 		
 		String uri = String.format("%s://%s:%s%s", StringUtils.lowerCase(protocal), "127.0.0.1", port, path);
@@ -244,7 +189,7 @@ public class HealthCheckService {
 			
 			//检查返回代码
 			int code = resp.getStatusLine().getStatusCode();
-			ret.setMessage(code + " " + resp.getStatusLine().getReasonPhrase());
+			ret.setCode(code);
 			if (code >= 200 && code < 300) {
 				ret.setOk(true);
 				ret.setResponseTime(System.currentTimeMillis() - beginTime);
@@ -263,25 +208,23 @@ public class HealthCheckService {
 		return ret;
 	}
 	
-	private void restoreHealthCheck(List<Instance> ins) throws IOException {
-		List<Long> pids = ins.stream().map(in -> in.getPid()).collect(Collectors.toList());
+	private void restoreHealthCheck(List<Long> pids) throws IOException {
 		for (Long pid : pids) {
 			if (!handlers.containsKey(pid)) {
-				Instance in = instanceService.getInstance(pid);
-				Service service = in == null ? null : serviceService.getService(in.getService());
-				if (in != null && service != null 
-						&& service.getHealthCheck() != null 
-						&& service.getHealthCheck().getEnabled()) {
-					register(service, in);
+				Proc p = procService.getProc(pid);
+				App app = p == null ? null : appService.getApp(p.getApp());
+				if (p != null && app != null 
+						&& app.getHealthChecks() != null 
+						&& app.getHealthChecks().size() > 0) {
+					register(app, p);
 				}
 			}
 		}
 	}
 	
-	private void cleanHealthCheck(List<Instance> ins) {
+	private void cleanHealthCheck(List<Long> pids) {
 		//找到已经停止的进程
 		List<Long> removePids = new ArrayList<Long>();
-		List<Long> pids = ins.stream().map(in -> in.getPid()).collect(Collectors.toList());
 		for (Long pid : handlers.keySet()) {
 			if (!pids.contains(pid)) {
 				removePids.add(pid);

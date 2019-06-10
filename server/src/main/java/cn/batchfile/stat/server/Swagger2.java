@@ -31,7 +31,7 @@ public class Swagger2 {
                 .description("STAT hub API DOC")
                 .termsOfServiceUrl("https://github.com/lane-cn/stat")
                 .contact("lane.cn@gmail.com")
-                .version("2.0")
+                .version("1.0")
                 .build();
     }
 }
