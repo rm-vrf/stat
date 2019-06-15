@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class Container {
     private String image;
+    private boolean readonly;
     private List<File> adds;
     private List<String> runs;
     private User user;
@@ -23,6 +24,14 @@ public class Container {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public boolean isReadonly() {
+        return readonly;
+    }
+
+    public void setReadonly(boolean readonly) {
+        this.readonly = readonly;
     }
 
     public List<File> getAdds() {
