@@ -12,6 +12,7 @@ public class Proc {
     private String container;
     private boolean up;
     private Date createTime;
+    private Date updateTime;
     private Map<String, String> attr;
     private String autogroup;
     private String cgroup;
@@ -104,6 +105,22 @@ public class Proc {
      */
     public Date getCreateTime() {
         return createTime;
+    }
+
+    /**
+     * 更新时间
+     * @return 更新时间
+     */
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    /**
+     * 更新时间
+     * @param updateTime 更新时间
+     */
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
     }
 
     /**
