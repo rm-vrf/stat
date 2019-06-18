@@ -24,12 +24,12 @@ public class VolumeController {
         return volumeService.getVolumes();
     }
 
-    @GetMapping("/api/v2/volume/{namespace}")
+    @GetMapping("/api/v2/volume/{namespace:.+}")
     public List<Volume> getVolumes(@PathVariable("namespace") String namespace) {
         return volumeService.getVolumes(namespace);
     }
 
-    @GetMapping("/api/v2/volume/{namespace}/{name}")
+    @GetMapping("/api/v2/volume/{namespace}/{name:.+}")
     public ResponseEntity<Volume> getVolume(@PathVariable("namespace") String namespace,
                                             @PathVariable("name") String name) {
 
@@ -46,12 +46,12 @@ public class VolumeController {
         return volumeService.putVolume(volume);
     }
 
-    @DeleteMapping("/api/v2/volume/{namespace}")
+    @DeleteMapping("/api/v2/volume/{namespace:.+}")
     public List<String> deleteVolumes(@PathVariable("namespace") String namespace) {
         return volumeService.deleteVolumes(namespace);
     }
 
-    @DeleteMapping("/api/v2/volume/{namespace}/{name}")
+    @DeleteMapping("/api/v2/volume/{namespace}/{name:.+}")
     public ResponseEntity<String> deleteVolume(@PathVariable("namespace") String namespace,
                                                 @PathVariable("name") String name) {
 

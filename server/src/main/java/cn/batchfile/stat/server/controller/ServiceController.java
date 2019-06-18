@@ -24,12 +24,12 @@ public class ServiceController {
         return serviceService.getServices();
     }
 
-    @GetMapping("/api/v2/service/{namespace}")
+    @GetMapping("/api/v2/service/{namespace:.+}")
     public List<Service> getServices(@PathVariable("namespace") String namespace) {
         return serviceService.getServices(namespace);
     }
 
-    @GetMapping("/api/v2/service/{namespace}/{name}")
+    @GetMapping("/api/v2/service/{namespace}/{name:.+}")
     public ResponseEntity<Service> getService(@PathVariable("namespace") String namespace,
                                              @PathVariable("name") String name) {
 
@@ -46,12 +46,12 @@ public class ServiceController {
         return serviceService.putService(service);
     }
 
-    @DeleteMapping("/api/v2/service/{namespace}")
+    @DeleteMapping("/api/v2/service/{namespace:.+}")
     public List<String> deleteServices(@PathVariable("namespace") String namespace) {
         return serviceService.deleteServices(namespace);
     }
 
-    @DeleteMapping("/api/v2/service/{namespace}/{name}")
+    @DeleteMapping("/api/v2/service/{namespace}/{name:.+}")
     public ResponseEntity<String> deleteService(@PathVariable("namespace") String namespace,
                               @PathVariable("name") String name) {
 

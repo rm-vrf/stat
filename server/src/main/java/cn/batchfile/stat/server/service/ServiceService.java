@@ -40,7 +40,7 @@ public class ServiceService {
 
         List<Service> ret = new ArrayList<>();
         for (Map<String, Object> map : list) {
-            ret.add(compsoseService(map));
+            ret.add(composeService(map));
         }
 
         return ret;
@@ -52,7 +52,7 @@ public class ServiceService {
         if (list.size() == 0) {
             return null;
         } else {
-            return compsoseService(list.get(0));
+            return composeService(list.get(0));
         }
     }
 
@@ -106,7 +106,7 @@ public class ServiceService {
         }
     }
 
-    private Service compsoseService(Map<String, Object> map) {
+    private Service composeService(Map<String, Object> map) {
         Object namespace = map.get("namespace");
         Object name = map.get("name");
         Object stateful = map.get("stateful");

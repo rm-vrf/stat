@@ -7,6 +7,7 @@ public class File {
     private String name;
     private String url;
     private long size;
+    private String contentType;
     private Date timestamp;
 
     public String getNamespace() {
@@ -39,6 +40,14 @@ public class File {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     public Date getTimestamp() {
