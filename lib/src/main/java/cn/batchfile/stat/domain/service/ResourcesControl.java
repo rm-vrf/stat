@@ -2,8 +2,8 @@ package cn.batchfile.stat.domain.service;
 
 public class ResourcesControl {
     private float cpus;
-    private long memory;
-    private long storage;
+    private String memory;
+    private String storage;
 
     public float getCpus() {
         return cpus;
@@ -13,19 +13,19 @@ public class ResourcesControl {
         this.cpus = cpus;
     }
 
-    public long getMemory() {
+    public String getMemory() {
         return memory;
     }
 
-    public void setMemory(long memory) {
+    public void setMemory(String memory) {
         this.memory = memory;
     }
 
-    public long getStorage() {
+    public String getStorage() {
         return storage;
     }
 
-    public void setStorage(long storage) {
+    public void setStorage(String storage) {
         this.storage = storage;
     }
 }

@@ -3,7 +3,7 @@ package cn.batchfile.stat.domain.service;
 import java.util.Date;
 
 public class File {
-    private String namespace = "default";
+    private String namespace;
     private String name;
     private String url;
     private long size;

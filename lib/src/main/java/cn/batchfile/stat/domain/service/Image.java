@@ -4,7 +4,7 @@ import java.util.Date;
 
 public class Image {
     private String name;
-    private String tag = "latest";
+    private String tag;
     private long size;
     private Date timestamp;
 

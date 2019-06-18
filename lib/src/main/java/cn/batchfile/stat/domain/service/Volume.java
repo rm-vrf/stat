@@ -3,9 +3,9 @@ package cn.batchfile.stat.domain.service;
 import java.util.List;
 
 public class Volume {
-    private String namespace = "default";
+    private String namespace;
     private String name;
-    private String type = "none";
+    private String type;
     private String source;
     private List<String> options;
     private VolumeDeploy deploy;

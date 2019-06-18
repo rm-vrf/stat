@@ -3,7 +3,7 @@ package cn.batchfile.stat.domain.service;
 import java.util.List;
 
 public class Service {
-    private String namespace = "default";
+    private String namespace;
     private String name;
     private boolean stateful;
     private String domainName;

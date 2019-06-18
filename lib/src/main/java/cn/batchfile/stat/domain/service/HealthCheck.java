@@ -1,7 +1,7 @@
 package cn.batchfile.stat.domain.service;
 
 public class HealthCheck {
-    private boolean enabled = true;
+    private boolean enabled;
     private Command command;
     private HttpGet httpGet;
     private int interval;

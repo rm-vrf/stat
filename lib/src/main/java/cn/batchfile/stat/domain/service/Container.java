@@ -6,8 +6,8 @@ import java.util.Map;
 public class Container {
     private String image;
     private boolean readonly;
-    private List<File> adds;
-    private List<String> runs;
+    private List<Add> adds;
+    private List<List<String>> runs;
     private User user;
     private String workDirectory;
     private List<String> command;
@@ -34,19 +34,19 @@ public class Container {
         this.readonly = readonly;
     }
 
-    public List<File> getAdds() {
+    public List<Add> getAdds() {
         return adds;
     }
 
-    public void setAdds(List<File> adds) {
+    public void setAdds(List<Add> adds) {
         this.adds = adds;
     }
 
-    public List<String> getRuns() {
+    public List<List<String>> getRuns() {
         return runs;
     }
 
-    public void setRuns(List<String> runs) {
+    public void setRuns(List<List<String>> runs) {
         this.runs = runs;
     }
 

@@ -1,22 +1,22 @@
-package cn.batchfile.stat.domain;
-
-public class Memory {
-	private long total;
-	private long ram;
-
-	public long getTotal() {
-		return total;
-	}
-	
-	public void setTotal(long total) {
-		this.total = total;
-	}
-	
-	public long getRam() {
-		return ram;
-	}
-	
-	public void setRam(long ram) {
-		this.ram = ram;
-	}
-}
+//package cn.batchfile.stat.domain;
+//
+//public class Memory {
+//	private long total;
+//	private long ram;
+//
+//	public long getTotal() {
+//		return total;
+//	}
+//
+//	public void setTotal(long total) {
+//		this.total = total;
+//	}
+//
+//	public long getRam() {
+//		return ram;
+//	}
+//
+//	public void setRam(long ram) {
+//		this.ram = ram;
+//	}
+//}
