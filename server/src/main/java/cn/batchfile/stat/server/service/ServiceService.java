@@ -1,5 +1,6 @@
 package cn.batchfile.stat.server.service;
 
+import cn.batchfile.stat.domain.Name;
 import cn.batchfile.stat.domain.service.*;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
@@ -57,7 +58,7 @@ public class ServiceService {
 
     public String putService(Service service) {
         if (StringUtils.isBlank(service.getNamespace())) {
-            service.setNamespace("default");
+            service.setNamespace(Name.DEFAULT_NAMESPACE);
         }
 
         String namespace = service.getNamespace();
@@ -71,14 +72,14 @@ public class ServiceService {
         String dependsOn = JSON.toJSONString(service.getDependsOn());
 
         String sql = "REPLACE INTO `service` " +
-                "(`namespace`, `name`, `stateful`, `domain_name`, `container`, " +
-                "`deploy`, `health_check`, `logging`, `depends_on`) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(`namespace`,`name`,`stateful`,`domain_name`,`container`," +
+                "`deploy`,`health_check`,`logging`,`depends_on`) " +
+                "VALUES (?,?,?,?,?,?,?,?,?)";
         int count = jdbcTemplate.update(sql,
                 namespace, name, stateful, domainName, container, deploy, healthCheck, logging, dependsOn);
         LOG.info("put service: {}/{}, count: {}", namespace, name, count);
 
-        return service.getNamespace() + "/" + service.getName();
+        return namespace + "/" + name;
     }
 
     public List<String> deleteServices(String namespace) {

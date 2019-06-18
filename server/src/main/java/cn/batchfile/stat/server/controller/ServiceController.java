@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 public class ServiceController {
-    protected static final Logger log = LoggerFactory.getLogger(ServiceController.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceController.class);
 
     @Autowired
     private ServiceService serviceService;
