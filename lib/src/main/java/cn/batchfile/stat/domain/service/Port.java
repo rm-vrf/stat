@@ -1,22 +1,22 @@
 package cn.batchfile.stat.domain.service;
 
 public class Port {
-    private int containerPort;
-    private int port;
+    private Integer containerPort;
+    private Integer port;
 
-    public int getContainerPort() {
+    public Integer getContainerPort() {
         return containerPort;
     }
 
-    public void setContainerPort(int containerPort) {
+    public void setContainerPort(Integer containerPort) {
         this.containerPort = containerPort;
     }
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public void setPort(int port) {
+    public void setPort(Integer port) {
         this.port = port;
     }
 }

@@ -6,7 +6,7 @@ package cn.batchfile.stat.domain.node;
 public class Os {
     private String name;
     private String version;
-    private int cpus;
+    private Integer cpus;
     private String architecture;
 
     /**
@@ -45,7 +45,7 @@ public class Os {
      * CPU 核数
      * @return CPU 核数
      */
-    public int getCpus() {
+    public Integer getCpus() {
         return cpus;
     }
 
@@ -53,7 +53,7 @@ public class Os {
      * CPU 核数
      * @param cpus CPU 核数
      */
-    public void setCpus(int cpus) {
+    public void setCpus(Integer cpus) {
         this.cpus = cpus;
     }
 

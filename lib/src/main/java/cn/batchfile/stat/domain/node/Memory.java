@@ -4,14 +4,14 @@ package cn.batchfile.stat.domain.node;
  * 内存
  */
 public class Memory {
-    private long total;
-    private long ram;
+    private Long total;
+    private Long ram;
 
     /**
      * 总内存
      * @return 总内存
      */
-    public long getTotal() {
+    public Long getTotal() {
         return total;
     }
 
@@ -19,7 +19,7 @@ public class Memory {
      * 总内存
      * @param total 总内存
      */
-    public void setTotal(long total) {
+    public void setTotal(Long total) {
         this.total = total;
     }
 
@@ -27,7 +27,7 @@ public class Memory {
      * RAM
      * @return RAM
      */
-    public long getRam() {
+    public Long getRam() {
         return ram;
     }
 
@@ -35,7 +35,7 @@ public class Memory {
      * RAM
      * @param ram RAM
      */
-    public void setRam(long ram) {
+    public void setRam(Long ram) {
         this.ram = ram;
     }
 }

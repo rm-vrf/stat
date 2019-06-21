@@ -6,7 +6,7 @@ public class File {
     private String namespace;
     private String name;
     private String url;
-    private long size;
+    private Long size;
     private String contentType;
     private Date timestamp;
 
@@ -34,11 +34,11 @@ public class File {
         this.url = url;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

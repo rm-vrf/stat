@@ -88,7 +88,19 @@ public class NodeService {
 	}
 
     public PaginationList<Node> searchNodes(String query, boolean upOnly, int from, int size) {
-	    return new PaginationList<>();
+	    String sql = " FROM `node` ";
+	    if (upOnly) {
+	        sql += " WHERE `status`='UP' ";
+        }
+	    sql += " ORDER BY `address` ";
+
+	    int total = jdbcTemplate.queryForObject("SELECT COUNT(*)" + sql, Integer.class);
+        List<Map<String, Object>> list = jdbcTemplate.queryForList("SELECT * " + sql + "LIMIT ?,?", from, size);
+        List<Node> nodes = new ArrayList<>();
+        for (Map<String, Object> map : list) {
+            nodes.add(composeNode(map));
+        }
+        return new PaginationList<>(total, nodes);
     }
 
     private Node composeNode(Map<String, Object> map) {

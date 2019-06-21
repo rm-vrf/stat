@@ -5,7 +5,7 @@ import java.util.Date;
 public class Image {
     private String name;
     private String tag;
-    private long size;
+    private Long size;
     private Date timestamp;
 
     public String getName() {
@@ -24,11 +24,11 @@ public class Image {
         this.tag = tag;
     }
 
-    public long getSize() {
+    public Long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
+    public void setSize(Long size) {
         this.size = size;
     }
 

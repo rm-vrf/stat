@@ -7,11 +7,11 @@ public class HealthCheckResult {
     private String container;
     private String node;
     private Date time;
-    private boolean ok;
+    private Boolean ok;
     private String endpoint;
     private String message;
-    private int code;
-    private long responseTime;
+    private Integer code;
+    private Long responseTime;
 
     public String getService() {
         return service;
@@ -45,11 +45,11 @@ public class HealthCheckResult {
         this.time = time;
     }
 
-    public boolean isOk() {
+    public Boolean isOk() {
         return ok;
     }
 
-    public void setOk(boolean ok) {
+    public void setOk(Boolean ok) {
         this.ok = ok;
     }
 
@@ -69,19 +69,19 @@ public class HealthCheckResult {
         this.message = message;
     }
 
-    public int getCode() {
+    public Integer getCode() {
         return code;
     }
 
-    public void setCode(int code) {
+    public void setCode(Integer code) {
         this.code = code;
     }
 
-    public long getResponseTime() {
+    public Long getResponseTime() {
         return responseTime;
     }
 
-    public void setResponseTime(long responseTime) {
+    public void setResponseTime(Long responseTime) {
         this.responseTime = responseTime;
     }
 }

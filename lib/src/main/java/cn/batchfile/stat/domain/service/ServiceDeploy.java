@@ -5,7 +5,7 @@ public class ServiceDeploy {
     public static final String MODE_GLOBAL = "global";
 
     private String mode;
-    private int replicas;
+    private Integer replicas;
     private Placement placement;
     private Resources resources;
 
@@ -17,11 +17,11 @@ public class ServiceDeploy {
         this.mode = mode;
     }
 
-    public int getReplicas() {
+    public Integer getReplicas() {
         return replicas;
     }
 
-    public void setReplicas(int replicas) {
+    public void setReplicas(Integer replicas) {
         this.replicas = replicas;
     }
 

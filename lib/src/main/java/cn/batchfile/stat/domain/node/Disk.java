@@ -5,7 +5,7 @@ package cn.batchfile.stat.domain.node;
  */
 public class Disk {
     private String dirName;
-    private long total;
+    private Long total;
 
     /**
      * 路径
@@ -27,7 +27,7 @@ public class Disk {
      * 总容量
      * @return 总容量
      */
-    public long getTotal() {
+    public Long getTotal() {
         return total;
     }
 
@@ -35,7 +35,7 @@ public class Disk {
      * 总容量
      * @param total 总容量
      */
-    public void setTotal(long total) {
+    public void setTotal(Long total) {
         this.total = total;
     }
 }

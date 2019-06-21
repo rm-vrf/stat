@@ -1,15 +1,15 @@
 package cn.batchfile.stat.domain.service;
 
 public class ResourcesControl {
-    private float cpus;
+    private Float cpus;
     private String memory;
     private String storage;
 
-    public float getCpus() {
+    public Float getCpus() {
         return cpus;
     }
 
-    public void setCpus(float cpus) {
+    public void setCpus(Float cpus) {
         this.cpus = cpus;
     }
 

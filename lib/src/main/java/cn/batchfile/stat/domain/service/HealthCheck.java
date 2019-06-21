@@ -1,19 +1,19 @@
 package cn.batchfile.stat.domain.service;
 
 public class HealthCheck {
-    private boolean enabled;
+    private Boolean enabled;
     private Command command;
     private HttpGet httpGet;
-    private int interval;
-    private int retries;
-    private int startPeriod;
-    private int timeout;
+    private Integer interval;
+    private Integer retries;
+    private Integer startPeriod;
+    private Integer timeout;
 
-    public boolean isEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -33,35 +33,35 @@ public class HealthCheck {
         this.httpGet = httpGet;
     }
 
-    public int getInterval() {
+    public Integer getInterval() {
         return interval;
     }
 
-    public void setInterval(int interval) {
+    public void setInterval(Integer interval) {
         this.interval = interval;
     }
 
-    public int getRetries() {
+    public Integer getRetries() {
         return retries;
     }
 
-    public void setRetries(int retries) {
+    public void setRetries(Integer retries) {
         this.retries = retries;
     }
 
-    public int getStartPeriod() {
+    public Integer getStartPeriod() {
         return startPeriod;
     }
 
-    public void setStartPeriod(int startPeriod) {
+    public void setStartPeriod(Integer startPeriod) {
         this.startPeriod = startPeriod;
     }
 
-    public int getTimeout() {
+    public Integer getTimeout() {
         return timeout;
     }
 
-    public void setTimeout(int timeout) {
+    public void setTimeout(Integer timeout) {
         this.timeout = timeout;
     }
 }

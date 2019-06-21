@@ -5,25 +5,18 @@ import java.util.Date;
 /**
  * 容器实例
  */
-public class Container {
-    public static final String STATUS_INIT = "INIT";
-    public static final String STATUS_CREATING = "CREATING";
-    public static final String STATUS_CREATED = "CREATED";
-    public static final String STATUS_RUNNING = "RUNNING";
-    public static final String STATUS_READY = "READY";
-    public static final String STATUS_STOPPED = "STOPPED";
+public class ContainerInstance {
 
     private String node;
     private String service;
-    private String image;
+    private Boolean valid;
     private String id;
-    private long pid;
+    private Long pid;
     private String status;
     private String bundle;
     private String owner;
     private Date createTime;
     private Date updateTime;
-    private String config;
 
     /**
      * 所在节点
@@ -58,19 +51,19 @@ public class Container {
     }
 
     /**
-     * 镜像，例如："python:2.7"
-     * @return 镜像
+     * 是否有效
+     * @return 是否有效
      */
-    public String getImage() {
-        return image;
+    public Boolean getValid() {
+        return valid;
     }
 
     /**
-     * 镜像，例如："python:2.7"
-     * @param image 镜像
+     * 是否有效
+     * @param valid 是否有效
      */
-    public void setImage(String image) {
-        this.image = image;
+    public void setValid(Boolean valid) {
+        this.valid = valid;
     }
 
     /**
@@ -93,7 +86,7 @@ public class Container {
      * 进程号
      * @return 进程号
      */
-    public long getPid() {
+    public Long getPid() {
         return pid;
     }
 
@@ -101,7 +94,7 @@ public class Container {
      * 进程号
      * @param pid 进程号
      */
-    public void setPid(long pid) {
+    public void setPid(Long pid) {
         this.pid = pid;
     }
 
@@ -183,21 +176,5 @@ public class Container {
      */
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
-    }
-
-    /**
-     * 配置
-     * @return 配置
-     */
-    public String getConfig() {
-        return config;
-    }
-
-    /**
-     * 配置
-     * @param config 配置
-     */
-    public void setConfig(String config) {
-        this.config = config;
     }
 }

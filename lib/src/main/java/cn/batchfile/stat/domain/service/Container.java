@@ -5,14 +5,14 @@ import java.util.Map;
 
 public class Container {
     private String image;
-    private boolean readonly;
+    private Boolean readonly;
     private List<Add> adds;
     private List<List<String>> runs;
     private User user;
     private String workDirectory;
     private List<String> command;
-    private int stopSignal;
-    private int stopGracePeriod;
+    private Integer stopSignal;
+    private Integer stopGracePeriod;
     private String hostname;
     private Map<String, String> environments;
     private List<Mount> mounts;
@@ -26,7 +26,7 @@ public class Container {
         this.image = image;
     }
 
-    public boolean isReadonly() {
+    public Boolean isReadonly() {
         return readonly;
     }
 
@@ -74,19 +74,19 @@ public class Container {
         this.command = command;
     }
 
-    public int getStopSignal() {
+    public Integer getStopSignal() {
         return stopSignal;
     }
 
-    public void setStopSignal(int stopSignal) {
+    public void setStopSignal(Integer stopSignal) {
         this.stopSignal = stopSignal;
     }
 
-    public int getStopGracePeriod() {
+    public Integer getStopGracePeriod() {
         return stopGracePeriod;
     }
 
-    public void setStopGracePeriod(int stopGracePeriod) {
+    public void setStopGracePeriod(Integer stopGracePeriod) {
         this.stopGracePeriod = stopGracePeriod;
     }
 

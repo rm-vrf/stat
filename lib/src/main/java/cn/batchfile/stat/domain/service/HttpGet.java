@@ -1,15 +1,15 @@
 package cn.batchfile.stat.domain.service;
 
 public class HttpGet {
-    private int portIndex;
+    private Integer portIndex;
     private String protocol;
     private String uri;
 
-    public int getPortIndex() {
+    public Integer getPortIndex() {
         return portIndex;
     }
 
-    public void setPortIndex(int portIndex) {
+    public void setPortIndex(Integer portIndex) {
         this.portIndex = portIndex;
     }
 

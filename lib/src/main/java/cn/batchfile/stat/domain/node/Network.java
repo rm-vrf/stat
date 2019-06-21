@@ -9,9 +9,9 @@ public class Network {
     private String type;
     private String address;
     private String hostname;
-    private boolean loopbackAddress;
-    private boolean multicastAddress;
-    private boolean siteLocalAddress;
+    private Boolean loopbackAddress;
+    private Boolean multicastAddress;
+    private Boolean siteLocalAddress;
 
     /**
      * 名称
@@ -98,7 +98,7 @@ public class Network {
      * @return a {@code boolean} indicating if the InetAddress is
      * a loopback address; or false otherwise.
      */
-    public boolean isLoopbackAddress() {
+    public Boolean isLoopbackAddress() {
         return loopbackAddress;
     }
 
@@ -107,7 +107,7 @@ public class Network {
      * @param loopbackAddress a {@code boolean} indicating if the InetAddress is
      * a loopback address; or false otherwise.
      */
-    public void setLoopbackAddress(boolean loopbackAddress) {
+    public void setLoopbackAddress(Boolean loopbackAddress) {
         this.loopbackAddress = loopbackAddress;
     }
 
@@ -116,7 +116,7 @@ public class Network {
      * @return a {@code boolean} indicating if the InetAddress is
      * an IP multicast address
      */
-    public boolean isMulticastAddress() {
+    public Boolean isMulticastAddress() {
         return multicastAddress;
     }
 
@@ -125,7 +125,7 @@ public class Network {
      * @param multicastAddress a {@code boolean} indicating if the InetAddress is
      *                         an IP multicast address
      */
-    public void setMulticastAddress(boolean multicastAddress) {
+    public void setMulticastAddress(Boolean multicastAddress) {
         this.multicastAddress = multicastAddress;
     }
 
@@ -134,7 +134,7 @@ public class Network {
      * @return a {@code boolean} indicating if the InetAddress is
      * a site local address; or false if address is not a site local unicast address.
      */
-    public boolean isSiteLocalAddress() {
+    public Boolean isSiteLocalAddress() {
         return siteLocalAddress;
     }
 
@@ -143,7 +143,7 @@ public class Network {
      * @param siteLocalAddress a {@code boolean} indicating if the InetAddress is
      * a site local address; or false if address is not a site local unicast address.
      */
-    public void setSiteLocalAddress(boolean siteLocalAddress) {
+    public void setSiteLocalAddress(Boolean siteLocalAddress) {
         this.siteLocalAddress = siteLocalAddress;
     }
 }

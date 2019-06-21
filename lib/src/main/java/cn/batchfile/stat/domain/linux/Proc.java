@@ -7,10 +7,10 @@ import java.util.Map;
  * Linux 进程信息
  */
 public class Proc {
-    private long pid;
+    private Long pid;
     private String node;
     private String container;
-    private boolean up;
+    private Boolean up;
     private Date createTime;
     private Date updateTime;
     private Map<String, String> attr;
@@ -39,7 +39,7 @@ public class Proc {
      * 进程号
      * @return 进程号
      */
-    public long getPid() {
+    public Long getPid() {
         return pid;
     }
 
@@ -47,7 +47,7 @@ public class Proc {
      * 进程号
      * @param pid 进程号
      */
-    public void setPid(long pid) {
+    public void setPid(Long pid) {
         this.pid = pid;
     }
 
@@ -87,7 +87,7 @@ public class Proc {
      * 是否启动
      * @return 是否启动
      */
-    public boolean isUp() {
+    public Boolean isUp() {
         return up;
     }
 
@@ -95,7 +95,7 @@ public class Proc {
      * 是否启动
      * @param up 是否启动
      */
-    public void setUp(boolean up) {
+    public void setUp(Boolean up) {
         this.up = up;
     }
 

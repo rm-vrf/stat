@@ -5,7 +5,7 @@ import java.util.List;
 public class Service {
     private String namespace;
     private String name;
-    private boolean stateful;
+    private Boolean stateful;
     private String domainName;
     private Container container;
     private ServiceDeploy deploy;
@@ -29,11 +29,11 @@ public class Service {
         this.name = name;
     }
 
-    public boolean isStateful() {
+    public Boolean isStateful() {
         return stateful;
     }
 
-    public void setStateful(boolean stateful) {
+    public void setStateful(Boolean stateful) {
         this.stateful = stateful;
     }
 
