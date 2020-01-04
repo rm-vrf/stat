@@ -1,24 +1,43 @@
 package cn.batchfile.stat.domain.service;
 
-import java.util.List;
-
+/**
+ * 部署位置
+ */
 public class Placement {
-    private List<String> constraints;
-    private List<String> preferences;
 
-    public List<String> getConstraints() {
-        return constraints;
+    private String constraint;
+    private String preference;
+
+    /**
+     * 限制位置
+     * @return 限制位置
+     */
+    public String getConstraint() {
+        return constraint;
     }
 
-    public void setConstraints(List<String> constraints) {
-        this.constraints = constraints;
+    /**
+     * 限制位置
+     * @param constraint 限制位置
+     */
+    public void setConstraint(String constraint) {
+        this.constraint = constraint;
     }
 
-    public List<String> getPreferences() {
-        return preferences;
+    /**
+     * 优先位置
+     * @return 优先位置
+     */
+    public String getPreference() {
+        return preference;
     }
 
-    public void setPreferences(List<String> preferences) {
-        this.preferences = preferences;
+    /**
+     * 优先位置
+     * @param preference 优先位置
+     */
+    public void setPreference(String preference) {
+        this.preference = preference;
     }
+
 }

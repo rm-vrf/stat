@@ -8,7 +8,7 @@
     
     <groupId>cn.batchfile.stat</groupId>
     <artifactId>stat-lib</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <scm>
@@ -25,40 +25,10 @@
     
     <dependencies>
 <!--		<dependency>-->
-<!--			<groupId>org.springframework</groupId>-->
-<!--			<artifactId>spring-web</artifactId>-->
-<!--			<version>4.3.9.RELEASE</version>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>org.apache.tomcat.embed</groupId>-->
-<!--			<artifactId>tomcat-embed-core</artifactId>-->
-<!--			<version>[8.5.40,)</version>-->
-<!--		</dependency>-->
-<!--		<dependency>-->
-<!--			<groupId>ch.qos.logback</groupId>-->
-<!--			<artifactId>logback-classic</artifactId>-->
-<!--			<version>1.1.11</version>-->
-<!--		</dependency>-->
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.6</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.6</version>
-        </dependency>
-<!--		<dependency>-->
 <!--			<groupId>org.apache.httpcomponents</groupId>-->
 <!--			<artifactId>httpclient</artifactId>-->
 <!--			<version>4.5.3</version>-->
 <!--		</dependency>-->
-        <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
-            <version>[1.3.3,)</version>
-        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.apache.commons</groupId>-->
 <!--            <artifactId>commons-vfs2</artifactId>-->
@@ -69,21 +39,6 @@
 <!--            <artifactId>commons-codec</artifactId>-->
 <!--            <version>1.4</version>-->
 <!--        </dependency>-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>[1.2.31,)</version>
-        </dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger2</artifactId>
-			<version>2.2.2</version>
-		</dependency>
-		<dependency>
-			<groupId>io.springfox</groupId>
-			<artifactId>springfox-swagger-ui</artifactId>
-			<version>2.2.2</version>
-		</dependency>
     </dependencies>
     
 </project>

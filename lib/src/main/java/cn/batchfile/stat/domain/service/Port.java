@@ -1,22 +1,43 @@
 package cn.batchfile.stat.domain.service;
 
+/**
+ * 端口定义
+ */
 public class Port {
-    private Integer containerPort;
-    private Integer port;
 
+    private Integer containerPort;
+    private Integer publicPort;
+
+    /**
+     * 容器端口
+     * @return 容器端口
+     */
     public Integer getContainerPort() {
         return containerPort;
     }
 
+    /**
+     * 容器端口
+     * @param containerPort 容器端口
+     */
     public void setContainerPort(Integer containerPort) {
         this.containerPort = containerPort;
     }
 
-    public Integer getPort() {
-        return port;
+    /**
+     * 公开端口
+     * @return 公开端口
+     */
+    public Integer getPublicPort() {
+        return publicPort;
     }
 
-    public void setPort(Integer port) {
-        this.port = port;
+    /**
+     * 公开端口
+     * @param publicPort 公开端口
+     */
+    public void setPublicPort(Integer publicPort) {
+        this.publicPort = publicPort;
     }
+
 }

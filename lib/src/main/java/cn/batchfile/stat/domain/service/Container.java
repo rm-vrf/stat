@@ -3,122 +3,112 @@ package cn.batchfile.stat.domain.service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 容器定义
+ */
 public class Container {
-    private String image;
-    private Boolean readonly;
-    private List<Add> adds;
-    private List<List<String>> runs;
-    private User user;
-    private String workDirectory;
-    private List<String> command;
-    private Integer stopSignal;
-    private Integer stopGracePeriod;
-    private String hostname;
-    private Map<String, String> environments;
-    private List<Mount> mounts;
+
     private List<Port> ports;
+    private Logging logging;
+    private List<Mount> mounts;
+    private List<Host> hosts;
+    private List<Ulimit> ulimits;
+    private Map<String, String> sysctls;
 
-    public String getImage() {
-        return image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
-    public Boolean isReadonly() {
-        return readonly;
-    }
-
-    public void setReadonly(boolean readonly) {
-        this.readonly = readonly;
-    }
-
-    public List<Add> getAdds() {
-        return adds;
-    }
-
-    public void setAdds(List<Add> adds) {
-        this.adds = adds;
-    }
-
-    public List<List<String>> getRuns() {
-        return runs;
-    }
-
-    public void setRuns(List<List<String>> runs) {
-        this.runs = runs;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getWorkDirectory() {
-        return workDirectory;
-    }
-
-    public void setWorkDirectory(String workDirectory) {
-        this.workDirectory = workDirectory;
-    }
-
-    public List<String> getCommand() {
-        return command;
-    }
-
-    public void setCommand(List<String> command) {
-        this.command = command;
-    }
-
-    public Integer getStopSignal() {
-        return stopSignal;
-    }
-
-    public void setStopSignal(Integer stopSignal) {
-        this.stopSignal = stopSignal;
-    }
-
-    public Integer getStopGracePeriod() {
-        return stopGracePeriod;
-    }
-
-    public void setStopGracePeriod(Integer stopGracePeriod) {
-        this.stopGracePeriod = stopGracePeriod;
-    }
-
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public Map<String, String> getEnvironments() {
-        return environments;
-    }
-
-    public void setEnvironments(Map<String, String> environments) {
-        this.environments = environments;
-    }
-
-    public List<Mount> getMounts() {
-        return mounts;
-    }
-
-    public void setMounts(List<Mount> mounts) {
-        this.mounts = mounts;
-    }
-
+    /**
+     * 端口定义
+     * @return 端口定义
+     */
     public List<Port> getPorts() {
         return ports;
     }
 
+    /**
+     * 端口定义
+     * @param ports 端口定义
+     */
     public void setPorts(List<Port> ports) {
         this.ports = ports;
     }
+
+    /**
+     * 日志设置
+     * @return 日志设置
+     */
+    public Logging getLogging() {
+        return logging;
+    }
+
+    /**
+     * 日志设置
+     * @param logging 日志设置
+     */
+    public void setLogging(Logging logging) {
+        this.logging = logging;
+    }
+
+    /**
+     * 挂载设置
+     * @return 挂载设置
+     */
+    public List<Mount> getMounts() {
+        return mounts;
+    }
+
+    /**
+     * 挂载设置
+     * @param mounts 挂载设置
+     */
+    public void setMounts(List<Mount> mounts) {
+        this.mounts = mounts;
+    }
+
+    /**
+     * 主机名映射
+     * @return 主机名映射
+     */
+    public List<Host> getHosts() {
+        return hosts;
+    }
+
+    /**
+     * 主机名映射
+     * @param hosts 主机名映射
+     */
+    public void setHosts(List<Host> hosts) {
+        this.hosts = hosts;
+    }
+
+    /**
+     * A list of resource limits to set in the container. For example: {"Name": "nofile", "Soft": 1024, "Hard": 2048}"
+     * @return A list of resource limits to set in the container
+     */
+    public List<Ulimit> getUlimits() {
+        return ulimits;
+    }
+
+    /**
+     * A list of resource limits to set in the container
+     * @param ulimits A list of resource limits to set in the container
+     */
+    public void setUlimits(List<Ulimit> ulimits) {
+        this.ulimits = ulimits;
+    }
+
+    /**
+     * A list of kernel parameters (sysctls) to set in the container. For example: {"net.ipv4.ip_forward": "1"}
+     * @return A list of kernel parameters (sysctls) to set in the container
+     */
+    public Map<String, String> getSysctls() {
+        return sysctls;
+    }
+
+    /**
+     * A list of kernel parameters (sysctls) to set in the container. For example: {"net.ipv4.ip_forward": "1"}
+     * @param sysctls A list of kernel parameters (sysctls) to set in the container
+     */
+    public void setSysctls(Map<String, String> sysctls) {
+        this.sysctls = sysctls;
+    }
+
 }

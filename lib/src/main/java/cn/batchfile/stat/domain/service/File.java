@@ -1,60 +1,59 @@
 package cn.batchfile.stat.domain.service;
 
-import java.util.Date;
-
+/**
+ * 文件
+ */
 public class File {
-    private String namespace;
-    private String name;
-    private String url;
-    private Long size;
-    private String contentType;
-    private Date timestamp;
 
-    public String getNamespace() {
-        return namespace;
+    private String source;
+    private String destination;
+    private String option;
+
+    /**
+     * 文件，File 的名称，比如"packages/zipkin-server-2.9.16-exec.jar"
+     * @return 文件，File 的名称，比如"packages/zipkin-server-2.9.16-exec.jar"
+     */
+    public String getSource() {
+        return source;
     }
 
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
+    /**
+     * 文件，File 的名称，比如"packages/zipkin-server-2.9.16-exec.jar"
+     * @param source 文件，File 的名称，比如"packages/zipkin-server-2.9.16-exec.jar"
+     */
+    public void setSource(String source) {
+        this.source = source;
     }
 
-    public String getName() {
-        return name;
+    /**
+     * 容器路径
+     * @return 容器路径
+     */
+    public String getDestination() {
+        return destination;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    /**
+     * 容器路径
+     * @param destination 容器路径
+     */
+    public void setDestination(String destination) {
+        this.destination = destination;
     }
 
-    public String getUrl() {
-        return url;
+    /**
+     * 选项："--chown=<user>:<group>"
+     * @return 选项："--chown=<user>:<group>"
+     */
+    public String getOption() {
+        return option;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public Long getSize() {
-        return size;
-    }
-
-    public void setSize(Long size) {
-        this.size = size;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
+    /**
+     * 选项："--chown=<user>:<group>"
+     * @param option 选项："--chown=<user>:<group>"
+     */
+    public void setOption(String option) {
+        this.option = option;
     }
 }

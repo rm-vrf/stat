@@ -23,4 +23,5 @@ public class Command {
     public void setTest(List<String> test) {
         this.test = test;
     }
+
 }

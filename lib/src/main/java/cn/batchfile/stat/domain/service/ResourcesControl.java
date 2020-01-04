@@ -1,31 +1,42 @@
 package cn.batchfile.stat.domain.service;
 
+/**
+ * 资源控制
+ */
 public class ResourcesControl {
     private Float cpus;
     private String memory;
-    private String storage;
 
+    /**
+     * CPU 线程数
+     * @return CPU 线程数
+     */
     public Float getCpus() {
         return cpus;
     }
 
+    /**
+     * CPU 线程数
+     * @param cpus CPU 线程数
+     */
     public void setCpus(Float cpus) {
         this.cpus = cpus;
     }
 
+    /**
+     * 内存
+     * @return 内存
+     */
     public String getMemory() {
         return memory;
     }
 
+    /**
+     * 内存
+     * @param memory 内存
+     */
     public void setMemory(String memory) {
         this.memory = memory;
     }
 
-    public String getStorage() {
-        return storage;
-    }
-
-    public void setStorage(String storage) {
-        this.storage = storage;
-    }
 }
