@@ -18,7 +18,6 @@ public class Node {
     private String engineVersion;
     private String os;
     private String architecture;
-    private String systemTime;
     private List<Integer> containers;
     private Integer images;
     private Integer cpus;
@@ -153,22 +152,6 @@ public class Node {
      */
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
-    }
-
-    /**
-     * 系统时间
-     * @return 系统时间
-     */
-    public String getSystemTime() {
-        return systemTime;
-    }
-
-    /**
-     * 系统时间
-     * @param systemTime 系统时间
-     */
-    public void setSystemTime(String systemTime) {
-        this.systemTime = systemTime;
     }
 
     /**

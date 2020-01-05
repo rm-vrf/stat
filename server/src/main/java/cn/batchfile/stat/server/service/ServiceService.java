@@ -11,11 +11,17 @@ import java.util.List;
 
 @org.springframework.stereotype.Service
 public class ServiceService {
+	
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
 
     @Autowired
     private ZookeeperService zookeeperService;
 
+    /**
+     * 获取所有服务
+     * @param namespace 命名空间
+     * @return 服务列表
+     */
     public List<Service> getServices(String namespace) {
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH;
         if (!zookeeperService.exist(path)) {
@@ -32,6 +38,12 @@ public class ServiceService {
         return services;
     }
 
+    /**
+     * 获取服务
+     * @param namespace 命名空间
+     * @param serviceName 服务名称
+     * @return 服务
+     */
     public Service getService(String namespace, String serviceName) {
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH + "/" + serviceName;
         if (!zookeeperService.exist(path)) {
@@ -43,6 +55,12 @@ public class ServiceService {
         return service;
     }
 
+    /**
+     * 创建服务
+     * @param namespace 命名空间
+     * @param service 服务
+     * @return 服务
+     */
     public Service createService(String namespace, Service service) {
     	LOG.info("create service, {}/{}", namespace, service.getName());
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace;
@@ -60,6 +78,12 @@ public class ServiceService {
         return service;
     }
 
+    /**
+     * 更新服务
+     * @param namespace 命名服务
+     * @param service 服务
+     * @return 服务
+     */
     public Service updateService(String namespace, Service service) {
     	LOG.info("update service, {}/{}", namespace, service.getName());
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH + "/" + service.getName();
@@ -72,6 +96,11 @@ public class ServiceService {
         return service;
     }
 
+    /**
+     * 删除所有服务
+     * @param namespace 命名空间
+     * @return 删除的服务名称
+     */
     public List<String> deleteServices(String namespace) {
     	LOG.info("delete all service, {}/*", namespace);
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH;
@@ -87,6 +116,12 @@ public class ServiceService {
         return serviceNames;
     }
 
+    /**
+     * 删除服务
+     * @param namespace 命名空间
+     * @param serivceName 服务名称
+     * @return 服务
+     */
     public Service deleteService(String namespace, String serivceName) {
     	LOG.info("delete service, {}/{}", namespace, serivceName);
         Service service = getService(namespace, serivceName);

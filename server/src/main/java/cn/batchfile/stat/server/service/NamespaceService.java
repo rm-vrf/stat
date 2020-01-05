@@ -22,14 +22,16 @@ public class NamespaceService {
         }
     }
 
+    /**
+     * 创建命名空间
+     * @param namespace 命名空间
+     * @return 命名空间
+     */
     public String createNamespace(String namespace) {
 
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace;
         String servicePath = path + ZookeeperService.SERVICE_PATH;
-        //String nodePath = path + ZookeeperUtils.NODE_PATH;
-        String containerOfServicePath = path + ZookeeperService.CONTAINER_OF_SERVICE_PATH;
-        String containerOfNodePath = path + ZookeeperService.CONTAINER_OF_NODE_PATH;
-        String[] ary = new String[] {path, servicePath, containerOfNodePath, containerOfServicePath};
+        String[] ary = new String[] {path, servicePath};
 
         for (String s : ary) {
             if (!zookeeperService.exist(s)) {
@@ -40,11 +42,20 @@ public class NamespaceService {
         return namespace;
     }
 
+    /**
+     * 获取所有的命名空间
+     * @return 命名空间列表
+     */
     public List<String> getNamespaces() {
         List<String> list = zookeeperService.getChildren(ZookeeperService.NAMESPACE_PATH);
         return list;
     }
 
+    /**
+     * 删除命名空间
+     * @param namespace 命名空间
+     * @return 命名空间
+     */
     public String deleteNamespace(String namespace) {
         String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace;
         if (zookeeperService.exist(path)) {
