@@ -12,8 +12,6 @@
 	<packaging>pom</packaging>
 	
 	<modules>
-		<module>lib</module>
-<!--        <module>agent</module>-->
         <module>server</module>
     </modules>
 </project>

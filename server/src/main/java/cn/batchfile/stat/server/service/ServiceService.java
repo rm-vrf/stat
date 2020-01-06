@@ -1,137 +1,144 @@
 package cn.batchfile.stat.server.service;
 
-import cn.batchfile.stat.domain.service.Service;
-import cn.batchfile.stat.server.util.YamlUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.alibaba.fastjson.JSON;
+
+import cn.batchfile.stat.server.dao.ServiceRepository;
+import cn.batchfile.stat.server.domain.service.Container;
+import cn.batchfile.stat.server.domain.service.HealthCheck;
+import cn.batchfile.stat.server.domain.service.Image;
+import cn.batchfile.stat.server.domain.service.Service;
+import cn.batchfile.stat.server.domain.service.ServiceDeploy;
+import cn.batchfile.stat.server.dto.ServiceTable;
+import cn.batchfile.stat.server.exception.DuplicateEntryException;
 
 @org.springframework.stereotype.Service
 public class ServiceService {
-	
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
-
+    
     @Autowired
-    private ZookeeperService zookeeperService;
+    private ServiceRepository serviceRepository;
 
-    /**
-     * 获取所有服务
-     * @param namespace 命名空间
-     * @return 服务列表
-     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public List<Service> getServices(String namespace) {
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH;
-        if (!zookeeperService.exist(path)) {
-            return null;
-        }
-
-        List<String> serviceNames = zookeeperService.getChildren(path);
-        List<Service> services = new ArrayList<>();
-        for (String serviceName : serviceNames) {
-            Service service = getService(namespace, serviceName);
-            services.add(service);
-        }
-
-        return services;
+    	LOG.debug("get service list, {}", namespace);
+    	Iterable<ServiceTable> sts = serviceRepository.findMany(namespace);
+    	List<Service> list = new ArrayList<Service>();
+    	sts.forEach(st -> {
+    		Service service = compose(st);
+    		list.add(service);
+    	});
+    	LOG.debug("list size: {}", list.size());
+    	return list;
     }
-
-    /**
-     * 获取服务
-     * @param namespace 命名空间
-     * @param serviceName 服务名称
-     * @return 服务
-     */
+    
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Service getService(String namespace, String serviceName) {
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH + "/" + serviceName;
-        if (!zookeeperService.exist(path)) {
-            return null;
-        }
-
-        String yaml = zookeeperService.getData(path);
-        Service service = YamlUtils.toObject(yaml, Service.class);
-        return service;
+    	LOG.debug("get service, {}/{}", namespace, serviceName);
+    	Optional<ServiceTable> st = serviceRepository.findOne(namespace, serviceName);
+    	if (st.isPresent()) {
+    		return compose(st.get());
+    	} else {
+    		return null;
+    	}
     }
 
-    /**
-     * 创建服务
-     * @param namespace 命名空间
-     * @param service 服务
-     * @return 服务
-     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Service createService(String namespace, Service service) {
     	LOG.info("create service, {}/{}", namespace, service.getName());
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace;
-        if (!zookeeperService.exist(path)) {
-        	throw new RuntimeException("Namespace does not exist. namespace: " + namespace);
-        }
-        
-        path += ZookeeperService.SERVICE_PATH + "/" + service.getName();
-        if (zookeeperService.exist(path)) {
-            throw new RuntimeException("Service has already existed, name: " + namespace + "/" + service.getName());
-        }
+    	Optional<ServiceTable> op = serviceRepository.findOne(namespace, service.getName());
+    	if (op.isPresent()) {
+    		throw new DuplicateEntryException("service already exist");
+    	}
 
-        String yaml = YamlUtils.toString(service);
-        zookeeperService.createPersistent(path, yaml);
+    	ServiceTable st = new ServiceTable();
+    	compose(st, service);
+    	st.setId(StringUtils.remove(UUID.randomUUID().toString(), '-'));
+    	st.setNamespace(namespace);
+    	
+    	serviceRepository.save(st);
+    	LOG.info("created");
         return service;
     }
 
-    /**
-     * 更新服务
-     * @param namespace 命名服务
-     * @param service 服务
-     * @return 服务
-     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Service updateService(String namespace, Service service) {
     	LOG.info("update service, {}/{}", namespace, service.getName());
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH + "/" + service.getName();
-        if (!zookeeperService.exist(path)) {
-            throw new RuntimeException("Service does not exist, name: " + service.getName());
-        }
-
-        String yaml = YamlUtils.toString(service);
-        zookeeperService.updateData(path, yaml);
+    	Optional<ServiceTable> op = serviceRepository.findOne(namespace, service.getName());
+    	if (!op.isPresent()) {
+    		throw new DuplicateEntryException("service not exist");
+    	}
+    	
+    	ServiceTable st = op.get();
+    	compose(st, service);
+    	serviceRepository.save(st);
+    	LOG.info("updated");
         return service;
     }
 
-    /**
-     * 删除所有服务
-     * @param namespace 命名空间
-     * @return 删除的服务名称
-     */
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public List<String> deleteServices(String namespace) {
     	LOG.info("delete all service, {}/*", namespace);
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH;
-        if (!zookeeperService.exist(path)) {
-            return null;
-        }
-
-        List<String> serviceNames = zookeeperService.getChildren(path);
-        for (String serviceName : serviceNames) {
-        	zookeeperService.deleteNode(path + "/" + serviceName);
-        }
-
+    	Iterable<ServiceTable> sts = serviceRepository.findMany(namespace);
+    	List<String> serviceNames = new ArrayList<String>();
+    	sts.forEach(st -> {
+    		serviceNames.add(st.getName());
+    	});
+    	serviceRepository.deleteMany(namespace);
+    	LOG.info("deleted many: {}", serviceNames);
+    	
+    	//TODO stop containers
         return serviceNames;
     }
 
-    /**
-     * 删除服务
-     * @param namespace 命名空间
-     * @param serivceName 服务名称
-     * @return 服务
-     */
-    public Service deleteService(String namespace, String serivceName) {
-    	LOG.info("delete service, {}/{}", namespace, serivceName);
-        Service service = getService(namespace, serivceName);
-        if (service == null) {
-            return null;
-        }
-
-        String path = ZookeeperService.NAMESPACE_PATH + "/" + namespace + ZookeeperService.SERVICE_PATH + "/" + serivceName;
-        zookeeperService.deleteNode(path);
-        return service;
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    public Service deleteService(String namespace, String serviceName) {
+    	LOG.info("delete service, {}/{}", namespace, serviceName);
+    	Optional<ServiceTable> st = serviceRepository.findOne(namespace, serviceName);
+    	if (!st.isPresent()) {
+    		LOG.info("no such servie: {}/{}", namespace, serviceName);
+    		return null;
+    	} else {
+    		serviceRepository.deleteById(st.get().getId());
+    		LOG.info("deleted");
+    	}
+    	
+    	//TODO stop containers
+        return compose(st.get());
     }
 
+    private Service compose(ServiceTable serviceTable) {
+    	Service service = new Service();
+    	service.setContainer(JSON.parseObject(serviceTable.getContainer(), Container.class));
+    	service.setDependsOn(JSON.parseArray(serviceTable.getDependsOn(), String.class));
+    	service.setDeploy(JSON.parseObject(serviceTable.getDeploy(), ServiceDeploy.class));
+    	service.setDomainName(serviceTable.getDomainName());
+    	service.setHealthCheck(JSON.parseObject(serviceTable.getHealthCheck(), HealthCheck.class));
+    	service.setImage(JSON.parseObject(serviceTable.getImage(), Image.class));
+    	service.setName(serviceTable.getName());
+    	service.setStateful(serviceTable.getStateful());
+    	return service;
+    }
+    
+    private void compose(ServiceTable serviceTable, Service service) {
+    	serviceTable.setContainer(JSON.toJSONString(service.getContainer()));
+    	serviceTable.setDependsOn(JSON.toJSONString(service.getDependsOn()));
+    	serviceTable.setDeploy(JSON.toJSONString(service.getDeploy()));
+    	serviceTable.setDomainName(service.getDomainName());
+    	serviceTable.setHealthCheck(JSON.toJSONString(service.getHealthCheck()));
+    	serviceTable.setImage(JSON.toJSONString(service.getImage()));
+    	serviceTable.setName(service.getName());
+    	serviceTable.setStateful(service.getStateful());
+    }
 }

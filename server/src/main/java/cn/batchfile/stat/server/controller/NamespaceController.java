@@ -32,7 +32,6 @@ public class NamespaceController {
 
     @GetMapping("/api/namespace")
     public ResponseEntity<List<String>> getNamespaces() {
-
         List<String> list = namespaceService.getNamespaces();
         return new ResponseEntity<>(list, HttpStatus.OK);
     }

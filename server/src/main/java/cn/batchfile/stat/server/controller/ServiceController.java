@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import cn.batchfile.stat.domain.service.Service;
+import cn.batchfile.stat.server.domain.service.Service;
 import cn.batchfile.stat.server.service.ServiceService;
 
 @RestController

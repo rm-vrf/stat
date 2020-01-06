@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
-import cn.batchfile.stat.domain.resource.File;
+import cn.batchfile.stat.server.domain.resource.FileInstance;
 import cn.batchfile.stat.server.service.FileService;
 
 @RestController
@@ -38,15 +38,15 @@ public class FileController {
     private FileService fileService;
 
     @PostMapping("/api/file/{namespace}/**/_mkdir")
-    public ResponseEntity<File> makeDirectory(HttpServletRequest request,
-                                                @PathVariable("namespace") String namespace) throws IOException {
+    public ResponseEntity<FileInstance> mkdir(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace) throws IOException {
 
         String begin = "/api/file/" + namespace + "/";
         String end = "/_mkdir";
         String name = StringUtils.substringBetween(request.getRequestURI(), begin, end);
         LOG.info("mkdir {}/{}", namespace, name);
 
-        File dir = fileService.createDirectory(namespace, name);
+        FileInstance dir = fileService.createDirectory(namespace, name);
         if (dir == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -55,15 +55,15 @@ public class FileController {
     }
 
     @GetMapping(value = {"/api/file/{namespace}/**/_ls", "/api/file/{namespace}/_ls"})
-    public ResponseEntity<List<File>> listDirectory(HttpServletRequest request,
-                                                    @PathVariable("namespace") String namespace) {
+    public ResponseEntity<List<FileInstance>> ls(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace) {
 
         String begin = "/api/file/" + namespace + "/";
         String end = "/_ls";
         String name = StringUtils.substringBetween(request.getRequestURI(), begin, end);
         LOG.debug("ls {}/{}", namespace, name);
 
-        List<File> files = fileService.listFiles(namespace, name);
+        List<FileInstance> files = fileService.listFiles(namespace, name);
         if (files == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
@@ -72,15 +72,15 @@ public class FileController {
     }
 
     @DeleteMapping("/api/file/{namespace}/**/_rmdir")
-    public ResponseEntity<File> removeDirectory(HttpServletRequest request,
-                                                @PathVariable("namespace") String namespace) {
+    public ResponseEntity<FileInstance> rmdir(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace) {
 
         String begin = "/api/file/" + namespace + "/";
         String end = "/_rmdir";
         String name = StringUtils.substringBetween(request.getRequestURI(), begin, end);
         LOG.info("rmdir {}/{}", namespace, name);
 
-        File file = fileService.deleteFile(namespace, name);
+        FileInstance file = fileService.deleteFile(namespace, name);
         if (file == null) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
@@ -88,28 +88,10 @@ public class FileController {
         }
     }
 
-    @PostMapping("/api/file/{namespace}/**/_mv")
-    public ResponseEntity<File> moveFile(HttpServletRequest request,
-                                         @PathVariable("namespace") String namespace,
-                                         @RequestParam("target") String target) throws IOException {
-
-        String begin = "/api/file/" + namespace + "/";
-        String end = "/_mv";
-        String name = StringUtils.substringBetween(request.getRequestURI(), begin, end);
-        LOG.info("mv {}/{} {}", namespace, name, target);
-
-        File file = fileService.moveFile(namespace, name, target);
-        if (file == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        } else {
-            return new ResponseEntity<>(file, HttpStatus.OK);
-        }
-    }
-
     @RequestMapping(value = "/api/file/{namespace}/**", method = RequestMethod.POST, consumes = "multipart/form-data")
-    public ResponseEntity<File> createFile(HttpServletRequest request,
-                                           @RequestParam("file") MultipartFile file,
-                                           @PathVariable("namespace") String namespace) throws IOException {
+    public ResponseEntity<FileInstance> createFile(HttpServletRequest request,
+    		@RequestParam("file") MultipartFile file,
+    		@PathVariable("namespace") String namespace) throws IOException {
 
         String begin = "/api/file/" + namespace + "/";
         String name = StringUtils.substringAfter(request.getRequestURI(), begin);
@@ -117,7 +99,8 @@ public class FileController {
 
         InputStream stream = file.getInputStream();
         try {
-	        File f = fileService.createFile(namespace, name, file.getSize(), stream);
+        	long size = file.getSize();
+        	FileInstance f = fileService.createFile(namespace, name, size, stream);
 	        if (f == null) {
 	            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	        } else {
@@ -131,8 +114,8 @@ public class FileController {
     }
 
     @RequestMapping(value = "/api/file/{namespace}/**", method = RequestMethod.POST, consumes = "application/octet-stream")
-    public ResponseEntity<File> createFile(HttpServletRequest request,
-                                           @PathVariable("namespace") String namespace) throws IOException {
+    public ResponseEntity<FileInstance> createFile(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace) throws IOException {
 
         String begin = "/api/file/" + namespace + "/";
         String name = StringUtils.substringAfter(request.getRequestURI(), begin);
@@ -141,7 +124,7 @@ public class FileController {
 
         InputStream stream = request.getInputStream();
         try {
-	        File f = fileService.createFile(namespace, name, size, stream);
+        	FileInstance f = fileService.createFile(namespace, name, size, stream);
 	        if (f == null) {
 	            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	        } else {
@@ -156,13 +139,13 @@ public class FileController {
 
     @RequestMapping(value = "/api/file/{namespace}/**", method = RequestMethod.HEAD)
     public ResponseEntity<Void> headFile(HttpServletRequest request,
-                                         @PathVariable("namespace") String namespace) {
+    		@PathVariable("namespace") String namespace) {
 
         String begin = "/api/file/" + namespace + "/";
         String name = StringUtils.substringAfter(request.getRequestURI(), begin);
         LOG.debug("head {}/{}", namespace, name);
 
-        File file = fileService.getFile(namespace, name);
+        FileInstance file = fileService.getFile(namespace, name);
         if (file == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {
@@ -175,15 +158,15 @@ public class FileController {
 
     @GetMapping("/api/file/{namespace}/**")
     public ResponseEntity<Void> getFile(HttpServletRequest request,
-                                        WebRequest req,
-                                        HttpServletResponse response,
-                                        @PathVariable("namespace") String namespace) throws IOException {
+    		WebRequest req,
+    		HttpServletResponse response,
+    		@PathVariable("namespace") String namespace) throws IOException {
 
         String begin = "/api/file/" + namespace + "/";
         String name = StringUtils.substringAfter(request.getRequestURI(), begin);
         LOG.debug("get {}/{}", namespace, name);
 
-        File file = fileService.getFile(namespace, name);
+        FileInstance file = fileService.getFile(namespace, name);
         if (file == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -197,36 +180,41 @@ public class FileController {
             return new ResponseEntity<>(headers, HttpStatus.NOT_MODIFIED);
         }
 
-        InputStream inputStream = fileService.getStream(namespace, name);
-        OutputStream outputStream = response.getOutputStream();
-        try {
-	        headers.setContentLength(file.getSize());
-	        response.setHeader("Content-Length", String.valueOf(file.getSize()));
-	        IOUtils.copyLarge(inputStream, outputStream);
-	        return new ResponseEntity<>(headers, HttpStatus.OK);
-        } finally {
-        	try {
-        		inputStream.close();
-        	} catch (Exception e) {}
-        	try {
-        		outputStream.close();
-        	} catch (Exception e) {}
+        if (file.getDirectory()) {
+        	headers.setContentLength(0);
+        	return new ResponseEntity<>(headers, HttpStatus.OK);
+        } else {
+	        InputStream inputStream = fileService.getStream(namespace, name);
+	        OutputStream outputStream = response.getOutputStream();
+	        try {
+		        headers.setContentLength(file.getSize());
+		        response.setHeader("Content-Length", String.valueOf(file.getSize()));
+		        IOUtils.copyLarge(inputStream, outputStream);
+		        return new ResponseEntity<>(headers, HttpStatus.OK);
+	        } finally {
+	        	try {
+	        		inputStream.close();
+	        	} catch (Exception e) {}
+	        	try {
+	        		outputStream.close();
+	        	} catch (Exception e) {}
+	        }
         }
     }
 
     @DeleteMapping("/api/file/{namespace}/**")
-    public ResponseEntity<File> deleteFile(HttpServletRequest request,
-                                           @PathVariable("namespace") String namespace) {
+    public ResponseEntity<FileInstance> deleteFile(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace) {
         
         String begin = "/api/file/" + namespace + "/";
         String name = StringUtils.substringAfter(request.getRequestURI(), begin);
         LOG.info("rm {}/{}", namespace, name);
         
-        File file = fileService.deleteFile(namespace, name);
+        FileInstance file = fileService.deleteFile(namespace, name);
         if (file == null) {
-        	return new ResponseEntity<File>(HttpStatus.NO_CONTENT);
+        	return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else {
-        	return new ResponseEntity<File>(file, HttpStatus.OK);
+        	return new ResponseEntity<>(file, HttpStatus.OK);
         }
     }
 
