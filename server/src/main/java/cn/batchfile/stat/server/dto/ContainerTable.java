@@ -51,6 +51,9 @@ public class ContainerTable {
 	@Column(length = 16)
 	private String state;
 	
+	@Column(length = 64)
+	private String description;
+	
 	@Column(name = "create_time")
 	private Date createTime;
 	
@@ -162,6 +165,14 @@ public class ContainerTable {
 
 	public void setState(String state) {
 		this.state = state;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public Date getCreateTime() {

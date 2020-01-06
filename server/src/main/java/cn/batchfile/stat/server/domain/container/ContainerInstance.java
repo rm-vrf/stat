@@ -19,6 +19,7 @@ public class ContainerInstance {
 	private List<MountInstance> mounts;
 	private Resources resources;
 	private String state;
+	private String description;
 	private Date createTime;
 	private Date startTime;
 	private Date stopTime;
@@ -125,6 +126,14 @@ public class ContainerInstance {
 
 	public void setState(String state) {
 		this.state = state;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public Date getCreateTime() {

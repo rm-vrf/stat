@@ -8,7 +8,10 @@ import cn.batchfile.stat.server.dto.ContainerTable;
 
 public interface ContainerRepository extends CrudRepository<ContainerTable, String> {
 	
-	@Query("SELECT c FROM Container c WHERE c.node=:nodeId")
-	Iterable<ContainerTable> fineByNodeId(@Param("nodeId") String nodeId);
+	@Query("SELECT c FROM Container c WHERE c.node=:nodeId ORDER BY c.createTime")
+	Iterable<ContainerTable> findMany(@Param("nodeId") String nodeId);
+	
+	@Query("SELECT c FROM Container c WHERE c.namespace=:namespace AND c.service=:serviceName ORDER BY c.createTime")
+	Iterable<ContainerTable> findMany(@Param("namespace") String namespace, @Param("serviceName") String serviceName);
 
 }
