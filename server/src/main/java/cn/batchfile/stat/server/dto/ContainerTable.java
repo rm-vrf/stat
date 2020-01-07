@@ -45,8 +45,17 @@ public class ContainerTable {
 	@Column(length = 1024)
 	private String mounts;
 	
-	@Column(length = 1024)
-	private String resources;
+	@Column(name = "limit_cpus")
+	private Float limitCpus;
+	
+	@Column(name = "limit_memory", length = 16)
+	private String limitMemory;
+	
+	@Column(name = "request_cpus")
+	private Float requestCpus;
+
+	@Column(name = "request_memory", length = 16)
+	private String requestMemory;
 	
 	@Column(length = 16)
 	private String state;
@@ -151,12 +160,36 @@ public class ContainerTable {
 		this.mounts = mounts;
 	}
 
-	public String getResources() {
-		return resources;
+	public Float getLimitCpus() {
+		return limitCpus;
 	}
 
-	public void setResources(String resources) {
-		this.resources = resources;
+	public void setLimitCpus(Float limitCpus) {
+		this.limitCpus = limitCpus;
+	}
+
+	public String getLimitMemory() {
+		return limitMemory;
+	}
+
+	public void setLimitMemory(String limitMemory) {
+		this.limitMemory = limitMemory;
+	}
+
+	public Float getRequestCpus() {
+		return requestCpus;
+	}
+
+	public void setRequestCpus(Float requestCpus) {
+		this.requestCpus = requestCpus;
+	}
+
+	public String getRequestMemory() {
+		return requestMemory;
+	}
+
+	public void setRequestMemory(String requestMemory) {
+		this.requestMemory = requestMemory;
 	}
 
 	public String getState() {

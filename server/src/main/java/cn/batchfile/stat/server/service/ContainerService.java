@@ -226,7 +226,18 @@ public class ContainerService {
 		containerTable.setCommand(containerInstance.getCommand());
 		containerTable.setPorts(JSON.toJSONString(containerInstance.getPorts()));
 		containerTable.setMounts(JSON.toJSONString(containerInstance.getMounts()));
-		containerTable.setResources(JSON.toJSONString(containerInstance.getResources()));
+		
+		if (containerInstance.getResources() != null) {
+			if (containerInstance.getResources().getLimits() != null) {
+				containerTable.setLimitCpus(containerInstance.getResources().getLimits().getCpus());
+				containerTable.setLimitMemory(containerInstance.getResources().getLimits().getMemory());
+			}
+			if (containerInstance.getResources().getRequests() != null) {
+				containerTable.setRequestCpus(containerInstance.getResources().getRequests().getCpus());
+				containerTable.setRequestMemory(containerInstance.getResources().getRequests().getMemory());
+			}
+		}
+		
 		containerTable.setState(containerInstance.getState());
 		containerTable.setDescription(containerInstance.getDescription());
 		containerTable.setCreateTime(containerInstance.getCreateTime());
@@ -244,11 +255,23 @@ public class ContainerService {
 		container.setDomainNames(JSON.parseArray(containerTable.getDomainNames(), String.class));
 		container.setIp(containerTable.getIp());
 		container.setName(containerTable.getName());
-		container.setImage(container.getImage());
+		container.setImage(containerTable.getImage());
 		container.setCommand(containerTable.getCommand());
 		container.setPorts(JSON.parseArray(containerTable.getPorts(), PortInstance.class));
 		container.setMounts(JSON.parseArray(containerTable.getMounts(), MountInstance.class));
-		container.setResources(JSON.parseObject(containerTable.getResources(), Resources.class));
+		
+		Resources res = new Resources();
+		ResourcesControl limits = new ResourcesControl();
+		limits.setCpus(containerTable.getLimitCpus());
+		limits.setMemory(containerTable.getLimitMemory());
+		res.setLimits(limits);
+		
+		ResourcesControl requests = new ResourcesControl();
+		requests.setCpus(containerTable.getRequestCpus());
+		requests.setMemory(containerTable.getRequestMemory());
+		res.setRequests(requests);
+		
+		container.setResources(res);
 		container.setState(containerTable.getState());
 		container.setDescription(containerTable.getDescription());
 		container.setCreateTime(containerTable.getCreateTime());

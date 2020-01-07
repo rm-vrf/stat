@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="/static/xterm/dist/xterm.css" />
+    <meta charset="utf-8">
+    <title>${container.id?substring(0,12)}@${node.info.publicIp}</title>
+    <style>
+    html, body { height: 100%; padding: 0; margin: 0; }
+	.fullscreen { height: 100%; }
+    </style>
+</head>
+<body>
+<div class="outer">
+    <div class="fullscreen" id="terminal"></div>
+</div>
+<script src="/static/js/jquery-1.12.4.js"></script>
+<script src="/static/xterm/dist/xterm.js"></script>
+<script src="/static/xterm/dist/addons/attach/attach.js"></script>
+<script src="/static/xterm/dist/addons/fit/fit.js"></script>
+<script>
+    var term = new Terminal({cursorBlink: true});
+    term.open(document.getElementById('#terminal'));
+    term.writeln("Welcome to ${container.id?substring(0,12)}@${node.info.publicIp}");
+    var protocol = (location.protocol === "https:") ? "wss://" : "ws://";
+    var socketURL = protocol + location.hostname + ((location.port) ? (":" + location.port) : "") + "/ws/terminal/${node.id}/${container.id}";
+    var socket = new WebSocket(socketURL);
+    term.attach(socket);
+    socket.onclose = function () {
+        term.writeln("\nEOF");
+    };
+    window.addEventListener('resize', () => {
+        term.fit()
+    });
+	term.fit();
+</script>
+</body>
+</html>
