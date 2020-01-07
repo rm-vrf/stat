@@ -49,7 +49,7 @@ public class FileService {
         }
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public FileInstance getFile(String namespace, String name) {
     	LOG.debug("get file: {}/{}", namespace, name);
     	Optional<FileTable> ft = StringUtils.isEmpty(name) ? fileRepository.findOne(namespace) : fileRepository.findOne(namespace, name);
@@ -93,7 +93,7 @@ public class FileService {
     	return compose(parent);
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<FileInstance> listFiles(String namespace, String name) {
     	LOG.debug("list dir: {}/{}", namespace, name);
     	Optional<FileTable> ft = StringUtils.isEmpty(name) ? fileRepository.findOne(namespace) : fileRepository.findOne(namespace, name);
@@ -177,7 +177,7 @@ public class FileService {
     	}
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public InputStream getStream(String namespace, String name) throws IOException {
     	Optional<FileTable> ft = fileRepository.findOne(namespace, name);
     	if (!ft.isPresent()) {

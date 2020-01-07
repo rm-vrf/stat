@@ -43,12 +43,12 @@ public class NodeService {
 	@Autowired
 	private ContainerRepository containerRepository;
 	
-	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public int getNodeCount() {
     	return (int)nodeRepository.count();
     }
 	
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Node> getNodes() {
     	LOG.debug("get all nodes");
     	Iterable<NodeTable> nts = nodeRepository.findMany();
@@ -60,7 +60,7 @@ public class NodeService {
     	return nodes;
     }
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Info> getInfos() {
     	LOG.debug("get all infos");
     	Iterable<NodeTable> nts = nodeRepository.findMany();
@@ -72,7 +72,7 @@ public class NodeService {
     	return infos;
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public Node getNode(String id) {
     	LOG.debug("get node: {}", id);
     	Optional<NodeTable> nt = nodeRepository.findOne(id);
@@ -85,7 +85,7 @@ public class NodeService {
     	}
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public Info getInfo(String dockerHost) {
     	LOG.debug("get info: {}", dockerHost);
     	Optional<NodeTable> op = nodeRepository.findById(dockerHost);

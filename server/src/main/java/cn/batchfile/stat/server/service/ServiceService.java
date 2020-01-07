@@ -30,7 +30,7 @@ public class ServiceService {
     @Autowired
     private ServiceRepository serviceRepository;
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Service> getServices(String namespace) {
     	LOG.debug("get service list, {}", namespace);
     	Iterable<ServiceTable> sts = serviceRepository.findMany(namespace);
@@ -43,7 +43,7 @@ public class ServiceService {
     	return list;
     }
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public Service getService(String namespace, String serviceName) {
     	LOG.debug("get service, {}/{}", namespace, serviceName);
     	Optional<ServiceTable> st = serviceRepository.findOne(namespace, serviceName);
@@ -98,7 +98,6 @@ public class ServiceService {
     	serviceRepository.deleteMany(namespace);
     	LOG.info("deleted many: {}", serviceNames);
     	
-    	//TODO stop containers
         return serviceNames;
     }
 
@@ -114,7 +113,6 @@ public class ServiceService {
     		LOG.info("deleted");
     	}
     	
-    	//TODO stop containers
         return compose(st.get());
     }
 

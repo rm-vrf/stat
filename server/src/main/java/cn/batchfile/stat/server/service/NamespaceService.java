@@ -23,7 +23,7 @@ public class NamespaceService {
     @Autowired
     private FileRepository fileRepository;
     
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public String getNamespace(String namespace) {
     	LOG.debug("get namespace: {}", namespace);
     	Optional<FileTable> ft = fileRepository.findOne(namespace);
@@ -57,7 +57,7 @@ public class NamespaceService {
         return namespace;
     }
 
-    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<String> getNamespaces() {
     	LOG.debug("get all namespace datas");
     	List<String> nss = new ArrayList<String>();
