@@ -28,6 +28,6 @@ public interface FileRepository extends CrudRepository<FileTable, String> {
 	@Query("DELETE FROM File f WHERE f.namespace=:namespace AND f.name=:name")
 	void deleteOne(@Param("namespace") String namespace, @Param("name") String name);
 	
-	@Query("SELECT f FROM File f WHERE f.parent=:parentId ORDER BY name")
+	@Query("SELECT f FROM File f WHERE f.parent=:parentId ORDER BY f.name")
 	Iterable<FileTable> findMany(@Param("parentId") String parentId);
 }

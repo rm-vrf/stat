@@ -10,9 +10,9 @@ import cn.batchfile.stat.server.dto.NodeTable;
 
 public interface NodeRepository extends CrudRepository<NodeTable, String> {
 
-	@Query("SELECT n FROM Node n ORDER BY dockerHost")
+	@Query("SELECT n FROM Node n ORDER BY n.dockerHost")
 	Iterable<NodeTable> findMany();
 	
-	@Query("SELECT n FROM Node n WHERE id=:id")
+	@Query("SELECT n FROM Node n WHERE n.id=:id")
 	Optional<NodeTable> findOne(@Param("id") String id);
 }

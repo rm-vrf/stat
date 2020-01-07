@@ -5,10 +5,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -23,9 +19,6 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerMount;
 import com.github.dockerjava.api.model.ContainerPort;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 
 import cn.batchfile.stat.server.dao.ContainerRepository;
 import cn.batchfile.stat.server.domain.container.ContainerInstance;
@@ -46,16 +39,8 @@ public class ContainerService {
 	@Autowired
 	private NodeService nodeService;
 	
-	@PostConstruct
-	public void init() {
-		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
-			try {
-				refresh();
-			} catch (Exception e) {
-				LOG.error("error when refresh", e);
-			}
-		}, 20, 10, TimeUnit.SECONDS); 
-	}
+	@Autowired
+	private DockerService dockerService;
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
 	public List<ContainerInstance> getContainersByService(String namespace, String serviceName) {
@@ -92,59 +77,37 @@ public class ContainerService {
 	}
 	
 	public InspectContainerResponse getContainerInSpect(String id) {
-		ContainerInstance ci = getContainer(id);
-		Node node = nodeService.getNode(ci.getNode());
-		DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-				.withDockerHost("tcp://" + node.getInfo().getDockerHost()).withApiVersion(node.getApiVersion()).build();
-		DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		ContainerInstance container = getContainer(id);
+		Node node = nodeService.getNode(container.getNode());
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		return docker.inspectContainerCmd(id).exec();
 	}
 	
 	public void startContainer(String id) {
-		ContainerInstance ci = getContainer(id);
-		Node node = nodeService.getNode(ci.getNode());
-		DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-				.withDockerHost("tcp://" + node.getInfo().getDockerHost()).withApiVersion(node.getApiVersion()).build();
-		DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		ContainerInstance container = getContainer(id);
+		Node node = nodeService.getNode(container.getNode());
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		docker.startContainerCmd(id).exec();
 	}
 	
 	public void stopContainer(String id) {
-		ContainerInstance ci = getContainer(id);
-		Node node = nodeService.getNode(ci.getNode());
-		DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-				.withDockerHost("tcp://" + node.getInfo().getDockerHost()).withApiVersion(node.getApiVersion()).build();
-		DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		ContainerInstance container = getContainer(id);
+		Node node = nodeService.getNode(container.getNode());
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		docker.stopContainerCmd(id).exec();
 	}
 	
 	public void removeContainer(String id) {
-		ContainerInstance ci = getContainer(id);
-		Node node = nodeService.getNode(ci.getNode());
-		DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-				.withDockerHost("tcp://" + node.getInfo().getDockerHost()).withApiVersion(node.getApiVersion()).build();
-		DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		ContainerInstance container = getContainer(id);
+		Node node = nodeService.getNode(container.getNode());
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		docker.removeContainerCmd(id).exec();
 	}
 	
-	private void refresh() {
-		List<Node> nodes = nodeService.getNodes();
-		for (Node node : nodes) {
-			LOG.info("refresh node: {}", node.getInfo().getDockerHost());
-			nodeService.refreshNode(node);
-			refresh(node);
-			LOG.info("complete refresh node");
-		}
-	}
-	
-	private void refresh(Node node) {
-		String dockerHost = node.getInfo().getDockerHost();
-		String apiVersion = node.getApiVersion();
+	public List<ContainerInstance> refreshContainer(Node node) {
 		String ip = node.getInfo().getPublicIp();
 		
-		DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-				.withDockerHost("tcp://" + dockerHost).withApiVersion(apiVersion).build();
-		DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
 		
 		for (Container container : containers) {
@@ -211,6 +174,8 @@ public class ContainerService {
 			ContainerTable ct = compose(ci);
 			containerRepository.save(ct);
 		}
+		
+		return null;//TODO
 	}
 	
 	private ContainerTable compose(ContainerInstance containerInstance) {
