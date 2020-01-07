@@ -18,4 +18,8 @@ public interface ContainerRepository extends CrudRepository<ContainerTable, Stri
 	@Modifying
 	@Query("UPDATE Container c SET c.state=:state WHERE c.node=:node")
 	void updateStatus(@Param("node") String node, @Param("state") String state);
+	
+	@Modifying
+	@Query("DELETE Container c WHERE c.node=:node")
+	void deleteMany(@Param("node") String node);
 }

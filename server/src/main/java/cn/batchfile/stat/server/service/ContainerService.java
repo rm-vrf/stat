@@ -145,6 +145,8 @@ public class ContainerService {
 			}
 		}
 		
+		//TODO 删除已经没有节点的容器
+		
 		return list;
 	}
 	

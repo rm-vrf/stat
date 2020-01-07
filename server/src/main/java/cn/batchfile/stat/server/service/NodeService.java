@@ -145,7 +145,13 @@ public class NodeService {
     	
     	Info info = composeInfo(op.get());
     	nodeRepository.deleteById(dockerHost);
-    	LOG.info("deleted, id: {}", op.get().getId());
+    	LOG.info("deleted node, id: {}", op.get().getId());
+    	
+    	if (StringUtils.isNotEmpty(op.get().getId())) {
+    		containerRepository.deleteMany(op.get().getId());
+    		LOG.info("deleted containers");
+    	}
+    	
     	return info;
     }
     
