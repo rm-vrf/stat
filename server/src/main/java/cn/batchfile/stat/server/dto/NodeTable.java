@@ -9,13 +9,13 @@ import javax.persistence.Table;
 @Table(name = "node")
 public class NodeTable {
 
-	@Id
-	@Column(length = 64)
+	@Column(length = 64, unique = true)
 	private String id;
 	
 	@Column(length = 64)
 	private String name;
 	
+	@Id
 	@Column(name = "docker_host", length = 32)
     private String dockerHost;
 	

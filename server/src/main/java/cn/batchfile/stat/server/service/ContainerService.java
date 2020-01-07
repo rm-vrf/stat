@@ -14,6 +14,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.fastjson.JSON;
 import com.github.dockerjava.api.DockerClient;
@@ -55,6 +57,7 @@ public class ContainerService {
 		}, 20, 10, TimeUnit.SECONDS); 
 	}
 	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
 	public List<ContainerInstance> getContainersByService(String namespace, String serviceName) {
 		LOG.debug("get containers of servie: {}/{}", namespace, serviceName);
 		List<ContainerInstance> containers = new ArrayList<ContainerInstance>();
@@ -66,6 +69,7 @@ public class ContainerService {
 		return containers;
 	}
 	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
 	public List<ContainerInstance> getContainersByNode(String nodeId) {
 		List<ContainerInstance> containers = new ArrayList<ContainerInstance>();
 		Iterable<ContainerTable> it = containerRepository.findMany(nodeId);
@@ -76,6 +80,7 @@ public class ContainerService {
 		return containers;
 	}
 	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
 	public ContainerInstance getContainer(String id) {
 		LOG.debug("get container, id: {}", id);
 		Optional<ContainerTable> op = containerRepository.findById(id);
@@ -126,6 +131,7 @@ public class ContainerService {
 		List<Node> nodes = nodeService.getNodes();
 		for (Node node : nodes) {
 			LOG.info("refresh node: {}", node.getInfo().getDockerHost());
+			nodeService.refreshNode(node);
 			refresh(node);
 			LOG.info("complete refresh node");
 		}

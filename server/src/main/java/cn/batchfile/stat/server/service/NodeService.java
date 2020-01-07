@@ -9,11 +9,14 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.fastjson.JSON;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Version;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DefaultDockerClientConfig.Builder;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 
@@ -34,10 +37,12 @@ public class NodeService {
 	@Autowired
 	private NodeRepository nodeRepository;
 	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public int getNodeCount() {
     	return (int)nodeRepository.count();
     }
-    
+	
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public List<Node> getNodes() {
     	LOG.debug("get all nodes");
     	Iterable<NodeTable> nts = nodeRepository.findMany();
@@ -49,20 +54,22 @@ public class NodeService {
     	return nodes;
     }
 
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public List<Info> getInfos() {
-    	LOG.debug("get infos");
+    	LOG.debug("get all infos");
     	Iterable<NodeTable> nts = nodeRepository.findMany();
     	List<Info> infos = new ArrayList<Info>();
     	nts.forEach(nt -> {
     		infos.add(composeInfo(nt));
     	});
-    	LOG.debug("count: {}", infos.size());
+    	LOG.debug("info count: {}", infos.size());
     	return infos;
     }
     
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Node getNode(String id) {
     	LOG.debug("get node: {}", id);
-    	Optional<NodeTable> nt = nodeRepository.findById(id);
+    	Optional<NodeTable> nt = nodeRepository.findOne(id);
     	if (nt.isPresent()) {
     		LOG.debug("get one node");
     		return composeNode(nt.get());
@@ -72,56 +79,46 @@ public class NodeService {
     	}
     }
     
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Info getInfo(String dockerHost) {
     	LOG.debug("get info: {}", dockerHost);
-    	Optional<NodeTable> op = nodeRepository.findOne(dockerHost);
-    	if (!op.isPresent()) {
-    		return null;
-    	} else {
+    	Optional<NodeTable> op = nodeRepository.findById(dockerHost);
+    	if (op.isPresent()) {
+    		LOG.debug("get one info");
     		return composeInfo(op.get());
+    	} else {
+    		LOG.debug("no info: {}", dockerHost);
+    		return null;
     	}
     }
     
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Info createInfo(Info info) {
     	LOG.info("create info {}", info.getDockerHost());
-    	Optional<NodeTable> op = nodeRepository.findOne(info.getDockerHost());
+    	Optional<NodeTable> op = nodeRepository.findById(info.getDockerHost());
     	if (op.isPresent()) {
     		throw new DuplicateEntryException("docker node already exist");
     	}
     	
-    	LOG.info("connect to docker host: {}", info.getDockerHost());
-    	DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-    			.withDockerHost("tcp://" + info.getDockerHost()).build();
-    	DockerClient docker = DockerClientBuilder.getInstance(config).build();
-    	Version dockerVersion = docker.versionCmd().exec();
-    	LOG.info("get docker version, kernel: {}, api: {}", dockerVersion.getKernelVersion(), dockerVersion.getApiVersion());
-
-    	long begin = System.currentTimeMillis();
-    	com.github.dockerjava.api.model.Info dockerInfo = docker.infoCmd().exec();
-    	long end = System.currentTimeMillis();
-    	LOG.info("get docker info, name: {}, id: {}", dockerInfo.getName(), dockerInfo.getId());
-
     	if (info.getLabels() == null) {
     		info.setLabels(new ArrayList<String>());
     	}
     	LOG.info("input labels: {}", info.getLabels());
     	
-    	Node node = composeNode(dockerInfo, dockerVersion, info);
-    	node.setStatus(Node.STATUS_ONLINE);
-    	node.setSlow(end - begin > 1000);
-    	LOG.info("slow node: {}", node.getSlow());
-    	
     	NodeTable nt = new NodeTable();
-    	compose(nt, node);
+    	compose(nt, info);
+    	nt.setStatus(Node.STATUS_NEW);
     	nodeRepository.save(nt);
-    	LOG.info("saved node");
     	
+    	LOG.info("saved info");
     	return info;
+    	
     }
 
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Info updateInfo(Info info) {
     	LOG.info("update info, {}", info.getDockerHost());
-    	Optional<NodeTable> op = nodeRepository.findOne(info.getDockerHost());
+    	Optional<NodeTable> op = nodeRepository.findById(info.getDockerHost());
     	if (!op.isPresent()) {
     		throw new NotFoundException("node not exist");
     	}
@@ -133,38 +130,67 @@ public class NodeService {
         return info;
     }
     
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public Info deleteInfo(String dockerHost) {
     	LOG.info("delete node, {}", dockerHost);
-    	Optional<NodeTable> op = nodeRepository.findOne(dockerHost);
+    	Optional<NodeTable> op = nodeRepository.findById(dockerHost);
     	if (!op.isPresent()) {
     		return null;
     	}
     	
     	Info info = composeInfo(op.get());
-    	nodeRepository.deleteById(op.get().getId());
+    	nodeRepository.deleteById(dockerHost);
     	LOG.info("deleted, id: {}", op.get().getId());
     	return info;
     }
     
-    private Node composeNode(com.github.dockerjava.api.model.Info dockerInfo, Version dockerVersion, Info info) {
-    	Node node = new Node();
-    	node.setId(StringUtils.remove(dockerInfo.getId(), ':').toLowerCase());
-    	node.setName(dockerInfo.getName());
-    	node.setImages(dockerInfo.getImages());
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED)
+    public Node refreshNode(Node node) {
+    	String dockerHost = node.getInfo().getDockerHost();
+    	String apiVersion = node.getApiVersion();
+    	LOG.info("connect to docker host: {}, version: {}", dockerHost, apiVersion);
     	
-    	node.setInfo(info);
-    	info.setArchitecture(dockerInfo.getArchitecture());
-    	info.setOs(dockerInfo.getOsType());
+    	Builder builder = DefaultDockerClientConfig.createDefaultConfigBuilder()
+    			.withDockerHost("tcp://" + dockerHost);
+    	if (StringUtils.isNotEmpty(apiVersion)) {
+    		builder.withApiVersion(apiVersion);
+    	}
+    	DockerClientConfig config = builder.build();
+    	DockerClient docker = DockerClientBuilder.getInstance(config).build();
+    	
+    	if (StringUtils.isEmpty(apiVersion)) {
+    		Version version = docker.versionCmd().exec();
+    		LOG.info("get docker version, kernel: {}, api: {}", 
+    				version.getKernelVersion(), version.getApiVersion());
+    		
+    		// sync values
+    		node.setApiVersion(version.getApiVersion());
+    		node.setEngineVersion(version.getVersion());
+    	}
+    	
+    	long begin = System.currentTimeMillis();
+    	com.github.dockerjava.api.model.Info info = docker.infoCmd().exec();
+    	long end = System.currentTimeMillis();
+    	LOG.info("get docker info, name: {}, id: {}", info.getName(), info.getId());
+    	
+		// sync values
+    	node.setId(StringUtils.remove(info.getId(), ':').toLowerCase());
+    	node.setName(info.getName());
+    	node.setImages(info.getImages());
+    	
+    	node.getInfo().setArchitecture(info.getArchitecture());
+    	node.getInfo().setOs(info.getOsType());
+    	
     	ResourcesControl rc = new ResourcesControl();
-    	rc.setCpus((float)dockerInfo.getNCPU());
-    	rc.setMemory(FileUtils.byteCountToDisplaySize(dockerInfo.getMemTotal()));
-    	info.setResources(rc);
+    	rc.setCpus((float)info.getNCPU());
+    	rc.setMemory(FileUtils.byteCountToDisplaySize(info.getMemTotal()));
+    	node.getInfo().setResources(rc);
     	
     	Containers containers = new Containers();
-    	containers.setTotal(dockerInfo.getContainers());
-    	containers.setRunning(dockerInfo.getContainersRunning());
-    	containers.setPaused(dockerInfo.getContainersPaused());
-    	containers.setStopped(dockerInfo.getContainersStopped());
+    	containers.setTotal(info.getContainers());
+    	containers.setRunning(info.getContainersRunning());
+    	containers.setPaused(info.getContainersPaused());
+    	containers.setStopped(info.getContainersStopped());
     	node.setContainers(containers);
     	
     	Resources resources = new Resources();
@@ -177,17 +203,24 @@ public class NodeService {
     	requests.setMemory("0");
     	resources.setRequests(requests);
     	node.setResources(resources);
-
-    	if (dockerVersion != null) {
-    		node.setApiVersion(dockerVersion.getApiVersion());
-    		node.setEngineVersion(dockerVersion.getVersion());
-    	}
+    	
+    	node.setStatus(Node.STATUS_ONLINE);
+    	node.setSlow(end - begin > 1000);
+    	LOG.info("slow node: {}", node.getSlow());
+    	
+    	// compose dto
+    	NodeTable nt = new NodeTable();
+    	compose(nt, node);
+    	nodeRepository.save(nt);
+    	LOG.info("saved node");
+    	
     	return node;
     }
     
     private void compose(NodeTable nodeTable, Node node) {
     	nodeTable.setId(node.getId());
     	nodeTable.setName(node.getName());
+    	
     	compose(nodeTable, node.getInfo());
     	nodeTable.setApiVersion(node.getApiVersion());
     	nodeTable.setEngineVersion(node.getEngineVersion());
