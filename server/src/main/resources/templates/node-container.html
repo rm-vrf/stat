@@ -87,6 +87,7 @@
 							<th class="table-check"><input type="checkbox" /></th>
 							<th class="table-id">ID</th>
 							<th class="table-title">服务/镜像</th>
+							<th class="table-title">名称</th>
 							<th class="table-type">状态</th>
 							<th class="table-date">描述</th>
 							<th class="table-title">命令</th>
@@ -99,6 +100,11 @@
 							<td><input type="checkbox" /></td>
 							<td>{{ container.index }}</td>
 							<td>{{ container.displayName }}</td>
+							<td>
+								<a v-bind:href="[ '/container/' + container.id ]">
+								{{ container.name }}
+								</a>
+							</td>
 							<td>
 								<span v-bind:class="[ container.stateClass ]">{{ container.state }}</span>
 							</td>
