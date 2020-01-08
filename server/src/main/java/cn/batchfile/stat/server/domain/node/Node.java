@@ -3,10 +3,10 @@ package cn.batchfile.stat.server.domain.node;
 import cn.batchfile.stat.server.domain.service.Resources;
 
 public class Node {
-	public static final String STATUS_NEW = "NEW";
-    public static final String STATUS_ONLINE = "ONLINE";
-    public static final String STATUS_OFFLINE = "OFFLINE";
-    public static final String STATUS_UNKNOWN = "UNKNOWN";
+	public static final String STATUS_CREATED = "created";
+    public static final String STATUS_ONLINE = "online";
+    public static final String STATUS_OFFLINE = "offline";
+    public static final String STATUS_UNKNOWN = "unknown";
     
     private String id;
     private String name;

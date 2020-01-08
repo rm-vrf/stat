@@ -27,10 +27,18 @@ public class ScheduleService {
 	
 	@Autowired
 	private NodeService nodeService;
+	
+	@Autowired
+	private MasterService masterService;
 
 	@PostConstruct
 	public void init() {
 		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
+			//判断当前节点是不是master
+			if (!masterService.isMaster()) {
+				return;
+			}
+			
 			//获取所有节点
 			List<Node> nodes = null;
 			try {
@@ -53,6 +61,11 @@ public class ScheduleService {
 		}, 20, 2, TimeUnit.SECONDS);
 		
 		Executors.newScheduledThreadPool(2).scheduleWithFixedDelay(() -> {
+			//判断当前节点是不是master
+			if (!masterService.isMaster()) {
+				return;
+			}
+			
 			try {
 				//从慢队列中取得消息，同步容器
 				List<Node> nodes = slowQueue.take();
@@ -63,6 +76,11 @@ public class ScheduleService {
 		}, 20, 2, TimeUnit.SECONDS);
 
 		Executors.newScheduledThreadPool(4).scheduleWithFixedDelay(() -> {
+			//判断当前节点是不是master
+			if (!masterService.isMaster()) {
+				return;
+			}
+			
 			try {
 				//从快队列中取得消息，同步容器
 				List<Node> nodes = quickQueue.take();

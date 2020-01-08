@@ -113,7 +113,7 @@ public class NodeService {
     	
     	NodeTable nt = new NodeTable();
     	compose(nt, info);
-    	nt.setStatus(Node.STATUS_NEW);
+    	nt.setStatus(Node.STATUS_CREATED);
     	nodeRepository.save(nt);
     	
     	LOG.info("saved info");
