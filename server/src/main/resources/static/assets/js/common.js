@@ -1,0 +1,81 @@
+var ONE_KB = 1024;
+var ONE_MB = ONE_KB * ONE_KB;
+var ONE_GB = ONE_KB * ONE_MB;
+var ONE_TB = ONE_KB * ONE_GB;
+var ONE_PB = ONE_KB * ONE_TB;
+var ONE_EB = ONE_KB * ONE_PB;
+
+function byteCountToDisplaySize(size) {
+    var displaySize;
+    if (size / ONE_EB > 1) {
+        displaySize = parseInt(size / ONE_EB) + " EB";
+    } else if (size / ONE_PB > 1) {
+        displaySize = parseInt(size / ONE_PB) + " PB";
+    } else if (size / ONE_TB > 1) {
+        displaySize = parseInt(size / ONE_TB) + " TB";
+    } else if (size / ONE_GB > 1) {
+        displaySize = parseInt(size / ONE_GB) + " GB";
+    } else if (size / ONE_MB > 1) {
+        displaySize = parseInt(size / ONE_MB) + " MB";
+    } else if (size / ONE_KB > 1) {
+        displaySize = parseInt(size / ONE_KB) + " KB";
+    } else {
+        displaySize = parseInt(size) + " bytes";
+    }
+    return displaySize;
+}
+
+/*
+function getParameter(name) {
+    var vars = [], hash;
+    var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+    for(var i = 0; i < hashes.length; i++) {
+        hash = hashes[i].split('=');
+        vars.push(hash[0]);
+        vars[hash[0]] = hash[1];
+    }
+    return vars;
+}
+
+var topbar = new Vue({
+	el : '#topbar-collapse',
+	data : {
+		messageCount: ''
+	},
+	methods: {
+		refresh: function() {
+			Vue.http.get('/api/v2/event/count').then(function(ret) {
+				var count = ret.body;
+				topbar.messageCount = count == 0 ? '' : count > 1024 ? count + '+' : count;
+			});
+		}
+	}
+});
+
+$(document).ready(function () {
+	topbar.refresh();
+	setInterval(function() {
+		topbar.refresh();
+	}, 5000);
+});
+*/
+function parseDate(s) {
+	//2019-02-20T10:11:05.580+0000
+	var year = parseInt(s.substr(0, 4));
+	var month = parseInt(s.substr(5, 5)) - 1;
+	var day = parseInt(s.substr(8, 2));
+	var hour = parseInt(s.substr(11, 2));
+	var minute = parseInt(s.substr(14, 2));
+	var second = parseInt(s.substr(17, 2));
+	var milli = parseInt(s.substr(20, 3));
+	return new Date(year, month, day, hour, minute, second, milli);
+}
+
+function formatDate(date) {
+	return (date.getYear() + 1900) + '-' + 
+		(date.getMonth() + 1) + '-' + 
+		date.getDate() + ' ' + 
+		date.getHours() + ':' + 
+		date.getMinutes() + ':' + 
+		date.getSeconds();
+}
