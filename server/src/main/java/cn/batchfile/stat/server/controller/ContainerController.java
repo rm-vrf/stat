@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.TopContainerResponse;
 
 import cn.batchfile.stat.server.domain.container.ContainerInstance;
 import cn.batchfile.stat.server.service.ContainerService;
@@ -47,13 +48,24 @@ public class ContainerController {
 	}
 	
 	@GetMapping("/api/container/{id}/inspect")
-	public ResponseEntity<InspectContainerResponse> getContainerInSpect(@PathVariable("id") String id) {
+	public ResponseEntity<InspectContainerResponse> getContainerInspect(@PathVariable("id") String id) {
 		LOG.debug("inspect container: {}", id);
-		InspectContainerResponse spec = containerService.getContainerInSpect(id);
+		InspectContainerResponse spec = containerService.getContainerInspect(id);
 		if (spec == null) {
 			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 		} else {
 			return new ResponseEntity<>(spec, HttpStatus.OK);
+		}
+	}
+	
+	@GetMapping("/api/container/{id}/top")
+	public ResponseEntity<TopContainerResponse> getContainerTop(@PathVariable("id") String id) {
+		LOG.debug("top container: {}", id);
+		TopContainerResponse top = containerService.getContainerTop(id);
+		if (top == null) {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		} else {
+			return new ResponseEntity<>(top, HttpStatus.OK);
 		}
 	}
 	

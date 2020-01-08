@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.alibaba.fastjson.JSON;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.TopContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ContainerMount;
 import com.github.dockerjava.api.model.ContainerPort;
@@ -76,11 +77,18 @@ public class ContainerService {
 		}
 	}
 	
-	public InspectContainerResponse getContainerInSpect(String id) {
+	public InspectContainerResponse getContainerInspect(String id) {
 		ContainerInstance container = getContainer(id);
 		Node node = nodeService.getNode(container.getNode());
 		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
 		return docker.inspectContainerCmd(id).exec();
+	}
+	
+	public TopContainerResponse getContainerTop(String id) {
+		ContainerInstance container = getContainer(id);
+		Node node = nodeService.getNode(container.getNode());
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
+		return docker.topContainerCmd(id).exec();
 	}
 	
 	public void startContainer(String id) {

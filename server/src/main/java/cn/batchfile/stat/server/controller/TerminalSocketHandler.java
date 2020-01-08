@@ -1,14 +1,19 @@
 package cn.batchfile.stat.server.controller;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -30,13 +35,26 @@ import cn.batchfile.stat.server.service.NodeService;
 
 @Component
 public class TerminalSocketHandler extends TextWebSocketHandler {
-	public static NodeService nodeService;
 	private static final Logger LOG = LoggerFactory.getLogger(TerminalSocketHandler.class);
-	private Map<String, Socket> sockets = null;
+	private static final String EXEC_DATA = "{\"Detach\":false,\"Tty\":true}";
+	public static NodeService nodeService;
+	private Map<String, ConnectionHandler> handlers = null;
 
 	public TerminalSocketHandler() {
 		LOG.info("+++ create TerminalSocketHandler object +++");
-		sockets = new ConcurrentHashMap<String, Socket>();
+		
+		handlers = new ConcurrentHashMap<>();
+		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
+			LOG.debug("clear websocket session");
+			for(Iterator<Map.Entry<String, ConnectionHandler>> it = handlers.entrySet().iterator(); it.hasNext(); ) {
+			    Map.Entry<String, ConnectionHandler> entry = it.next();
+			    if(System.currentTimeMillis() - entry.getValue().timestamp > 30000) {
+			    	LOG.info("remove idle session: {}", entry.getKey());
+			    	exitQuielty(entry.getKey(), "\r\nCLOSE IDLE SESSION");
+			        it.remove();
+			    }
+			}
+		}, 60, 60, TimeUnit.SECONDS);
 	}
 	
 	@Override
@@ -64,16 +82,18 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
                 .withTty(true)
                 .exec().getId();
         LOG.info("create exec, id: {}", execId);
-
         
         // create socket channel
         ary = StringUtils.split(StringUtils.remove(node.getInfo().getDockerHost(), '/'), ':');
         Socket socket = new Socket(ary[0], Integer.valueOf(ary[1]));
-        sockets.put(session.getId(), socket);
+        ConnectionHandler handler = new ConnectionHandler();
+        handler.socket = socket;
+        handler.timestamp = System.currentTimeMillis();
+        handler.session = session;
+        handlers.put(session.getId(), handler);
         
         // send http request
         String uri = "/v" + node.getApiVersion() + "/exec/" + execId + "/start";
-        String data = "{\"Detach\":false,\"Tty\":true}";
         OutputStream out = socket.getOutputStream();
         List<String> lines = new ArrayList<>();
         lines.add("POST " + uri + " HTTP/1.1");
@@ -81,23 +101,31 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
         lines.add("user-agent: curl/7.55.1");
         lines.add("accept: */*");
         lines.add("content-type: application/json");
-        lines.add("content-length: " + data.length());
+        lines.add("content-length: " + EXEC_DATA.length());
         lines.add("");
-        lines.add(data);
+        lines.add(EXEC_DATA);
         IOUtils.writeLines(lines, "\n", out, Charset.forName("UTF-8"));
         
         // read output
         InputStream in = socket.getInputStream();
         new Thread(() -> {
             try {
-                while (true) {
+                while (socket.isConnected()) {
                     byte[] buff = new byte[1];
                     int i = in.read(buff);
                     if (i > 0) {
                         session.sendMessage(new TextMessage(buff));
+                        handler.timestamp = System.currentTimeMillis();
                     }
                 }
-            } catch (Exception e) {}
+                exitQuielty(session.getId(), "\r\nSOCKET CONNECTION CLOSED");
+            } catch (SocketException e) {
+            	LOG.info("error when read socket", e);
+            } catch (Exception e) {
+            	LOG.error("error when read socket", e);
+            } finally {
+            	closeQuielty(socket);
+            }
         }).start();
 	}
 
@@ -106,27 +134,51 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
             throws InterruptedException, IOException {
 
         String payload = message.getPayload();
-        Socket socket = sockets.get(session.getId());
+        ConnectionHandler handler = handlers.get(session.getId());
         
-        if (socket != null) {
-        	OutputStream outputStream = socket.getOutputStream();
+        if (handler != null && handler.socket != null) {
+        	OutputStream outputStream = handler.socket.getOutputStream();
         	IOUtils.write(payload.getBytes(Charset.forName("UTF-8")), outputStream);
-        	LOG.info("get message from client: {}, {}", payload, this.toString());
+        	LOG.debug("get message from client: {}, {}", payload, this.toString());
+        	handler.timestamp = System.currentTimeMillis();
         }
     }
-
+    
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        LOG.info("afterConnectionClosed, status: {}");
-        Socket socket = sockets.get(session.getId());
-        
-        if (socket != null) {
-	        OutputStream outputStream = socket.getOutputStream();
-	        IOUtils.write("exit\n".getBytes(Charset.forName("UTF-8")), outputStream);
-	        try {
-	        	socket.close();
-	        } catch (Exception e) {}
-        }
-        sockets.remove(session.getId());
+        LOG.info("afterConnectionClosed, status: {}", status);
+        exitQuielty(session.getId(), "\r\nSESSION CLOSED " + status);
+        handlers.remove(session.getId());
+    }
+    
+    private void exitQuielty(String sessionId, String message) {
+    	ConnectionHandler handler = handlers.get(sessionId);
+    	if (handler != null) {
+    		//向exec发出'exit'指令
+    		try {
+    			OutputStream outputStream = handler.socket.getOutputStream();
+    			IOUtils.write("exit\n".getBytes(Charset.forName("UTF-8")), outputStream);
+    		} catch (Exception e) {}
+    		
+    		//关闭exec连接
+    		closeQuielty(handler.socket);
+
+    		//向控制台发出信息
+    		try {
+        		handler.session.sendMessage(new TextMessage(message));
+    		} catch (Exception e) {}
+    	}
+    }
+    
+    private void closeQuielty(Closeable closeable) {
+    	try {
+    		closeable.close();
+    	} catch (Exception e) {}
+    }
+
+    class ConnectionHandler {
+    	protected WebSocketSession session;
+    	protected long timestamp;
+    	protected Socket socket;
     }
 }
