@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import cn.batchfile.stat.server.domain.container.ContainerInstance;
 import cn.batchfile.stat.server.domain.node.Node;
 import cn.batchfile.stat.server.service.ContainerService;
+import cn.batchfile.stat.server.service.DockerService;
 import cn.batchfile.stat.server.service.NodeService;
 
 @Controller
@@ -19,6 +20,9 @@ public class HtmlController {
 	
 	@Autowired
 	private NodeService nodeService;
+	
+	@Autowired
+	private DockerService dockerService;
 	
 	@RequestMapping("/node")
 	public String nodeList() {
@@ -46,6 +50,7 @@ public class HtmlController {
 	@RequestMapping("/container/{containerId}/terminal")
 	public String containerTerminal(@PathVariable("containerId") String containerId, ModelMap model) {
 		TerminalSocketHandler.nodeService = nodeService;
+		TerminalSocketHandler.dockerService = dockerService;
 		
 		ContainerInstance container = containerService.getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
@@ -57,6 +62,8 @@ public class HtmlController {
 	
 	@RequestMapping("/container/{containerId}/log")
 	public String containerLog(@PathVariable("containerId") String containerId, ModelMap model) {
+		LogSocketHandler.nodeService = nodeService;
+		
 		ContainerInstance container = containerService.getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
 		

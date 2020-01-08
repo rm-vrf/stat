@@ -20,7 +20,7 @@
 <script>
     var term = new Terminal({cursorBlink: true});
     term.open(document.getElementById('#terminal'));
-    term.writeln("Welcome to ${container.id?substring(0,12)}@${node.info.publicIp}");
+    term.writeln("Welcome to ${container.id?substring(0,12)} on ${node.info.publicIp}");
     var protocol = (location.protocol === "https:") ? "wss://" : "ws://";
     var socketURL = protocol + location.hostname + ((location.port) ? (":" + location.port) : "") + "/ws/terminal/${node.id}/${container.id}";
     var socket = new WebSocket(socketURL);

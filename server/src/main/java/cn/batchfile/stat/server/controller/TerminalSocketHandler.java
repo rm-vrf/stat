@@ -26,11 +26,9 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 
 import cn.batchfile.stat.server.domain.node.Node;
+import cn.batchfile.stat.server.service.DockerService;
 import cn.batchfile.stat.server.service.NodeService;
 
 @Component
@@ -38,6 +36,7 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(TerminalSocketHandler.class);
 	private static final String EXEC_DATA = "{\"Detach\":false,\"Tty\":true}";
 	public static NodeService nodeService;
+	public static DockerService dockerService;
 	private Map<String, ConnectionHandler> handlers = null;
 
 	public TerminalSocketHandler() {
@@ -48,7 +47,7 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
 			LOG.debug("clear websocket session");
 			for(Iterator<Map.Entry<String, ConnectionHandler>> it = handlers.entrySet().iterator(); it.hasNext(); ) {
 			    Map.Entry<String, ConnectionHandler> entry = it.next();
-			    if(System.currentTimeMillis() - entry.getValue().timestamp > 30000) {
+			    if(System.currentTimeMillis() - entry.getValue().timestamp > 1200000) {
 			    	LOG.info("remove idle session: {}", entry.getKey());
 			    	exitQuielty(entry.getKey(), "\r\nCLOSE IDLE SESSION");
 			        it.remove();
@@ -67,10 +66,7 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
 		Node node = nodeService.getNode(nodeId);
 
 		// connect to docket
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("tcp://" + node.getInfo().getDockerHost())
-                .withApiVersion(node.getApiVersion()).build();
-        DockerClient docker = DockerClientBuilder.getInstance(config).build();
+		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
         
         // create exec on container
         String execId = docker.execCreateCmd(containerId)
