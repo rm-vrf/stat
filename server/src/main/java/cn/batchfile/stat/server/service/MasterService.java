@@ -58,7 +58,7 @@ public class MasterService {
 		if (StringUtils.isEmpty(address)) {
 			address = getAddress();
 		}
-		LOG.info("STAT HUB START, ADDRESS: {}, PORT: {}", address, port);
+		LOG.info(":::: STAT HUB START, ADDRESS: {}, PORT: {} ::::", address, port);
 
 		//创建数据对象
 		MasterTable mt = new MasterTable();

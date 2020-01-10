@@ -28,6 +28,7 @@ public class ScheduleService {
 	private static final int OFFLINE_POOL_SIZE = 1;
 	private static final int ONLINE_REFRESH_INTERVAL = 5;
 	private static final int OFFLINE_REFRESH_INTERVAL = 10;
+	private static final int PAGE_SIZE = 50;
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduleService.class);
 
 	@Autowired
@@ -56,22 +57,20 @@ public class ScheduleService {
 	private void setupSchedule(String[] status, int poolSize, int refreshInterval) {
 		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
 			//判断当前节点是不是master
-			if (!masterService.isMaster()) {
-				return;
+			if (masterService.isMaster()) {
+				//同步离线节点和未知节点
+				try {
+					refreshNodes(status, poolSize);
+				} catch (Exception e) {
+					LOG.error("error when refresh nodes", e);
+				}
 			}
-			
-			//同步离线节点和未知节点
-			try {
-				refreshNodes(status, poolSize);
-			} catch (Exception e) {
-				LOG.error("error when refresh nodes", e);
-			}
-		}, 20, refreshInterval, TimeUnit.SECONDS);
+		}, 10, refreshInterval, TimeUnit.SECONDS);
 	}
 	
 	private void refreshNodes(String[] status, int poolSize) {
 		//遍历节点
-		Pageable pageable = PageRequest.of(0, 50);
+		Pageable pageable = PageRequest.of(0, PAGE_SIZE);
 		Page<Node> page = nodeService.searchNodes(status, pageable);
 		while (!page.isEmpty()) {
 			//遍历节点，逐个刷新
@@ -84,8 +83,11 @@ public class ScheduleService {
 					});
 				});
 				es.shutdown();
-				es.awaitTermination(30, TimeUnit.SECONDS);
-				LOG.debug("finish refresh");
+
+				//根据数据量计算合适的超时时间
+				int timeout = page.getContent().size() * dockerService.getConnectTimeoutSeconds();
+				es.awaitTermination(timeout, TimeUnit.SECONDS);
+				LOG.debug("---- finish refresh loop ----");
 			} catch (Exception e) {
 				LOG.error("error when refresh nodes", e);
 			}

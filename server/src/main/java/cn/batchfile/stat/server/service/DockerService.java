@@ -25,10 +25,14 @@ import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 @org.springframework.stereotype.Service
 public class DockerService {
 	private static final int READ_TIMEOUT = 1800000;
-	private static final int CONNECT_TIMEOUT = 2000;
+	public static final int CONNECT_TIMEOUT = 2000;
 	private static final int MAX_PER_ROUTE_CONNECTIONS = 10;
 	private static final Logger LOG = LoggerFactory.getLogger(DockerService.class);
 	private Map<String, DockerClient> dockerClients = new ConcurrentHashMap<>();
+	
+	public int getConnectTimeoutSeconds() {
+		return CONNECT_TIMEOUT / 1000;
+	}
 	
 	public Version getVersion(String dockerHost) {
 		DockerClient docker = getDockerClient(dockerHost);
