@@ -42,7 +42,7 @@ public class ScheduleService {
 			//获取所有节点
 			List<Node> nodes = null;
 			try {
-				nodes = nodeService.getNodes();
+				nodes = new ArrayList<>();//.getNodes();//TODO for debug
 			} catch (Exception e) {
 				LOG.error("error when get node data", e);
 				return;

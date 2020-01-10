@@ -5,6 +5,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.server.domain.node.Info;
@@ -26,12 +31,6 @@ public class NodeController {
 	
 	@Autowired
 	private NodeService nodeService;
-	
-	@PostMapping("/api/node/_count")
-	public ResponseEntity<Integer> getNodeCount() {
-		Integer count = nodeService.getNodeCount();
-		return new ResponseEntity<>(count, HttpStatus.OK);
-	}
 	
 	@GetMapping("/api/info")
 	public ResponseEntity<List<Info>> getInfos() {
@@ -80,11 +79,22 @@ public class NodeController {
 	}
 	
 	@GetMapping("/api/node")
-	public ResponseEntity<List<Node>> getNodes() {
-		List<Node> nodes = nodeService.getNodes();
+	public ResponseEntity<Page<Node>> getNodes(
+			@PageableDefault(value = 10, sort = {"dockerHost"}, direction = Sort.Direction.ASC) Pageable pageable) {
+		Page<Node> nodes = nodeService.getNodes(pageable);
 		return new ResponseEntity<>(nodes, HttpStatus.OK);
 	}
 
+	@PostMapping("/api/node/_search")
+	public ResponseEntity<Page<Node>> searchNodes(
+			@RequestParam(value = "name", required = false) String name,
+			@RequestParam(value = "publicIp", required = false) String publicIp,
+			@RequestParam(value = "label", required = false) String label,
+			@PageableDefault(value = 10, sort = {"dockerHost"}, direction = Sort.Direction.ASC) Pageable pageable) {
+		Page<Node> nodes = nodeService.searchNodes(name, publicIp, label, pageable);
+		return new ResponseEntity<>(nodes, HttpStatus.OK);
+	}
+	
 	@GetMapping("/api/node/{id}")
 	public ResponseEntity<Node> getNode(@PathVariable("id") String id) {
 		Node node = nodeService.getNode(id);

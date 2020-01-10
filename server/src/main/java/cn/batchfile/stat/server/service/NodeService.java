@@ -11,6 +11,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,30 +48,48 @@ public class NodeService {
 	private ContainerRepository containerRepository;
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-    public int getNodeCount() {
-    	return (int)nodeRepository.count();
-    }
-	
-	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-    public List<Node> getNodes() {
-    	LOG.debug("get all nodes");
-    	Iterable<NodeTable> nts = nodeRepository.findMany();
-    	List<Node> nodes = new ArrayList<Node>();
-    	nts.forEach(nt -> {
-    		nodes.add(composeNode(nt));
-    	});
-    	LOG.debug("nodes count: {}", nodes.size());
+    public Page<Node> getNodes(Pageable pageable) {
+    	LOG.debug("get all nodes, page: {}", pageable);
+    	List<Node> content = new ArrayList<Node>();
+    	Page<NodeTable> page = nodeRepository.findMany(pageable); 
+    	for (NodeTable nt : page.getContent()) {
+    		content.add(composeNode(nt));
+    	}
+    	Page<Node> nodes = new PageImpl<>(content, pageable, page.getTotalElements());
     	return nodes;
     }
 
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
+    public Page<Node> searchNodes(String name, String publicIp, String label, Pageable pageable) {
+    	LOG.debug("search nodes, name: {}, ip: {}, label: {}, page: {}", name, publicIp, label, pageable);
+		String n = StringUtils.replace(name, "*", "%");
+		String ip = StringUtils.replace(publicIp, "*", "%");
+    	List<Node> content = new ArrayList<Node>();
+    	Page<NodeTable> page = nodeRepository.findMany(n, ip, label, pageable); 
+    	for (NodeTable nt : page.getContent()) {
+    		content.add(composeNode(nt));
+    	}
+    	Page<Node> nodes = new PageImpl<>(content, pageable, page.getTotalElements());
+    	return nodes;
+    }
+	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Info> getInfos() {
     	LOG.debug("get all infos");
-    	Iterable<NodeTable> nts = nodeRepository.findMany();
+    	
+    	Pageable pageable = PageRequest.of(0, 50);
     	List<Info> infos = new ArrayList<Info>();
-    	nts.forEach(nt -> {
-    		infos.add(composeInfo(nt));
-    	});
+    	Page<NodeTable> page = nodeRepository.findMany(pageable);
+    	while (!page.isEmpty()) {
+    		page.getContent().forEach(nt -> {
+    			infos.add(composeInfo(nt));
+    		});
+    		if (page.hasNext()) {
+    			page = nodeRepository.findMany(page.nextPageable());
+    		} else {
+    			break;
+    		}
+    	}
     	LOG.debug("info count: {}", infos.size());
     	return infos;
     }
