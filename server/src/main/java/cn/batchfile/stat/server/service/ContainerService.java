@@ -10,11 +10,13 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.fastjson.JSON;
-import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.TopContainerResponse;
 import com.github.dockerjava.api.model.Container;
@@ -44,26 +46,30 @@ public class ContainerService {
 	private DockerService dockerService;
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-	public List<ContainerInstance> getContainersByService(String namespace, String serviceName) {
+	public Page<ContainerInstance> getContainersByService(String namespace, 
+			String serviceName, 
+			Pageable pageable) {
+		
 		LOG.debug("get containers of servie: {}/{}", namespace, serviceName);
 		List<ContainerInstance> containers = new ArrayList<ContainerInstance>();
-		Iterable<ContainerTable> it = containerRepository.findMany(namespace, serviceName);
-		it.forEach(i -> {
+		Page<ContainerTable> page = containerRepository.findMany(namespace, serviceName, pageable);
+		page.forEach(i -> {
 			containers.add(compose(i));
 		});
 		LOG.debug("containers count: {}", containers.size());
-		return containers;
+		return new PageImpl<>(containers, pageable, page.getTotalElements());
 	}
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-	public List<ContainerInstance> getContainersByNode(String nodeId) {
+	public Page<ContainerInstance> getContainersByNode(String nodeId, Pageable pageable) {
+		LOG.debug("get containers on node: {}", nodeId);
 		List<ContainerInstance> containers = new ArrayList<ContainerInstance>();
-		Iterable<ContainerTable> it = containerRepository.findMany(nodeId);
-		it.forEach(i -> {
+		Page<ContainerTable> page = containerRepository.findMany(nodeId, pageable);
+		page.forEach(i -> {
 			containers.add(compose(i));
 		});
 		LOG.debug("containers count: {}", containers.size());
-		return containers;
+		return new PageImpl<>(containers, pageable, page.getTotalElements());
 	}
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
@@ -77,85 +83,73 @@ public class ContainerService {
 		}
 	}
 	
-	public InspectContainerResponse getContainerInspect(String id) {
-		ContainerInstance container = getContainer(id);
+	public InspectContainerResponse getContainerInspect(String containerId) {
+		ContainerInstance container = getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		return docker.inspectContainerCmd(id).exec();
+		return dockerService.inspectContainer(node.getInfo().getDockerHost(), node.getApiVersion(), containerId);
 	}
 	
-	public TopContainerResponse getContainerTop(String id) {
-		ContainerInstance container = getContainer(id);
+	public TopContainerResponse getContainerTop(String containerId) {
+		ContainerInstance container = getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		return docker.topContainerCmd(id).exec();
+		return dockerService.topContainer(node.getInfo().getDockerHost(), node.getApiVersion(), containerId);
 	}
 	
-	public void startContainer(String id) {
-		ContainerInstance container = getContainer(id);
+	public void startContainer(String containerId) {
+		ContainerInstance container = getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		docker.startContainerCmd(id).exec();
+		dockerService.startContainer(node.getInfo().getDockerHost(), node.getApiVersion(), containerId);
 	}
 	
-	public void stopContainer(String id) {
-		ContainerInstance container = getContainer(id);
+	public void stopContainer(String containerId) {
+		ContainerInstance container = getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		docker.stopContainerCmd(id).exec();
+		dockerService.stopContainer(node.getInfo().getDockerHost(), node.getApiVersion(), containerId);
 	}
 	
-	public void removeContainer(String id) {
-		ContainerInstance container = getContainer(id);
+	public void removeContainer(String containerId) {
+		ContainerInstance container = getContainer(containerId);
 		Node node = nodeService.getNode(container.getNode());
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		docker.removeContainerCmd(id).exec();
+		dockerService.removeContainer(node.getInfo().getDockerHost(), node.getApiVersion(), containerId);
 	}
 	
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED)
-	public List<ContainerInstance> refreshContainer(Node node) {
-		String ip = node.getInfo().getPublicIp();
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-		List<Container> containers = docker.listContainersCmd().withShowAll(true).exec();
-
-		List<ContainerInstance> oldList = getContainersByNode(node.getId());
-		List<ContainerInstance> list = new ArrayList<>();
-		for (Container container : containers) {
-			//寻找老容器，在老容器的属性上设置新的值
-			ContainerInstance ci = findInList(oldList, container.getId());
-			if (ci == null) {
-				ci = new ContainerInstance();
-			}
-			String oldState = ci.getState();
-			
-			//从接口数据中同步容器属性
-			compose(ci, container);
-
-			//同步节点属性
-			ci.setNode(node.getId());
-			ci.setIp(ip);
-			
-			//判断容器的状态
-			refreshTime(ci, oldState);
-
-			//构建数据对象
-			ContainerTable ct = compose(ci);
-			containerRepository.save(ct);
-			
-			list.add(ci);
+	public ContainerInstance refreshContainer(ContainerInstance containerInstance, 
+			Container remoteContainer, 
+			Node node) {
+		
+		if (remoteContainer == null) {
+			//远程没有这个容器，数据库里面的数据也要删除
+			containerRepository.deleteById(containerInstance.getId());
+			LOG.info("removed container instance, id: {}, node: {}", 
+					containerInstance.getId(), node.getInfo().getDockerHost());
+			return null;
 		}
 		
-		//遍历老数据，判断是不是已经不在了
-		for (ContainerInstance oldData : oldList) {
-			if (findInList(list, oldData.getId()) == null) {
-				LOG.info("delete container: {}", oldData.getId());
-				containerRepository.deleteById(oldData.getId());
-			}
+		if (containerInstance == null) {
+			//数据库里面没有这个容器，这是新容器，需要添加
+			containerInstance = new ContainerInstance();
+			LOG.info("add container instance, id: {}, node: {}", 
+					remoteContainer.getId(), node.getInfo().getDockerHost());
 		}
 		
-		//TODO 删除已经没有节点的容器
+		//容器的老状态
+		String oldState = containerInstance.getState();
 		
-		return list;
+		//从接口数据中同步容器属性
+		compose(containerInstance, remoteContainer);
+
+		//同步节点属性
+		containerInstance.setNode(node.getId());
+		containerInstance.setIp(node.getInfo().getPublicIp());
+
+		//判断容器的启动和停止时间
+		refreshTime(containerInstance, oldState);
+
+		//更新数据库
+		ContainerTable ct = compose(containerInstance);
+		containerRepository.save(ct);
+		return containerInstance;
 	}
 	
 	private void refreshTime(ContainerInstance container, String oldState) {
@@ -169,15 +163,6 @@ public class ContainerService {
 		if (StringUtils.equals(oldState, "running") && !StringUtils.equals(newState, "running")) {
 			container.setStopTime(new Date());
 		}
-	}
-	
-	private ContainerInstance findInList(List<ContainerInstance> list, String id) {
-		for (ContainerInstance obj : list) {
-			if (StringUtils.equals(obj.getId(), id)) {
-				return obj;
-			}
-		}
-		return null;
 	}
 	
 	private ContainerInstance compose(ContainerInstance ci, Container container) {

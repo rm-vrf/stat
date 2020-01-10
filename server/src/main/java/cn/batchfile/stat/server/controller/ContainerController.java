@@ -1,10 +1,12 @@
 package cn.batchfile.stat.server.controller;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,13 +28,16 @@ public class ContainerController {
 	private ContainerService containerService;
 	
 	@GetMapping("/api/node/{nodeId}/container")
-	public ResponseEntity<List<ContainerInstance>> getContainersByNode(@PathVariable("nodeId") String nodeId) {
-		LOG.debug("get containers on node: {}", nodeId);
-		List<ContainerInstance> list = containerService.getContainersByNode(nodeId);
+	public ResponseEntity<Page<ContainerInstance>> getContainersByNode(
+			@PathVariable("nodeId") String nodeId,
+			@PageableDefault(value = 10, sort = {"startTime"}, direction = Sort.Direction.DESC) Pageable pageable) {
+		
+		LOG.debug("get containers on node: {}, page: {}", nodeId, pageable);
+		Page<ContainerInstance> list = containerService.getContainersByNode(nodeId, pageable);
 		if (list == null) {
-			return new ResponseEntity<List<ContainerInstance>>(HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 		} else {
-			return new ResponseEntity<List<ContainerInstance>>(list, HttpStatus.OK);
+			return new ResponseEntity<>(list, HttpStatus.OK);
 		}
 	}
 	

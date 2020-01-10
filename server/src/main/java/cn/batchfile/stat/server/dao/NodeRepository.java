@@ -15,6 +15,9 @@ public interface NodeRepository extends JpaRepository<NodeTable, String> {
 	@Query(value = "SELECT n FROM Node n")
 	Page<NodeTable> findMany(Pageable pageable);
 	
+	@Query(value = "SELECT n FROM Node n WHERE n.status IN (:status)")
+	Page<NodeTable> findMany(@Param("status") String[] status, Pageable pageable);
+	
 	@Query(value = "SELECT n FROM Node n WHERE (:name is null OR name LIKE :name) "
 			+ "AND (:publicIp is null OR publicIp LIKE :publicIp) "
 			+ "AND (:label is null OR labels LIKE CONCAT('%\"', :label, '\"%'))")

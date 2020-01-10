@@ -1,10 +1,10 @@
 package cn.batchfile.stat.server.service;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.PostConstruct;
@@ -13,14 +13,22 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
+import com.github.dockerjava.api.model.Container;
+
+import cn.batchfile.stat.server.domain.container.ContainerInstance;
 import cn.batchfile.stat.server.domain.node.Node;
 
 @org.springframework.stereotype.Service
 public class ScheduleService {
+	private static final int ONLINE_POOL_SIZE = 2;
+	private static final int OFFLINE_POOL_SIZE = 1;
+	private static final int ONLINE_REFRESH_INTERVAL = 5;
+	private static final int OFFLINE_REFRESH_INTERVAL = 10;
 	private static final Logger LOG = LoggerFactory.getLogger(ScheduleService.class);
-	private BlockingQueue<List<Node>> quickQueue = new LinkedBlockingQueue<>(2);
-	private BlockingQueue<List<Node>> slowQueue = new LinkedBlockingQueue<>(2);
 
 	@Autowired
 	private ContainerService containerService;
@@ -30,97 +38,119 @@ public class ScheduleService {
 	
 	@Autowired
 	private MasterService masterService;
+	
+	@Autowired
+	private DockerService dockerService;
 
 	@PostConstruct
 	public void init() {
+		//同步在线节点的定时器
+		setupSchedule(new String[] {Node.STATUS_ONLINE, Node.STATUS_CREATED}, 
+				ONLINE_POOL_SIZE, ONLINE_REFRESH_INTERVAL);
+
+		//同步离线节点的定时器
+		setupSchedule(new String[] {Node.STATUS_OFFLINE, Node.STATUS_UNKNOWN}, 
+				OFFLINE_POOL_SIZE, OFFLINE_REFRESH_INTERVAL);
+	}
+	
+	private void setupSchedule(String[] status, int poolSize, int refreshInterval) {
 		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
 			//判断当前节点是不是master
 			if (!masterService.isMaster()) {
 				return;
 			}
 			
-			//获取所有节点
-			List<Node> nodes = null;
+			//同步离线节点和未知节点
 			try {
-				nodes = new ArrayList<>();//.getNodes();//TODO for debug
+				refreshNodes(status, poolSize);
 			} catch (Exception e) {
-				LOG.error("error when get node data", e);
-				return;
+				LOG.error("error when refresh nodes", e);
 			}
-
-			//创建快队列和慢队列
-			List<Node> quick = new ArrayList<>();
-			List<Node> slow = new ArrayList<>();
-			
-			//遍历所有节点
-			refreshNodes(quick, slow, nodes);
-			
-			//消息入队
-			quickQueue.offer(quick);
-			slowQueue.offer(slow);
-		}, 20, 2, TimeUnit.SECONDS);
-		
-		Executors.newScheduledThreadPool(2).scheduleWithFixedDelay(() -> {
-			//判断当前节点是不是master
-			if (!masterService.isMaster()) {
-				return;
-			}
-			
-			try {
-				//从慢队列中取得消息，同步容器
-				List<Node> nodes = slowQueue.take();
-				refreshContainers(nodes);
-			} catch (Exception e) {
-				LOG.error("error when refresh container", e);
-			}
-		}, 20, 2, TimeUnit.SECONDS);
-
-		Executors.newScheduledThreadPool(4).scheduleWithFixedDelay(() -> {
-			//判断当前节点是不是master
-			if (!masterService.isMaster()) {
-				return;
-			}
-			
-			try {
-				//从快队列中取得消息，同步容器
-				List<Node> nodes = quickQueue.take();
-				refreshContainers(nodes);
-			} catch (Exception e) {
-				LOG.error("error when refresh container", e);
-			}
-		}, 20, 2, TimeUnit.SECONDS);
+		}, 20, refreshInterval, TimeUnit.SECONDS);
 	}
 	
-	private void refreshNodes(List<Node> quick, List<Node> slow, List<Node> nodes) {
-		for (Node n : nodes) {
+	private void refreshNodes(String[] status, int poolSize) {
+		//遍历节点
+		Pageable pageable = PageRequest.of(0, 50);
+		Page<Node> page = nodeService.searchNodes(status, pageable);
+		while (!page.isEmpty()) {
+			//遍历节点，逐个刷新
 			try {
-				//刷新节点
-				Node node = nodeService.refreshNode(n);
-				
-				//刷新容器，只刷在线的节点
-				String newStatus = node.getStatus();
-				
-				//在线节点入队，准备同步容器
-				if (StringUtils.equals(newStatus, Node.STATUS_ONLINE)) {
-					if (node.getSlow()) {
-						slow.add(node);
-					} else {
-						quick.add(node);
-					}
-				}
+				ExecutorService es = Executors.newFixedThreadPool(poolSize);
+				page.getContent().forEach(node -> {
+					//创建Runnable对象
+					es.submit(() -> {
+						refreshNode(node);
+					});
+				});
+				es.shutdown();
+				es.awaitTermination(30, TimeUnit.SECONDS);
+				LOG.debug("finish refresh");
 			} catch (Exception e) {
-				LOG.error("error when refresh node: " + n.getId(), e);
+				LOG.error("error when refresh nodes", e);
 			}
+			
+			//遍历下一页数据
+    		if (page.hasNext()) {
+    			page = nodeService.getNodes(page.nextPageable());
+    		} else {
+    			break;
+    		}
 		}
 	}
 	
-	private void refreshContainers(List<Node> nodes) {
-		for (Node node : nodes) {
+	private void refreshNode(Node node) {
+		//从远程接口刷新节点
+		Node newNode = nodeService.refreshNode(node);
+		
+		//在线节点同步容器
+		if (StringUtils.equals(newNode.getStatus(), Node.STATUS_ONLINE)) {
+			refreshContainers(newNode);
+		}
+	}
+	
+	private void refreshContainers(Node node) {
+		//从远程节点获取所有的容器，包括所有的状态
+		List<Container> containerList = dockerService.listContainers(node.getInfo().getDockerHost(), node.getApiVersion(), true);
+		Map<String, Container> remoteContainers = new HashMap<>();
+		for (Container container : containerList) {
+			remoteContainers.put(container.getId(), container);
+		}
+		
+		//从数据库获取所有容器，遍历更新
+		Pageable pageable = PageRequest.of(0, 50);
+		Page<ContainerInstance> page = containerService.getContainersByNode(node.getId(), pageable);
+		while (!page.isEmpty()) {
+			//遍历节点，逐个刷新
+			page.getContent().forEach(instance -> {
+				try {
+					//刷新数据
+					LOG.debug("save container instance: {}, node: {}", instance.getId(), node.getInfo().getDockerHost());
+					containerService.refreshContainer(instance, remoteContainers.get(instance.getId()), node);
+				} catch (Exception e) {
+					LOG.error("error when refresh container: {}", instance.getId());
+				} finally {
+					//刷新后从集合中删除容器
+					remoteContainers.remove(instance.getId());
+				}
+			});
+			
+			//遍历下一页数据
+    		if (page.hasNext()) {
+    			page = containerService.getContainersByNode(node.getId(), page.nextPageable());
+    		} else {
+    			break;
+    		}
+		}
+		
+		//遍历完毕之后留在集合中的容器，数据库里缺少的容器，需要添加到数据库
+		for (Container container : remoteContainers.values()) {
 			try {
-				LOG.debug("refresh container data, node: {}", node.getId());
-				containerService.refreshContainer(node);
+				//刷新数据
+				LOG.debug("new container, image: {}, node: {}", container.getImage(), node.getInfo().getDockerHost());
+				containerService.refreshContainer(null, container, node);
 			} catch (Exception e) {
-				LOG.error("error when refresh container, node: " + node.getId(), e);
+				LOG.error("error when refresh container: {}", container.getId());
 			}
 		}
 	}

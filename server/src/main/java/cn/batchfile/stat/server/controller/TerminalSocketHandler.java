@@ -25,7 +25,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 
 import cn.batchfile.stat.server.domain.node.Node;
 import cn.batchfile.stat.server.service.DockerService;
@@ -65,19 +65,13 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
 		LOG.info("nodeId: {}, containerId: {}", nodeId, containerId);
 		Node node = nodeService.getNode(nodeId);
 
-		// connect to docket
-		DockerClient docker = dockerService.getDockerClient(node.getInfo().getDockerHost(), node.getApiVersion());
-        
         // create exec on container
-        String execId = docker.execCreateCmd(containerId)
-                .withAttachStdin(true)
-                .withAttachStdout(true)
-                .withAttachStderr(true)
-                //.withCmd("/bin/sh", "-c", "TERM=xterm-256color; export TERM; [ -x /bin/bash ] && ([ -x /usr/bin/script ] && /usr/bin/script -q -c \"/bin/bash\" /dev/null || exec /bin/bash) || exec /bin/sh")
-                .withCmd("/bin/sh")
-                .withTty(true)
-                .exec().getId();
-        LOG.info("create exec, id: {}", execId);
+        //.withCmd("/bin/sh", "-c", "TERM=xterm-256color; export TERM; [ -x /bin/bash ] && ([ -x /usr/bin/script ] && /usr/bin/script -q -c \"/bin/bash\" /dev/null || exec /bin/bash) || exec /bin/sh")
+        ExecCreateCmdResponse execResp = dockerService.createExec(node.getInfo().getDockerHost(), 
+        		node.getApiVersion(), 
+        		containerId, 
+        		"/bin/sh");
+        LOG.info("create exec, id: {}", execResp.getId());
         
         // create socket channel
         ary = StringUtils.split(StringUtils.remove(node.getInfo().getDockerHost(), '/'), ':');
@@ -89,7 +83,7 @@ public class TerminalSocketHandler extends TextWebSocketHandler {
         handlers.put(session.getId(), handler);
         
         // send http request
-        String uri = "/v" + node.getApiVersion() + "/exec/" + execId + "/start";
+        String uri = "/v" + node.getApiVersion() + "/exec/" + execResp.getId() + "/start";
         OutputStream out = socket.getOutputStream();
         List<String> lines = new ArrayList<>();
         lines.add("POST " + uri + " HTTP/1.1");

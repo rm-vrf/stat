@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +38,15 @@ public class LogSocketHandler extends TextWebSocketHandler {
 		
 		handlers = new ConcurrentHashMap<>();
 		Executors.newScheduledThreadPool(1).scheduleWithFixedDelay(() -> {
-			//TODO
+			LOG.debug("clear websocket session");
+			for(Iterator<Map.Entry<String, ConnectionHandler>> it = handlers.entrySet().iterator(); it.hasNext(); ) {
+			    Map.Entry<String, ConnectionHandler> entry = it.next();
+			    if(System.currentTimeMillis() - entry.getValue().timestamp > 86400000) {
+			    	LOG.info("remove idle session: {}", entry.getKey());
+			    	exitQuielty(entry.getKey(), StringUtils.EMPTY);
+			        it.remove();
+			    }
+			}
 		}, 60, 60, TimeUnit.SECONDS);
 	}
 	

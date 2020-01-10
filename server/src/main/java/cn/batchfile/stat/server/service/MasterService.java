@@ -114,7 +114,11 @@ public class MasterService {
     	});
 
     	//如果第一个节点就是自己，本人就是主节点
+    	boolean oldStatus = master.get();
     	master.set(ms.size() > 0 && StringUtils.equals(ms.get(0).getId(), self));
+    	if (master.get() != oldStatus) {
+    		LOG.info("==== ELECTED MASTER =====");
+    	}
     }
     
     private boolean connectOk(String serviceId) {

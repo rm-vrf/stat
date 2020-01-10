@@ -1,6 +1,7 @@
 package cn.batchfile.stat.server.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +20,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.alibaba.fastjson.JSON;
-import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Version;
 
 import cn.batchfile.stat.server.dao.ContainerRepository;
@@ -60,6 +60,18 @@ public class NodeService {
     }
 
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
+    public Page<Node> searchNodes(String[] status, Pageable pageable) {
+    	LOG.debug("get nodes, status: {}, page: {}", Arrays.asList(status), pageable);
+    	List<Node> content = new ArrayList<Node>();
+    	Page<NodeTable> page = nodeRepository.findMany(status, pageable); 
+    	for (NodeTable nt : page.getContent()) {
+    		content.add(composeNode(nt));
+    	}
+    	Page<Node> nodes = new PageImpl<>(content, pageable, page.getTotalElements());
+    	return nodes;
+    }
+	
+	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public Page<Node> searchNodes(String name, String publicIp, String label, Pageable pageable) {
     	LOG.debug("search nodes, name: {}, ip: {}, label: {}, page: {}", name, publicIp, label, pageable);
 		String n = StringUtils.replace(name, "*", "%");
@@ -76,7 +88,6 @@ public class NodeService {
 	@Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Info> getInfos() {
     	LOG.debug("get all infos");
-    	
     	Pageable pageable = PageRequest.of(0, 50);
     	List<Info> infos = new ArrayList<Info>();
     	Page<NodeTable> page = nodeRepository.findMany(pageable);
@@ -169,6 +180,7 @@ public class NodeService {
     	nodeRepository.deleteById(dockerHost);
     	LOG.info("deleted node, id: {}", op.get().getId());
     	
+    	// 级联删除容器
     	if (StringUtils.isNotEmpty(op.get().getId())) {
     		containerRepository.deleteMany(op.get().getId());
     		LOG.info("deleted containers");
@@ -192,15 +204,18 @@ public class NodeService {
 
     		//成功刷新，设置Online状态
         	node.setStatus(Node.STATUS_ONLINE);
-        	offlineCounts.put(node.getId(), 0);
+        	offlineCounts.put(dockerHost, 0);
     	} catch (Exception e) {
-    		//set state
-    		int count = offlineCounts.containsKey(node.getId()) ? offlineCounts.get(node.getId()) + 1 : 1;
-    		offlineCounts.put(node.getId(), count);
-    		if (offlineCounts.get(node.getId()) > 3) {
-        		node.setStatus(Node.STATUS_OFFLINE);
-    		} else {
-        		node.setStatus(Node.STATUS_UNKNOWN);
+    		LOG.info("connect fail, node: {}, count: {}", dockerHost, offlineCounts.get(dockerHost));
+    		//连接异常，如果不是Offline状态，就判断是不是Offline状态
+    		if (!StringUtils.equals(oldStatus, Node.STATUS_OFFLINE)) {
+	    		int count = offlineCounts.containsKey(dockerHost) ? offlineCounts.get(dockerHost) + 1 : 1;
+	    		offlineCounts.put(dockerHost, count);
+	    		if (offlineCounts.get(dockerHost) >= 3) {
+	        		node.setStatus(Node.STATUS_OFFLINE);
+	    		} else {
+	        		node.setStatus(Node.STATUS_UNKNOWN);
+	    		}
     		}
     	}
     	
@@ -210,14 +225,18 @@ public class NodeService {
     	nodeRepository.save(nt);
     	LOG.debug("saved node");
     	
-    	//比较状态，设置容器状态
+    	//比较新状态和老状态，如果从在线状态转到路线状态，设置关联的容器状态
     	String newStatus = node.getStatus();
     	if ((StringUtils.equals(newStatus, Node.STATUS_OFFLINE) 
     			|| StringUtils.equals(newStatus, Node.STATUS_UNKNOWN)) 
     			&& !StringUtils.equals(oldStatus, newStatus)) {
     		containerRepository.updateStatus(node.getId(), newStatus);
     	}
-    	
+
+    	//记录日志
+    	if (!StringUtils.equals(oldStatus, newStatus)) {
+    		LOG.info("node status change, ip: {}, status: {} -> {}", dockerHost, oldStatus, newStatus);
+    	}
     	return node;
     }
     
@@ -311,44 +330,47 @@ public class NodeService {
     }
     
     private void refreshNode(Node node, String dockerHost, String apiVersion) {
-    	DockerClient docker = dockerService.getDockerClient(dockerHost, apiVersion);
     	if (StringUtils.isEmpty(apiVersion)) {
-    		Version version = docker.versionCmd().exec();
-    		LOG.info("get docker version, kernel: {}, api: {}", 
-    				version.getKernelVersion(), version.getApiVersion());
-    		
-    		// sync values
+    		//得到版本信息
+    		Version version = dockerService.getVersion(dockerHost);
+    		LOG.info("get docker version, kernel: {}, api: {}", version.getKernelVersion(), version.getApiVersion());
     		node.setApiVersion(version.getApiVersion());
     		node.setEngineVersion(version.getVersion());
     	}
     	
+    	//得到基本信息
     	long begin = System.currentTimeMillis();
-    	com.github.dockerjava.api.model.Info info = docker.infoCmd().exec();
+    	com.github.dockerjava.api.model.Info info = dockerService.getInfo(dockerHost, node.getApiVersion());
     	long end = System.currentTimeMillis();
     	node.setSlow(end - begin > 1000);
     	LOG.debug("get docker info, name: {}, slow: {}, id: {}", info.getName(), node.getSlow(), info.getId());
     	
-		// sync values
+		//得到节点编号和名称
     	node.setId(StringUtils.remove(info.getId(), ':').toLowerCase());
     	node.setName(info.getName());
-    	node.setImages(info.getImages());
-    	
+
+    	//得到操作系统的架构
     	node.getInfo().setArchitecture(info.getArchitecture());
     	node.getInfo().setOs(info.getOsType());
     	
+    	//得到节点资源
     	ResourcesControl rc = new ResourcesControl();
     	rc.setCpus((float)info.getNCPU());
     	rc.setMemory(FileUtils.byteCountToDisplaySize(info.getMemTotal()));
     	node.getInfo().setResources(rc);
-    	
+
+    	//得到容器和镜像的数量
     	Containers containers = new Containers();
     	containers.setTotal(info.getContainers());
     	containers.setRunning(info.getContainersRunning());
     	containers.setPaused(info.getContainersPaused());
     	containers.setStopped(info.getContainersStopped());
     	node.setContainers(containers);
-    	
-    	Resources resources = new Resources();
+    	node.setImages(info.getImages());
+
+    	//设置已经使用的资源
+    	//TODO 改在服务编排里面控制
+    	/*Resources resources = new Resources();
     	ResourcesControl limits = new ResourcesControl();
     	limits.setCpus(0F);
     	limits.setMemory("0");
@@ -357,6 +379,6 @@ public class NodeService {
     	requests.setCpus(0F);
     	requests.setMemory("0");
     	resources.setRequests(requests);
-    	node.setResources(resources);
+    	node.setResources(resources);*/
     }
 }
