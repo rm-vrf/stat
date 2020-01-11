@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<style>
+			/*滚动条垂直方向的宽度*/
+			::-webkit-scrollbar
+			{
+				width: 2px;
+			}
+			/* 垂直滚动条的滑动块 */
+			::-webkit-scrollbar-thumb:vertical {
+				border-radius: 4px;
+				-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3);
+				background-color: deepskyblue;
+			}
+			.list-header{
+				height:42px;
+				padding: 5px;
+			}
+			.list-content{
+				overflow-y: scroll;
+			}
+			.img-container{
+				display: inline-block;
+				border: 1px solid deepskyblue;
+				padding: 3px;
+				width: 38px;
+				height: 38px;
+				margin: 5px 5px;
+			}
+			.group-title{
+				height: 30px;
+				padding: 5px 5px 5px 10px;
+				background: rgba(153, 153, 153, 0.15);
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+	<div class="list-header">
+		 <input name="name" data-type="text" type="text" class="form-control" id="input_name" placeholder="search">
+	</div>
+	<div  class="list-content " >
+		<div class="list-group">
+			  <div class="list-group-item">
+			  		<h4 class="group-title">图表</h4>
+			  		<div class="list-group">
+			  			<a class="img-container"><img src="img/componentType/line_chart.png"  style="width: 32px; height: 32px" /></a>
+			  			<a class="img-container"><img src="img/componentType/pie_chart.png"  style="width: 32px; height: 32px" /></a>
+	
+			  		</div>
+			  </div>
+			  <div class="list-group-item">
+			  		<h4><a class="group-title">图表</a></h4>
+			  		<div class="list-group">
+			  			<a class="img-container"><img src="img/componentType/line_chart.png"  style="width: 32px; height: 32px" /></a>
+			  		</div>
+			  </div>
+			  <div class="list-group-item">
+			  		<h4><a class="group-title">图表</a></h4>
+			  		<div class="list-group">
+			  			<a class="img-container"><img src="img/componentType/line_chart.png"  style="width: 32px; height: 32px" /></a>
+			  			<a class="img-container"><img src="img/componentType/pie_chart.png"  style="width: 32px; height: 32px" /></a>
+
+			  		</div>
+			  </div>
+			  <div class="list-group-item">
+			  		<h4><a class="group-title">图表</a></h4>
+			  		<div class="list-group">
+			  			<a class="img-container"><img src="img/componentType/line_chart.png"  style="width: 32px; height: 32px" /></a>
+			  			<a class="img-container"><img src="img/componentType/pie_chart.png"  style="width: 32px; height: 32px" /></a>
+			  		</div>
+			  </div>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js" ></script>
+	<script>
+		$(document).ready(function(){
+			$(".group-title").click(){
+				
+			}
+		})
+	</script>
+</html>

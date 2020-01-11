@@ -24,27 +24,37 @@ public class HtmlController {
 	@Autowired
 	private DockerService dockerService;
 	
+	@RequestMapping("/")
+	public String index() {
+		return "ui/index";
+	}
+	
+	@RequestMapping("/dashboard")
+	public String dashboard() {
+		return "ui/dashboard";
+	}
+	
 	@RequestMapping("/node")
 	public String nodeList() {
-		return "node-list";
+		return "ui/node-list";
 	}
 	
 	@RequestMapping("/node/{nodeId}")
 	public String node(@PathVariable("nodeId") String nodeId, ModelMap model) {
 		model.addAttribute("nodeId", nodeId);
-		return "node-view";
+		return "ui/node-view";
 	}
 
 	@RequestMapping("/node/{nodeId}/container")
 	public String nodeContainer(@PathVariable("nodeId") String nodeId, ModelMap model) {
 		model.addAttribute("nodeId", nodeId);
-		return "node-container";
+		return "ui/node-container";
 	}
 	
 	@RequestMapping("/container/{containerId}")
 	public String containerView(@PathVariable("containerId") String containerId, ModelMap model) {
 		model.addAttribute("containerId", containerId);
-		return "container-view";
+		return "ui/container-view";
 	}
 	
 	@RequestMapping("/container/{containerId}/terminal")
@@ -57,7 +67,7 @@ public class HtmlController {
 		
 		model.addAttribute("container", container);
 		model.addAttribute("node", node);
-		return "container-terminal";
+		return "ui/container-terminal";
 	}
 	
 	@RequestMapping("/container/{containerId}/log")
@@ -69,6 +79,6 @@ public class HtmlController {
 		
 		model.addAttribute("container", container);
 		model.addAttribute("node", node);
-		return "container-log";
+		return "ui/container-log";
 	}
 }

@@ -1,0 +1,51 @@
+.my-table{
+	table-layout: fixed;
+}
+.my-table>thead>tr>th{
+	background-color: #f5f8fa;
+	border-bottom: 0;
+	cursor: pointer;
+}
+.mytable-th{
+	border-bottom: 0;
+}
+.my-table td{
+	color: rgb(102, 102, 102);
+}
+.my-table td>span {
+	display: inline-block;
+	width:100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.my-table a{
+	text-align: center;
+}
+
+.sort-container{
+	display: inline-block;		
+	vertical-align: middle;
+    position: relative;
+    top: -3px;
+}
+.sort-container .sort{
+	display: block;
+	cursor: pointer;
+	font-size: 7px;
+	height:10px;
+	color: rgba(102, 102, 102, 0.25);
+}
+.sort-container>a:hover{
+	color: #333;
+}
+.sort-container>a.active{
+	color: #333;
+}
+
+td a:focus, td a:hover {
+    text-decoration: underline;
+}
+.my-table td input{
+	width: 90%;
+}

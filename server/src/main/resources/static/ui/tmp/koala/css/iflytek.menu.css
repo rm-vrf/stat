@@ -1,0 +1,72 @@
+/** ################菜单样式################**/
+.iflytek_menu{
+	padding: 10px 5px;
+	height: 100%;
+}
+.iflytek_menu li{
+	list-style-type: none;
+    position: relative;
+    height: 100%;
+    background: #3899dc;
+    color: #33333;
+}
+.iflytek_menu a{
+	text-decoration: none;
+    display: block;   
+    padding: 5px 15px;
+}
+.iflytek_menu a:link,
+.iflytek_menu a:visited{
+	 color: #fff;
+}
+.iflytek_menu  a:hover, 
+.iflytek_menu  a:active{
+    color: #dedede;
+}
+
+
+.iflytek_menu li ul{
+    display: none;
+    padding: 0px;
+}
+.iflytek_menu li ul li{
+    float: none;    
+}
+
+.iflytek_menu li ul li ul{
+    top: 0px;
+    left: 100%;
+}
+/** ################顶部菜单样式################**/
+.iflytek_menu_top a{
+	border: 1px solid #fff;
+    border-width: 1px 1px 0 0; 
+}
+
+.iflytek_menu_top li{
+	float: left;
+	text-align: center;
+	line-height: 40px;
+}
+.iflytek_menu_top li ul {
+	 position: absolute;       /*二级ul使用绝对定位，宽度大于一级菜单时，才不会撑大一级*/
+}
+
+/** ################左侧菜单样式################**/
+.iflytek_menu_left{
+ 
+}
+.iflytek_menu_left li{
+	text-align: left;
+	padding-left: 5px;
+	line-height: 20px;
+	width: 100%;
+}
+.iflytek_menu_left li ul {
+	margin-left: 13px;
+}
+.iflytek_menu_left  a:hover, 
+.iflytek_menu_left  a:active{
+    border-left: 5px solid #fff;
+}
+

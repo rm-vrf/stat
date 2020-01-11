@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<body>
+		<div class="border-location-container">
+				<a class="border-location  active" data-type="all" ref="border_item_all">全部</a>
+				<a class="border-location" data-type="top" ref="border_item_top">上</a>
+				<a class="border-location" data-type="bottom" ref="border_item_bottom">下</a>
+				<a class="border-location" data-type="left" ref="border_item_left">左</a>
+				<a class="border-location" data-type="right" ref="border_item_right">右</a>
+			</div>
+			<div class="border-items">
+				<div id="border_item_all"  class="border-item" >
+					<span class="border-title">边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-width"></select>
+					<a class="border border-color"><span id="all_border_color_input" style-attr="border-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding"></select>
+					<span class="border-label">圆角:</span>
+					<select class="border-select border-radius-select"  style-attr="border-radius"></select>
+				</div>
+				<div  id="border_item_top"  class="border-item" style="display: none">
+					<span class="border-title">上边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-top-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-top-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-top-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-top"></select>
+				</div>
+				<div  id="border_item_bottom"  class="border-item" style="display: none">
+					<span class="border-title">下边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-bottom-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-bottom-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-bottom-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-bottom"></select>
+				</div>
+				<div  id="border_item_left"  class="border-item" style="display: none">
+					<span class="border-title">左边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-left-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-left-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-left-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-left"></select>
+				</div>
+				<div  id="border_item_right"  class="border-item"  style="display: none">
+					<span class="border-title">右边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-right-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-right-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-right-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-right"></select>
+				</div>
+			</div>
+	</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Koala House</title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="js/rely/code-mirror/lib/codemirror.css" />
+		<link rel="stylesheet" href="css/main.css" />
+		<!-- 第三方库或自定义库js-->
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js" ></script>
+		<script type="text/javascript" src="js/rely/code-mirror/lib/codemirror.js" ></script>
+		<script type="text/javascript" src="js/rely/code-mirror/mode/javascript/javascript.js" ></script>
+	</head>
+	<body>
+		 <textarea id="code" name="code">
+{"show":true,"feature":{"dataZoom":{"yAxisIndex":"none"},"dataView":{"readOnly":false},"magicType":{"type":["line","bar"]},"restore":{},"saveAsImage":{}}}
+		 </textarea>
+</body>
+<script>
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {  // 标识到textarea
+            value : "http://www.cnblogs.com/oldphper",  // 文本域默认显示的文本
+            mode: "text/javascript",
+            // theme : "",  // CSS样式选择
+            indentUnit : 2,  // 缩进单位，默认2
+            smartIndent : true,  // 是否智能缩进
+            tabSize : 4,  // Tab缩进，默认4
+            readOnly : false,  // 是否只读，默认false
+            showCursorWhenSelecting : true,
+            lineNumbers : true  // 是否显示行号
+            // .. 还有好多，翻译不完。需要的去看http://codemirror.net/doc/manual.html#config
+        });
+    </script>
+</html>

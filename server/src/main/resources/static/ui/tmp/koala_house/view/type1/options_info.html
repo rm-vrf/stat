@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<link rel="stylesheet" href="../../js/rely/bootstrap/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="../../css/main.css" />
+	<script type="text/javascript" src="../../js/rely/jquery-3.2.1.min.js" ></script>
+	<body>
+		<div class="container-fluid"  name="options_container" style="padding: 2px; height: 100%; overflow-y: auto; overflow-x: hidden">
+			<!--标题设置-->
+			<div class="panel panel-default">
+				<div class="panel-heading">标题</div>
+				<div class="panel-body">
+					<div class="form-group">
+						<label for="input_name" class="control-label">主标题：</label>
+						<input class="change-input" name="options.title.text" data-type="text" type="text" id="title_text">
+							<a class="text-style-edit" name="options.title.textStyle"><span class="glyphicon glyphicon-edit"></span></a>
+					</div>
+					<div class="form-group">
+						<label for="input_name" class="control-label">副标题：</label>
+						<input  class="change-input"  name="options.title.subtext" data-type="text" type="text" id="title_subtext" >
+						<a class="text-style-edit" name="options.title.subtextStyle"><span class="glyphicon glyphicon-edit"></span></a>
+					</div>
+					<div class="form-group">
+						<label for="style_background" class="control-label">背景：</label>
+						<div name="options.title" class="style-component-background"     style="display: inline-block;height: 22px;"></div>
+					</div>
+					<div class="form-group">
+						<label for="style_border" class="control-label">边框：</label>
+						<div name="options.title" class="style-component-border"   style="display: inline-block;height: 22px;"></div>
+					</div>
+				</div>
+			</div>
+			<!--图例设置-->
+			<div class="panel panel-default">
+				<div class="panel-heading">图例</div>
+				<div class="panel-body">
+					<div id="charts_legend_table_container"></div>
+				</div>
+			</div>
+			<!--横坐标设置-->
+			<div class="panel panel-default">
+				<div class="panel-heading">横坐标</div>
+				<div class="panel-body">
+					<div id="charts_xAxis_table_container"></div>
+				</div>
+			</div>
+			<!--纵坐标设置-->
+			<div class="panel panel-default">
+				<div class="panel-heading">纵坐标</div>
+				<div class="panel-body">
+					<div class="form-group">
+						<label for="input_name" class="control-label" >显示值：</label>
+						<input class="change-input" name="options.yAxis.axisLabel.formatter" data-type="text" type="text" >
+						<span title="其中{value}代表当前数值" class="glyphicon glyphicon-alert" style="color: goldenrod"></span>
+					</div>
+				</div>
+			</div>
+			<!--系列列表-->
+			<div class="panel panel-default">
+				<div class="panel-heading">系列列表</div>
+				<div class="panel-body">
+					<div class="panel-body">
+						<div id="charts_series_table_container"></div>
+					</div>
+				</div>
+			</div>
+			<div class="form-group" style="padding: 15px 5px 10px;">
+				<button type="button" name="save"  class="btn btn-primary pull-right" >保存</button>
+			</div>
+		</div>
+	</body>
+</html>

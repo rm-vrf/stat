@@ -1,0 +1,57 @@
+.file-container{
+	position: relative;
+	width: 100%;
+	height: 100%;
+	min-height: 250px;
+	overflow-y: auto;
+	border: 1px solid dodgerblue;
+	padding: 15px;
+}
+		
+.file-container .file-box{
+	padding: 5px 10px 1px;
+	width: 70px;
+	height: 90px;
+	border: 1px solid rgba(0, 191, 255, 0.4);
+	margin: 10px;
+	position:relative;
+	display: inline-block;
+	cursor: pointer;
+}
+.file-container .img-container{
+	border: 1px solid dodgerblue;
+	display: inline-block;
+	border: 1px solid rgba(0, 191, 255, 0.2);
+	padding: 4px;
+	width: 50px;
+	height: 50px;
+	margin: 5px 5px;
+	cursor: pointer;
+}
+.file-container .img-container img{
+	width: 100%; 
+	height: 100%;
+}
+.file-box span{
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: center;
+	display: block;
+	 position: relative;
+	width: 100%;
+	height: 20px;
+	font-size: 10px;
+}
+.file-box .file-tool-delete{
+	float: right;
+	position: absolute;
+	right: -8px;
+	top: -8px;
+	display: none;
+	cursor: pointer;
+}
+.file-tool{
+	height: 40px;
+	padding: 5px ;
+}

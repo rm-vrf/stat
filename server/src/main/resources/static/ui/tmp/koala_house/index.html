@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title>Koala House</title>
+		<!--第三方依赖css-->
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="js/rely/bootstrap_table/bootstrap-table.min.css" />
+		<link rel="stylesheet" href="js/rely/code-mirror/lib/codemirror.css" />
+		<link rel="stylesheet" href="js/rely/code-mirror/theme/eclipse.css" />
+		<!--组件样式-->
+		<link rel="stylesheet" href="css/style.css" />
+		<!--自定义css-->
+		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="css/left.css" />
+		<link rel="stylesheet" href="css/right.css" />
+		<link rel="stylesheet" href="css/title.window.css" />
+		<link rel="stylesheet" href="css/layer.panel.css" />
+		<link rel="stylesheet" href="css/draw.panel.css" />
+		<link rel="stylesheet" href="css/resource.panel.css" />
+		<link rel="stylesheet" href="css/tool.container.css" />
+		<link rel="stylesheet" href="js/rely/my_table/my.table.css" />
+
+		<!-- 第三方库或自定义库js-->
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js"></script>
+		<script type="text/javascript" src="js/rely/bootstrap/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="js/rely/bootstrap_table/bootstrap-table.js"></script>
+		<script type="text/javascript" src="js/rely/bootstrap_table/locale/bootstrap-table-zh-CN.js"></script>
+		<script type="text/javascript" src="js/rely/echarts/echarts.min.js"></script>
+		<script type="text/javascript" src="js/rely/simple-color/jquery.simple-color.js"></script>
+
+		<script type="text/javascript" src="js/rely/code-mirror/lib/codemirror.js"></script>
+		<script type="text/javascript" src="js/rely/code-mirror/mode/javascript/javascript.js"></script>
+		<script type="text/javascript" src="js/rely/code-mirror/keyMap/vim.js"></script>
+		<script type="text/javascript" src="js/rely/code-mirror/formatter.js"></script>
+		<script type="text/javascript" src="js/utils/util.js"></script>
+		<script type="text/javascript" src="js/rely/iflytek/iflytek.util.js"></script>
+		<script type="text/javascript" src="js/rely/iflytek/iflytek.tab.js"></script>
+
+	</head>
+
+	<body>
+		<div class="container-fluid header">
+			<div class="logo-container pull-left">
+				<img src="img/view/koala.png" />
+				<span class="logo-text">Koala House</span>
+			</div>
+		</div>
+		<div style="overflow: hidden">
+			<div class="middle"></div>
+			<div class="left">
+				<div id="component_type_panel">
+					<ul class="nav nav-tabs" role="tablist">
+						<li role="presentation" class="active">
+							<a href="#left_content_theme" aria-controls="left_content_theme" role="tab" data-toggle="tab">组件类型</a>
+						</li>
+						<li role="presentation">
+							<a href="#left_content_user" aria-controls="left_content_user" role="tab" data-toggle="tab">本地资源</a>
+						</li>
+					</ul>
+					<div class="tab-content">
+						<div role="tabpanel" class="tab-pane active" id="left_content_theme"></div>
+						<div role="tabpanel" class="tab-pane" id="left_content_user"></div>
+					</div>
+				</div>
+				<div id="layer_components_panel"></div>
+			</div>
+			<div class="right">
+				<div class="container-fluid content">
+					<ul id="right-nav" class="nav nav-tabs"></ul>
+					<div id="right-content"></div>
+				</div>
+				<div class="right-arrow-container">
+					<img class="right-arrow" src="img/view/left_arrow.png" />
+				</div>
+			</div>
+			<div id="tool_container" class="tool-container">
+			</div>
+		</div>
+	</body>
+	<!-- 画布相关js-->
+	<script type="text/javascript" src="js/draw/model/componentTypes.js"></script>
+	<script type="text/javascript" src="js/draw/model/options.js"></script>
+	<script type="text/javascript" src="js/draw/model/component.js"></script>
+	<script type="text/javascript" src="js/draw/manager/selection.manager.js"></script>
+	<script type="text/javascript" src="js/draw/manager/cursor.manager.js"></script>
+	<script type="text/javascript" src="js/draw/interpreter.js"></script>
+	<script type="text/javascript" src="js/draw/drawPanel.js"></script>
+	<script type="text/javascript" src="js/components/component.type.panel.js"></script>
+	<script type="text/javascript" src="js/components/resource.panel.js"></script>
+	<script type="text/javascript" src="js/draw/propertyPanel.js"></script>
+	<script type="text/javascript" src="js/draw/propertyPanel/basePropertyPanel.js" ></script>
+	<script type="text/javascript" src="js/draw/propertyPanel/baseChartsPropertyPanel.js" ></script>
+	<script type="text/javascript" src="js/draw/propertyPanel/lineChartsPropertyPanel.js" ></script>
+	<script type="text/javascript" src="js/components/layer.panel.js"></script>
+	<script type="text/javascript" src="js/draw/message.js"></script>
+	<script type="text/javascript" src="js/components/tool.container.js"></script>
+	<script type="text/javascript" src="js/components/export.window.js"></script>
+	<script type="text/javascript" src="js/components/code.mirror.window.js"></script>
+	<script type="text/javascript" src="js/components/style.background.component.js"></script>
+	<script type="text/javascript" src="js/components/style.borders.component.js"></script>
+	<script type="text/javascript" src="js/components/style.border.component.js"></script>
+	<script type="text/javascript" src="js/components/style.font.component.js"></script>
+	<script type="text/javascript" src="js/components/charts.style.font.window.js"></script>
+	<script type="text/javascript" src="js/rely/my_table/iflytek.my.table.js"></script>
+	<script type="text/javascript" src="js/rely/my_table/iflytek.my.pager.js"></script>
+	<script type="text/javascript" src="js/components/charts.style.series.window.js" ></script>
+	<!--页面业务逻辑js-->
+	<script type="text/javascript" src="js/main.js"></script>
+	<script>
+		$(document).ready(function() {
+			init();
+		});
+	</script>
+
+</html>

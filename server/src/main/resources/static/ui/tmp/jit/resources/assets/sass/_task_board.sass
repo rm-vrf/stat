@@ -1,0 +1,39 @@
+@import variables
+
+.task-board
+  position: relative
+  margin-bottom: 4px
+  border: 1px solid #ccc
+  padding: 5px
+  word-wrap: break-word
+  font-size: size('compact')
+
+div
+  &.task-board-recent
+    border-left-width: 5px
+  &.task-board-status-closed
+    user-select: none
+    border: 1px dotted #555
+
+.task-board
+  &:hover
+    background-color: #eee
+    cursor: move
+  a
+    color: color('dark')
+    text-decoration: none
+  .dropdown-menu
+    font-weight: normal
+  .task-score
+    font-weight: bold
+
+.task-board-collapsed
+  overflow: hidden
+  white-space: nowrap
+  text-overflow: ellipsis
+
+.task-board-title
+  margin-top: 5px
+  margin-bottom: 8px
+  a:hover
+    text-decoration: underline

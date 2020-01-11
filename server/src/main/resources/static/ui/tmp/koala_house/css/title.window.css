@@ -1,0 +1,27 @@
+
+/*导出信息框*/
+.title-window-mask{
+	position: absolute;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 128, 0, 0.2);
+	display: none;
+	z-index: 101;
+}
+.title-window-container{
+	position: absolute;
+    top: 50px;
+    left: 329px;
+    width: 700px;
+    background: #f8f8f8;
+    border: 1px solid rgba(0, 128, 0, 0.2);
+    display: none;
+    z-index: 102;
+}
+.title-window-icon-close{
+	float: right;
+	position: relative;
+	right:-16px;
+	top: -16px;
+}

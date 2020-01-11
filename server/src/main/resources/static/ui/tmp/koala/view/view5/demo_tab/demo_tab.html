@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<link rel="stylesheet" href="../../../js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="../../../css/main.css" />
+		<script type="text/javascript" src="../../../js/rely/jquery-3.2.1.min.js" ></script>
+		<script type="text/javascript" src="../../../js/rely/require/require.js" ></script>
+		<script type="text/javascript" src="../../../js/util/iflytek.util.js" ></script>
+		<script type="text/javascript" src="iflytek.tab.js" ></script>		
+
+	</head>
+	<body>
+		<blockquote>
+		  	<p><a href="demo_tab.zip">Download</a></p>
+		</blockquote>
+		<h4>解决的问题：</h4>
+		<ul>
+			<li>1、可动态加载html内容（匹配body标签的子元素)</li>
+			<li>2、可动态加载js： 需使用AMD语法，且页面加载完毕后会自动调用js中的init方法</li>
+			<li>3、可懒加载：设置属性override</li>
+			<li>4、组件执行完毕后可回调</li>
+		</ul>
+		<h4>示例如下：</h4>
+		<div style="border: 1px solid #8f8f8f; padding: 20px;">
+			<ul id="main-nav" class="nav nav-tabs"></ul>
+			<div  id="main-content" style="width:100%; margin:30px 20px" ></div>
+		</div>
+	</body>
+	
+	<script type="text/javascript">
+		/**页面初始化**/
+		$(document).ready(function(){
+			new iflytek.tab({
+				tabContainer: "#main-nav",   // tab项父容器
+				contentContainer: "#main-content",  // html显示区父容器
+				override: false,  // 内容是否覆盖：若为true，则每次加载都清空html再加载；若为false,则已加载过的html内容不会重新加载
+				loadCompletedHandler: completedHandler,  // html加载完毕之后回调
+				data: getData()    // 数据源
+				});
+		});
+		function getData(){
+			return [
+				{name: "Tab1",  url: "view/page1.html",  js: "view/page1.js" , changeHandler: changeHandler},
+				{name: "Tab2",  url: "view/page2.html",  js: "view/page2.js"},
+				{name: "Tab3",  url: "view/page3.html",  js: "view/page3.js"},
+			];
+		}
+		function completedHandler(item, index){
+			var str = "你选中的Tab索引为" + index + ",数据为" + JSON.stringify(item);
+			console.log(str);
+		}
+		function changeHandler(item){
+			console.log("changeHandler = " + JSON.stringify(item));
+		}
+	</script>
+</html>

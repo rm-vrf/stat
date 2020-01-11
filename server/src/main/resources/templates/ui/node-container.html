@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>容器</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="/static/ui/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="/static/ui/style/admin.css" media="all">
+    <link rel="stylesheet" href="/static/assets/css/amazeui.min.css"/>
+    <link rel="stylesheet" href="/static/assets/css/admin.css">
+</head>
+<body>
+
+<div class="layui-fluid" style="background-color:#f2f2f2">
+    <div class="layui-card">
+        <div class="layui-card-body">
+            <div style="padding-bottom: 10px;">
+                <button class="layui-btn layuiadmin-btn-list" data-type="add">创建容器</button>
+            </div>
+            <div id="dataTable">
+                <table class="layui-table layuiadmin-page-table" lay-skin="line">
+                    <thead>
+                    <tr>
+                        <th><span style="white-space:nowrap">ID</span></th>
+                        <th><span style="white-space:nowrap">镜像</span></th>
+                        <th><span style="white-space:nowrap">命令</span></th>
+                        <th><span style="white-space:nowrap">状态</span></th>
+                        <th><span style="white-space:nowrap">描述</span></th>
+                        <th><span style="white-space:nowrap">端口</span></th>
+                        <th><span style="white-space:nowrap">操作</span></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="container in containers">
+                        <td>
+                            <a v-bind:lay-href="[ '/container/' + container.id ]"
+                               v-bind:lay-text="[ '容器 ' + container.displayId ]">
+                                {{ container.displayId }}
+                            </a>
+                        </td>
+                        <td>{{ container.image }}</td>
+                        <td>{{ container.command }}</td>
+                        <td>
+                            <span v-bind:class="[ container.stateClass ]">{{ container.state }}</span>
+                        </td>
+                        <td>{{ container.description }}</td>
+                        <td>{{ container.displayPort }}</td>
+                        <td>
+                            <div class="layui-icon layadmin-tabs-control layui-icon-down">
+                                <ul class="layui-nav layadmin-tabs-select" lay-filter="layadmin-pagetabs-nav">
+                                    <li class="layui-nav-item" lay-unselect>
+                                        <a href="javascript:;"></a>
+                                        <dl class="layui-nav-child layui-anim-fadein">
+                                            <dd>
+                                                <a v-bind:href="['/container/' + container.id + '/terminal']"
+                                                   target="_blank">控制台</a>
+                                            </dd>
+                                            <dd>
+                                                <a v-bind:href="['/container/' + container.id + '/log']"
+                                                   target="_blank">日志</a>
+                                            </dd>
+                                            <hr>
+                                            <dd><a v-on:click="startContainer(container.id)" href="javascript:;">启动</a>
+                                            </dd>
+                                            <dd><a v-on:click="stopContainer(container.id)" href="javascript:;">停止</a>
+                                            </dd>
+                                            <dd><a v-on:click="removeContainer(container.id)" href="javascript:;">删除</a>
+                                            </dd>
+                                        </dl>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div>
+                    <div id="laypage"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!--[if lt IE 9]>
+<script src="/static/assets/jquery/1.11.1/jquery.min.js"></script>
+<script src="/static/assets/2.8.3/modernizr.js"></script>
+<script src="/static/assets/js/polyfill/rem.min.js"></script>
+<script src="/static/assets/js/polyfill/respond.min.js"></script>
+<script src="/static/assets/js/amazeui.legacy.js"></script>
+<![endif]-->
+
+<!--[if (gte IE 9)|!(IE)]><!-->
+<script src="/static/assets/js/jquery.min.js"></script>
+<script src="/static/assets/js/amazeui.min.js"></script>
+<!--<![endif]-->
+<script src="/static/assets/js/app.js"></script>
+
+<!-- script begin -->
+<script src="/static/assets/js/vue.min.js" type="text/javascript"></script>
+<script src="/static/assets/js/vue-resource.min.js" type="text/javascript"></script>
+<script src="/static/assets/js/common.js" type="text/javascript"></script>
+<script src="/static/ui/layui/layui.js"></script>
+<script>
+var dataTable = new Vue({
+	el : '#dataTable',
+	data : {
+		containers: [],
+		pageable: {},
+		totalElements: 0,
+		totalPages: 0
+	},
+	methods: {
+		search: function(page) {
+			Vue.http.get('/api/node/${nodeId}/container?page=' + page).then(function(ret) {
+				dataTable.containers = ret.body.content;
+				dataTable.pageable = ret.body.pageable;
+				dataTable.totalElements = ret.body.totalElements;
+				dataTable.totalPages = ret.body.totalPages;
+				$.each(dataTable.containers, function(i, container) {
+						container.displayId = container.id.substring(0, 12);
+					if (container.state === 'running') {
+						container.stateClass = 'am-badge am-badge-success';
+					} else {
+						container.stateClass = 'am-badge am-badge-danger';
+					}
+					var displayPort = new Array();
+					if (container.ports != null) {
+						$.each(container.ports, function(j, port) {
+							var desc = '';
+							desc += port.publicPort > '' ? port.publicPort : 'NONE';
+							desc += ':' + port.privatePort;
+							desc += '/' + port.type;
+							displayPort.push(desc);
+						});
+					}
+					container.displayPort = displayPort.join(', ');
+				});
+			});
+		},
+		refresh: function() {
+			$.each(dataTable.containers, function(i, container) {
+				Vue.http.get('/api/container/'+container.id).then(function(ret) {
+					container.description = ret.body.description;
+					container.state = ret.body.state;
+					if (container.state === 'running') {
+						container.stateClass = 'am-badge am-badge-success';
+					} else {
+						container.stateClass = 'am-badge am-badge-danger';
+					}
+				});
+			});
+		}
+	}
+});
+
+$(document).ready(function () {
+	dataTable.search(0);
+	setInterval(function() {
+		dataTable.refresh();
+	}, 5000);
+});
+
+layui.config({
+	base: '/static/ui/' //静态资源所在路径
+}).extend({
+	index: 'lib/index' //主入口模块
+}).use(['index', 'contlist', 'table', 'laypage'], function(){
+	var laypage = layui.laypage;
+	laypage.render({
+		elem: 'laypage',
+		count: dataTable.totalElements,
+		layout: ['count', 'prev', 'page', 'next'],
+		jump: function(obj){
+			dataTable.search(obj.curr-1);
+		}
+	});
+});
+
+function stopContainer(containerId) {
+	Vue.http.post('/api/container/'+containerId+'/_stop').then(function(ret) {
+		alert(ret.status);
+	});
+}
+
+function startContainer(containerId) {
+	Vue.http.post('/api/container/'+containerId+'/_start').then(function(ret) {
+		alert(ret.status);
+	});
+}
+
+function removeContainer(containerId) {
+	Vue.http.post('/api/container/'+containerId+'/_remove').then(function(ret) {
+		alert(ret.status);
+	});
+}
+
+
+</script>
+</body>
+</html>

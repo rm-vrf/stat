@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="js/rely/my_table/my.table.css" />
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js"></script>
+		<script type="text/javascript" src="js/rely/my_table/iflytek.my.table.js"></script>
+		<script type="text/javascript" src="js/rely/my_table/iflytek.my.pager.js"></script>
+		<script type="text/javascript" src="js/utils/util.js" ></script>
+		<style>
+			.header-title {
+				display: inline-block;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<div class="container">
+				<div class="form-group">
+						<label for="input_name" class="control-label" >列数：</label>
+						<input id="charts_datasource_cols" type="number" min="1" value="4" >
+				</div>
+				<div class="form-group">
+					<div class="table-container"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+
+	<script>
+		var myTable;
+		$(document).ready(function() {
+			initTable();
+			$("#charts_datasource_cols").change(function(){
+				initTable();
+			});
+		})
+		function initTable(){
+			var data = getData();
+			myTable = $(".table-container").myTable({
+				showPager: false,
+				columns: getColumns(),
+				data: getData(),
+				events: {
+					changeValue: function(rowData){
+						console.log(JSON.stringify(myTable.data));
+					},
+					removeRow: function(rowData){
+						myTable.removeRow(rowData);	
+						console.log(JSON.stringify(myTable.data));
+					}
+				}
+			});
+			// 处理新增事件
+			$(".table-container").find("#add-row-tool").off().click(function(){
+				myTable.addRow({
+					id: uuid(),
+					order: 7,
+					value: "newValue",
+					sex: 0
+				});
+			});
+		}
+		function getColumns() {
+			var cols = $("#charts_datasource_cols").val();
+			var columns = [];
+			for(var i = 0; i< cols; i++){
+				columns.push({
+					type: 3,
+					headerField: "数据项"+(i+1),
+					labelField:  i
+				})
+			}
+			columns.push({type: 2, headerField: '<a id="add-row-tool">+</a>', style: {width: "30px"},
+			labelData: [ {label: "--", title: "", eventType: "removeRow"}]});
+			return columns;
+		}
+		
+		function getData(){
+			var arr  = [];
+			for(var i = 0; i<3; i++){
+				var arr1 = [];
+				for(var j = 0; j<4; j++){
+					arr1[j] = "value" + i+ "" + j + "";
+				}
+				arr.push(arr1);
+			}
+			return arr;
+		}
+		function getSexList(){
+			return [{label: "未知", value: 0},
+			{label: "男", value: 1},
+			{label: "女", value: 2}]
+		}
+	</script>
+
+</html>

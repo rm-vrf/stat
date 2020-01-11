@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<link rel="stylesheet" href="../../../js/rely/bootstrap/css/bootstrap.css" />
+		<link rel="stylesheet" href="../../../css/main.css" />
+		<link rel="stylesheet" href="../../../css/iflytek.menu.css"  />
+		<script type="text/javascript" src="../../../js/rely/jquery-3.2.1.min.js" ></script>
+		<script type="text/javascript" src="../../../js/util/iflytek.util.js" ></script>		
+		<script type="text/javascript" src="iflytek.menu.js" ></script>
+		<style>
+			#top_menu_container{
+				height: 70px;
+			}
+			#top_menu_container li{
+				width: 120px;
+			}
+			#left_menu_container li ul{
+				width: 120px;
+			}
+		</style>
+	</head>
+	<body>
+		<blockquote>
+		  	<p><a href="demo_menu.zip">Download</a></p>
+		</blockquote>
+		<h4>示例如下：(左侧菜单为点击事件，头部菜单为mouseover事件) </h4>
+		<div style="border: 1px solid #8f8f8f; padding: 20px;">
+			<div id="top_menu_container" style="margin-left: 200px"></div> 
+			<div id="left_menu_container" style="width: 180px"></div> 
+		</div>
+	</body>
+	
+	<script type="text/javascript">
+		$(document).ready(function(){
+			// 初始化menu
+		    iflytek.generator.menu("top", {
+				container: "#top_menu_container", 
+				data: getData()
+			});
+			 iflytek.generator.menu("left", {
+				container: "#left_menu_container", 
+				data: getData()
+			});
+		});
+		/**
+		 * 获取数据
+		 */
+		
+		function getData(){
+			var count1 = 5;
+			var count2 = 5;
+			var count3 = 5;
+			var arr = createData(count1, "");
+			for(var i = 0; i<arr.length; i++){
+				arr[i].children = createData(count2, (i+1)+"_");
+				var arr1 = arr[i].children;
+				for(var j = 0; j<arr1.length; j++){
+					arr1[j].children = createData(count3, (i+1)+"_"+(j+1));
+				}
+			}
+			return arr;
+		}
+		function createData(count, id_prex){
+			var arr = [];
+			for(var i = 0; i< count; i++){
+				arr[i] = {
+					id: id_prex + i,
+					name: "菜单" + id_prex + "_" + (i+1),
+					url: "#",
+					children: []
+				}
+			}
+			return arr;
+		}
+</script>
+</html>

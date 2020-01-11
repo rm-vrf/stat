@@ -1,0 +1,68 @@
+/*画布层级*/
+.panel-layer{
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+/*中间区域*/
+.selection{
+	width:100px;
+ 	height: 100px;
+ 	/*border: 1px solid rgba(149, 226, 149, 0.8);*/
+ 	background: rgba(0, 128, 0, 0.08);
+ 	z-index: 3;
+ 	position: absolute;
+}
+.panel-component{
+	position: absolute;
+	display: block;
+	background: #F7F7F7;
+	border: none;
+	z-index: 1;
+}
+.panel-component.active{
+	/*background: rgba(144, 238, 144, 0.55);*/
+	border: deepskyblue 1px solid;
+	margin: -1px;
+}
+.panel-component-content-container,
+.panel-component-content{
+	width:100%;
+	height:100%;
+	display: block;
+}
+.panel-component-mask{
+	width:100%;
+	height:100%;
+	position:absolute;
+	top:0px;
+/*	border: 1px solid rgba(149, 226, 149, 0.8);*/
+ 	background: rgba(0, 128, 0, 0.01);
+ 	cursor: pointer;
+ 	display: none;
+ 	margin: -1px;
+}
+.panel-component-mask .tool{
+	float: right;
+	position: relative;
+	right: 1px;
+	top: 1px;
+	margin: 2px;
+}
+.panel-component-mask .tool-drag{
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+	margin: 2px;
+}
+.grid-cell{
+	width: 100px;
+    height: 100px;
+    border: 1px solid #ccc;
+    display: inline-block;
+    margin: 0px;
+    border-bottom: none;
+    border-left: none;
+    margin-top: -4px;
+    z-index: 0;
+}

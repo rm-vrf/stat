@@ -1,0 +1,45 @@
+/*右边区域*/
+.right .panel-body {
+    padding: 10px ;
+}
+.right .panel-heading{
+	padding: 8px;
+}
+.right .panel{
+	margin-bottom: 1px;
+}
+.right .form-control{
+	height: 30px;
+	padding: 4x 6x;
+	line-height: 1em;
+}
+.right .form-group{
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-bottom: 10px
+}
+.right .form-horizontal .control-label{
+	padding-left: 0px;
+	padding-right: 0px;
+}
+.right-arrow-container{
+	background: #dff0d8;
+    width: 15px;
+    height: 30px;
+    position: relative;
+    left: -16px;
+    top: -50%;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.right-arrow{
+	position: relative;
+    top: 3px;
+    left: 4px;
+}
+.data-source-tab{
+	display: none;
+}
+.data-source-tab.active{
+	display: block;
+}

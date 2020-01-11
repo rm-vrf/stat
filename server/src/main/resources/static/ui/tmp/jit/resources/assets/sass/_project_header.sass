@@ -1,0 +1,43 @@
+@import variables
+@import mixins
+
+.project-header
+  @include grid(100)
+  margin-bottom: 15px
+
+  .dropdown-component
+    margin-top: 4px
+    @include grid_width(10/100)
+    @include md-device
+      @include grid_width(13/100)
+    @include sm-device
+      @include grid_width(1)
+
+  .views-switcher-component
+    margin-top: 4px
+    @include grid_width(48/100)
+    @include custom-device(1300px)
+      @include grid_width(55/100)
+    @include md-device
+      @include grid_width(92/100)
+    @include sm-device
+      margin-top: 0
+      @include grid_width(1)
+
+  .filter-box-component
+    margin: 0
+    @include grid_width(42/100)
+    @include custom-device(1300px)
+      @include grid_width(35/100)
+    @include md-device
+      @include grid_width(1)
+      margin-top: 10px
+      .filter-box
+        max-width: 100%
+    @include sm-device
+      @include grid_width(1)
+      margin-top: 10px
+      .filter-box
+        max-width: 100%
+    form
+      margin: 0

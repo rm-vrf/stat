@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+		<link rel="stylesheet" href="css/title.window.css" />
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js"></script>
+		<script type="text/javascript" src="js/rely/iflytek/iflytek.util.js"></script>
+		<script type="text/javascript" src="js/rely/simple-color/jquery.simple-color.js"></script>
+		<script type="text/javascript" src="js/components/style.background.component.js"></script>
+		<script type="text/javascript" src="js/components/style.border.component.js"></script>
+		<script type="text/javascript" src="js/components/style.font.component.js" ></script>
+		<script type="text/javascript" src="js/draw/message.js"></script>
+		<script type="text/javascript" src="js/utils/util.js"></script>
+		<script type="text/javascript" src="js/components/charts.style.font.window.js"></script>
+
+	</head>
+	<style>
+		.style-input {
+			width: 35px;
+		}
+	</style>
+
+	<body>
+		<div class="container-fluid" name="info_container">
+			<div class="panel panel-default">
+				<div class="panel-heading">标题</div>
+				<div class="panel-body">
+					<div class="form-group">
+						<label for="input_name" class="col-sm-2 control-label">主标题：</label>
+						<div class="col-sm-10">
+							<input name="name" data-type="text" type="text" id="input_name" placeholder="主标题">
+							<a class="text-style-edit"><span class="glyphicon glyphicon-edit"></span></a>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="input_name" class="col-sm-2 control-label">副标题：</label>
+						<div class="col-sm-10">
+							<input name="name" data-type="text" type="text" id="input_name" placeholder="副标题">
+							<a class="text-style-edit"><span class="glyphicon glyphicon-edit"></span></a>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="style_background" class="col-sm-2 control-label">背景：</label>
+						<div class="col-sm-10">
+							<div name="style.background" class="style-component-background"></div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="style_border" class="col-sm-2 control-label">边框：</label>
+						<div class="col-sm-10" style="padding-right: 0px">
+							<div name="style.border" class="style-component-border"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</body>
+	<script>
+		$(document).ready(init);
+		var title = {
+			textStyle: {
+				color: "#333"
+			},
+			subtextStyle: {
+				color: "#333"
+			}
+		};
+		var fontStyleWindow = new iflytek.titleWindow.fontStyle();
+		function init() {
+			initHtml();
+			initEventHandler();
+		}
+		function changePropertyHandler(data){
+			
+		}
+		function initHtml() {
+			// 填充背景组件
+			$(".style-component-background").backgroundStyleComp({
+				data: {style:{}},
+				changePropertyHandler: changePropertyHandler
+			});
+			// 填充边框属性组件
+			$(".style-component-border").borderStyleComp({
+				data: {style:{}},
+				changePropertyHandler: changePropertyHandler
+			});
+		}
+
+		function initEventHandler() {
+			$(".text-style-edit").click(function() {
+				fontStyleWindow.show(convertTextStyleToStyle(title.textStyle), function(data) {
+					$.extend(title.textStyle, convertStyleToTextStyle(data.style));
+					console.log(JSON.stringify(title.textStyle));
+				});
+			})
+		}
+		function convertTextStyleToStyle(textStyle){
+			var style = {};
+			style["color"] = textStyle.color;
+			style["font-style"] = textStyle.fontStyle;
+			style["font-weight"] = textStyle.fontWeight;
+			style["font-size"] = textStyle.fontSize;
+			style["font-family"] = textStyle.fontFamily;
+			return {style: style};
+		}
+		function convertStyleToTextStyle(style){
+			var textStyle = {};
+			textStyle.color = style["color"];
+			textStyle.fontStyle = style["font-style"];
+			textStyle.fontWeight = style["font-weight"];
+			textStyle.fontSize = style["font-size"];
+			textStyle.fontFamily = style["font-family"];
+			return textStyle;
+		}
+	</script>
+
+</html>

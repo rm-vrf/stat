@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+	</head>
+	<link rel="stylesheet" href="../../js/rely/bootstrap/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="../../css/main.css" />
+	<script type="text/javascript" src="../../js/rely/jquery-3.2.1.min.js"></script>
+
+	<body>
+		<div class="container-fluid" name="service_container" style="padding: 2px; height: 100%; overflow-y: auto; overflow-x: hidden">
+			<div class="panel panel-default">
+				<div class="panel-heading">数据属性</div>
+				<div class="panel-body">
+					<div class="form-group" style="margin-bottom: 20px;">
+						<div class="radio-inline">
+							<label><input type="radio" data-type="boolean" name="serviceType" id="serviceTypeRadios1" ref="service_array_content" value="array" checked>数组</label>
+						</div>
+						<div class="radio-inline">
+							<label><input type="radio"  data-type="boolean" name="serviceType" id="serviceTypeRadios2"  ref="service_local_content" value="local" > 本地</label>
+						</div>
+						<div class="radio-inline">
+							<label><input type="radio"  data-type="boolean" name="serviceType" id="serviceTypeRadios3"  ref="service_remote_content" value="remote" > 远程</label>
+						</div>
+					</div>
+					<div class="form-group data-source-tab active" id="service_array_content">
+						<div class="form-group">
+							<label for="input_name" class="control-label">列数：</label>
+							<input id="datasource_array_cols" type="number" min="1" value="7" style="width: 80px">
+						</div>
+						<div class="form-group">
+							<div id="datasource_array_table"></div>
+						</div>
+					</div>
+					<div class="form-group data-source-tab" id="service_local_content">
+						<div class="form-group">
+							<label for="input_name" class="col-sm-2 control-label">url：</label>
+							<div class="col-sm-10">
+								<input name="service.local.url" data-type="text" type="text" class="change-input" >
+							</div>
+						</div>
+					</div>
+					<div class="form-group data-source-tab" id="service_remote_content">
+							<div class="form-group col-sm-12">
+								<label for="input_name" class="col-sm-3 control-label">方法：</label>
+								<div class="col-sm-9">
+									<select name="service.remote.type" class="change-input">
+										<option value="get">get</option>
+										<option value="post">post</option>
+									</select>
+								</div>
+							</div>
+							<div class="form-group  col-sm-12">
+								<label for="input_name" class="col-sm-3 control-label">url：</label>
+								<div class="col-sm-9">
+									<input name="service.remote.url" data-type="text" type="text" class="change-input" >
+								</div>
+							</div>
+
+					</div>
+
+				</div>
+			</div>
+			<div class="form-group" style="padding: 15px 5px 10px;">
+				<button type="button" name="save" class="btn btn-primary pull-right">保存</button>
+			</div>
+		</div>
+	</body>
+
+</html>

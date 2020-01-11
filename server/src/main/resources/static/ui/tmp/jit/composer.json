@@ -1,0 +1,67 @@
+{
+    "name": "jitamin/jitamin",
+    "type": "project",
+    "description": "A web based project management system",
+    "license": "MIT",
+    "config": {
+        "preferred-install": "dist",
+        "optimize-autoloader": true,
+        "discard-changes": true
+    },
+    "require" : {
+        "php" : ">=5.6.0",
+        "ext-gd" : "*",
+        "ext-mbstring" : "*",
+        "ext-hash" : "*",
+        "ext-openssl" : "*",
+        "ext-json" : "*",
+        "ext-ctype" : "*",
+        "ext-filter" : "*",
+        "ext-session" : "*",
+        "pimple/pimple" : "3.0.2",
+        "eluceo/ical": "0.10.1",
+        "erusev/parsedown" : "1.6.0",
+        "fguillot/json-rpc" : "1.2.1",
+        "fguillot/picodb" : "1.0.14",
+        "jitamin/picofeed": "0.1.24",
+        "jitamin/simple-logger" : "1.0.2",
+        "jitamin/simple-validator" : "1.0.2",
+        "jitamin/simple-queue" : "1.0.1",
+        "nesbot/carbon": "~1.21",
+        "paragonie/random_compat": "2.0.11",
+        "christian-riesen/otp" : "1.4.3",
+        "swiftmailer/swiftmailer" : "5.4.5",
+        "symfony/console" : "~3.1",
+        "symfony/event-dispatcher" : "~3.1",
+        "gregwar/captcha": "1.1.1",
+        "robmorgan/phinx": "^0.6.5",
+        "vlucas/phpdotenv": "^2.4"
+    },
+    "require-dev" : {
+        "phpdocumentor/reflection-docblock": "2.0.4",
+        "block8/php-docblock-checker": "^1.0",
+        "squizlabs/php_codesniffer": "~2.5",
+        "symfony/yaml": "2.8.7",
+        "symfony/stopwatch" : "2.6.13",
+        "phpunit/phpunit" : "4.8.26",
+        "friendsofphp/php-cs-fixer": "^2.0"
+    },
+    "autoload" : {
+        "classmap" : ["app/"],
+        "psr-4" : {
+            "Jitamin\\" : "app/"
+        },
+        "files" : [
+            "app/helpers.php"
+        ]
+    },
+    "scripts": {
+        "pre-install-cmd": [
+            "php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-install-cmd": [
+        ],
+        "post-update-cmd": [
+        ]
+    }
+}

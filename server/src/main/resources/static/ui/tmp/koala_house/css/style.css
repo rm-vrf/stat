@@ -1,0 +1,124 @@
+/**------文本样式-----------*/
+.font{
+	display: inline-block;
+	width: 18px;
+	height:18px;
+	border: 1px solid #DDDDDD;
+	background-repeat: no-repeat;
+	background-position-x: 1px ;
+	background-position-y: 1px ;
+}
+.font:hover, .font .active{
+	border: 1px solid #777777;
+}
+.font-style{
+	background-image: url(../img/style/font_italic.png);
+}
+.font-style-container{
+	padding: 8px 0px;
+}
+.font-weight{
+	background-image: url(../img/style/font_bold.png);
+}
+.font-underline{
+	background-image: url(../img/style/font_underline.png);
+}
+.font-select{
+	display: inline-block;
+	border: 1px solid #D4D4D4;
+	height:23px ;
+	position: relative;
+    top: -4px;
+}
+#font_family_list{
+	width: 120px;
+}
+#font_size_list{
+	width: 65px;
+}
+
+#font_color_container{
+	display: none;
+	position: absolute;
+	left: 0px;
+	top:0px;;
+}
+.font-color{
+
+}
+.simpleColorChooser{
+	z-index: 301;
+}
+.simpleColorDisplay{
+	border: none;
+}
+#font_color_input{
+	display: inline-block;
+	background: #fff;
+	position: relative;
+}
+/**---------------边框样式----------**/
+.border{
+	display: inline-block;
+	width: 18px;
+	height:18px;
+	border: 1px solid #DDDDDD;
+	background-repeat: no-repeat;
+	background-position-x: 1px ;
+	background-position-y: 1px ;
+}
+.border:hover{
+	border: 1px solid #777777;
+}
+.border-select{
+	display: inline-block;
+	border: 1px solid #D4D4D4;
+	height:23px ;
+	position: relative;
+    top: -4px;
+}
+.border-label{
+	display: inline-block;
+	position: relative;
+	top: -3px;
+	margin-left: 10px;
+}
+.border-title{
+	display: inline-block;
+	position: relative;
+	top: -3px;
+	margin-right: 8px;
+	font-weight: bold;
+	width: 50px;
+	text-align: right;
+}
+.border-items{
+	border: 1px solid #eee;
+    padding: 10px 2px 10px 0px;
+    width: 370px;
+    margin-top: -25px;
+}
+.border-items .border-item{
+	width: 365px;
+	margin-top: 5px
+}
+.border-location-container{
+	position: relative;
+    top: -20px;
+    left: 68px;
+	height: 30px;
+}
+.border-location{
+	border: 1px solid #DDDDDD;
+	border-radius: 3px;
+	color: #ddd;
+	padding: 3px 6px;
+}
+.border-location-container .active{
+	border: 1px solid deepskyblue;
+	color: deepskyblue;
+}
+/**-----背景样式---------**/
+.style-component-background{
+	padding: 8px 0px;
+}

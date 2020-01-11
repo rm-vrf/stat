@@ -1,0 +1,68 @@
+.layer-header{
+	height: 30px;
+	padding: 5px;
+	background: whitesmoke;
+	border: 1px solid #ccc;
+}
+.layer-content{
+	width: 100%;
+}
+.layer-content li.active{
+	background: rgba(3, 169, 244, 0.15);
+}
+.layer-title{
+	margin-left: 10px;
+	font-size: 14px;
+}
+.layer-title:hover{
+	color: dodgerblue;
+}
+.layer-tool{
+	color: gray;
+	cursor: pointer;
+}
+.layer-component .layer-tool{
+	display: none;
+}
+.layer-tool:hover{
+	color: rgba(51, 122, 183, 0.7);
+}
+.layer-tool.active{
+	color: dodgerblue;
+}
+.layer-tool span{
+	width: 20px;
+	height:20px;
+}
+.layer-content ul{
+	padding: 0px;
+}
+.layer-content li{
+	list-style-type: none;
+	position: relative;
+	display: block;
+	padding: 5px;
+	background-color: #fff;
+	border: 1px solid #ddd;
+	border-top: none;
+	cursor: pointer;
+}
+.layer-content li:hover{
+	background-color: rgba(51, 122, 183, 0.22);
+}
+.layer-content li:active{
+	 background-color: rgba(51, 122, 183, 0.4);
+}
+
+.layer-panel-title{
+	margin-left: 10px;
+	font-size: 14px;
+	font-weight: bold;
+	padding: 4px;
+}
+.layer-panel-add{
+	right: 7px; cursor: pointer;
+}
+.layer-panel-add:hover{
+	color: dodgerblue;
+}

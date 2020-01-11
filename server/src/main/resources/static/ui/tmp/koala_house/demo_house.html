@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Koala House</title>
+		<link rel="stylesheet" href="css/main.css" />
+		<!-- 第三方库或自定义库js-->
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js" ></script>
+		<script type="text/javascript" src="js/rely/echarts/echarts.min.js" ></script>
+		<script type="text/javascript" src="js/utils/util.js" ></script>
+		
+	</head>
+	<body>
+		<div class="header">
+			<img src="img/view/koala.png" /> 
+			<span >Koala House</span>
+		</div>
+		<div class="container">
+			<div class="middle">
+			</div>
+			<div class="left">
+				<div class="content"></div>	
+			</div>
+			<div class="right">
+				<div class="content">
+					<h3>组件信息(JSON)</h3>
+					 <textarea id="right_component_content" rows="37" cols="36"></textarea>
+				</div>
+			</div>
+		</div>		
+	</body>
+	<!-- 画布相关js-->
+		<script type="text/javascript" src="js/draw/model/componentTypes.js" ></script>
+		<script type="text/javascript" src="js/draw/model/options.js" ></script>
+		<script type="text/javascript" src="js/draw/model/component.js" ></script>
+		<script type="text/javascript" src="js/draw/manager/manager.js" ></script>
+		<script type="text/javascript" src="js/draw/interpreter.js" ></script>
+		<script type="text/javascript" src="js/draw/drawPanel.js" ></script>
+		<!--页面业务逻辑js-->
+		<script type="text/javascript" src="js/main.js" ></script>
+		<script>
+			
+			$(document).ready(function(){
+				initLeftMenu();
+				initPanel();
+			});
+		</script>
+</html>

@@ -1,0 +1,29 @@
+/*工具栏*/
+.tool-container{
+	height: 25px;
+	position: absolute;
+    left: 250px;
+    padding: 4px 20px;
+  /*  border: 1px solid rgba(154, 205, 50, 0.14);*/
+}
+.tool-group{
+	padding: 5px;
+	display: inline-block;
+	margin-right: 10px;
+}
+.tool-group input{
+	width:65px;
+	height:25px;
+	display: inline-block;
+}
+
+.panel-style-container{
+	position: relative;
+	left: 527px;
+	width: 300px;
+	border: 1px gainsboro solid;
+	background: #F8F8F8;
+	border-radius: 5px;
+	padding: 10px;
+	display: none;
+}

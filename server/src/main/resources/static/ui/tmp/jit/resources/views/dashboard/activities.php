@@ -1,0 +1,1 @@
+<?= $this->render('event/events', ['events' => $events]) ?>

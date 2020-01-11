@@ -1,0 +1,8 @@
+{
+  "name": "Jitamin",
+  "description": "Jitamin is a free and open source web project management system",
+  "repository": "https://github.com/Jitamin/Jitamin",
+  "logo": "https://jitamin.com/assets/img/icon.svg",
+  "keywords": ["jitamin", "php", "agile"],
+  "addons": ["heroku-postgresql:hobby-dev"]
+}

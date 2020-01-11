@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<div class="container">
+			<p id="background_demo">
+				边框样式示例
+			</p>
+			<div class="border-location-container">
+				<a class="border-location  active" data-type="all" ref="border_item_all">全部</a>
+				<a class="border-location" data-type="top" ref="border_item_top">上</a>
+				<a class="border-location" data-type="bottom" ref="border_item_bottom">下</a>
+				<a class="border-location" data-type="left" ref="border_item_left">左</a>
+				<a class="border-location" data-type="right" ref="border_item_right">右</a>
+			</div>
+			<div class="border-items">
+				<div id="border_item_all"  class="border-item" >
+					<span class="border-title">边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-width"></select>
+					<a class="border border-color"><span id="all_border_color_input" style-attr="border-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding"></select>
+					<span class="border-label">圆角:</span>
+					<select class="border-select border-radius-select"  style-attr="border-radius"></select>
+				</div>
+				<div  id="border_item_top"  class="border-item" style="display: none">
+					<span class="border-title">上边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-top-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-top-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-top-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-top"></select>
+				</div>
+				<div  id="border_item_bottom"  class="border-item" style="display: none">
+					<span class="border-title">下边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-bottom-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-bottom-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-bottom-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-bottom"></select>
+				</div>
+				<div  id="border_item_left"  class="border-item" style="display: none">
+					<span class="border-title">左边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-left-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-left-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-left-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-left"></select>
+				</div>
+				<div  id="border_item_right"  class="border-item"  style="display: none">
+					<span class="border-title">右边线:</span>
+					<select  class="border-select border-style-select"  style-attr="border-right-style"></select>
+					<select  class="border-select border-width-select"  style-attr="border-right-width"></select>
+					<a class="border border-color"><span id="top_border_color_input" style-attr="border-right-color"></span> </a>
+					<span class="border-label">边距:</span>
+					<select class="border-select border-padding-select"  style-attr="padding-right"></select>
+				</div>
+			</div>
+			
+		</div>
+	</body>
+	<script type="text/javascript" src="js/rely/jquery-1.9.1.min.js" ></script>
+	<script type="text/javascript" src="js/rely/simple-color/jquery.simple-color.js" ></script>
+	<script>
+		var borderStyle = {};
+		var borderStyleCachec = {};
+		$(document).ready(init);
+		function init(){
+			initHtml();
+			initEventHandler();
+		}
+		function initHtml(){
+			// 初始化边框样式列表
+			var arr = [{label: "无", value: "none"},
+			{label: "点状", value: "dotted"},
+			{label: "实线", value: "solid"},
+			{label: "双线", value: "double"},
+			{label: "虚线", value: "dashed"}];
+			initSelect($(".border-style-select"), arr);
+			// 初始化边框大小列表
+			var arr1 = [];
+			for(var i = 0; i <=10; i++){
+				arr1.push({label: i, value: i + "px"});
+			}
+			initSelect($(".border-width-select"), arr1);
+			// 初始化圆角大小列表
+			var arr2 = [];
+			for(var i = 0; i <=10; i++){
+				arr2.push({label: i, value: i + "px"});
+			}
+			initSelect($(".border-radius-select"), arr2);
+			// 初始化边距
+			var arr3 = [];
+			for(var i = 0; i <=10; i++){
+				arr3.push({label: i, value: i + "px"});
+			}
+			initSelect($(".border-padding-select"), arr3);
+			// 初始化边框颜色
+			initBorderColorHtml($("#all_border_color_input"));
+			initBorderColorHtml($("#top_border_color_input"));
+			initBorderColorHtml($("#bottom_border_color_input"));
+			initBorderColorHtml($("#left_border_color_input"));
+			initBorderColorHtml($("#right_border_color_input"));
+		}
+		function initBorderColorHtml(target, onSelectHandler){
+			 target.simpleColor({
+				boxWidth: 16,
+			    boxHeight: 16,
+			    cellWidth: 16,
+			    cellHeight: 16,
+			    chooserCSS: { 'border': '1px solid #777', 'width': '272px' },
+			    displayCSS: { 'border': '1px solid #ddd' },
+			    displayColorCode: false,
+			    livePreview: true,
+			    onSelect: function(hex, element) {
+			   		changeStyle(target, "#"+hex);
+				}
+			  });
+		}
+		function initEventHandler(){
+			// 显示或隐藏边框设置
+			$(".border-location").off().click(function(){
+				$(this).toggleClass("active");
+				// 显示或隐藏属性设置区域
+				var targetId = $(this).attr("ref");
+				$("#" + targetId).toggle();
+				// 处理数据
+				var active = $(this).hasClass("active");
+				var type = $(this).attr("data-type");
+				if(active){
+						$.extend(borderStyle, borderStyleCachec[type]);
+				}else{
+					// 存入内存
+					borderStyleCachec[type] = getBorderValueByType(type);		
+					resetBorderValueByType(type);
+				}
+				initStyle();
+			});
+			// 改变边框样式/宽度/边角
+			$(".border-select").off().change(function(){
+				changeStyle($(this));
+			});
+		}
+		function getBorderValueByType(type){
+			var prex = "border-";
+			if(type != "all"){
+				prex = "border-" + type + "-";
+			}
+			var resultObj = {};
+			resultObj[prex + "style"] = borderStyle[prex + "style"];
+			resultObj[prex + "color"] = borderStyle[prex + "color"];
+			resultObj[prex + "width"] = borderStyle[prex + "width"];
+			resultObj[prex + "radius"] = borderStyle[prex + "radius"];
+			return resultObj;
+		}
+		function resetBorderValueByType(type){
+			var prex = "border-";
+			if(type != "all"){
+				prex = "border-" + type + "-";
+			}
+			borderStyle[prex + "style"] ="none";
+			borderStyle[prex + "color"] = "none";
+			borderStyle[prex + "width"] = "none";
+			borderStyle[prex + "radius"] = "none";
+		}
+		function changeStyle(element, value){
+			var prop = element.attr("style-attr");
+			if(value != undefined){
+				borderStyle[prop] = value;
+			}else{
+				borderStyle[prop] = element.val();
+			}
+			initStyle();
+		}
+		function initStyle(){
+			$("#background_demo").css(borderStyle);	
+		} 
+
+		function initSelect(targets, data){
+			var htmlContent = "";
+			for(var i = 0; i< data.length; i++){
+			var item = data[i];
+				htmlContent += '<option value ="'+item.value+'">'+item.label+'</option>';
+			}
+			targets.each(function(){
+				$(this).html(htmlContent);
+			});
+		}
+	</script>
+</html>

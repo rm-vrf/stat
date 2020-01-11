@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="js/rely/my_table/my.table.css" />
+		<script type="text/javascript" src="js/rely/jquery-3.2.1.min.js"></script>
+		<script type="text/javascript" src="js/rely/my_table/iflytek.my.table.js"></script>
+		<script type="text/javascript" src="js/rely/my_table/iflytek.my.pager.js"></script>
+		<script type="text/javascript" src="js/utils/util.js" ></script>
+		<style>
+			.header-title {
+				display: inline-block;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<div class="header row">
+				<h3 class="header-title">图例</h3>
+				<a><span class="glyphicon glyphicon-edit"></span></a>
+			</div>
+			<div class="table-container">
+
+			</div>
+		</div>
+	</body>
+
+	<script>
+		var myTable;
+		$(document).ready(function() {
+			myTable = $(".table-container").myTable({
+				showPager: false,
+				columns: getColumns(),
+				data: getData(),
+				events: {
+					changeValue: function(rowData){
+						console.log(JSON.stringify(myTable.data));
+					},
+					removeRow: function(rowData){
+						myTable.removeRow(rowData);	
+						console.log(JSON.stringify(myTable.data));
+					}
+				}
+			});
+			// 处理新增事件
+			$(".table-container").find("#add-row-tool").off().click(function(){
+				myTable.addRow({
+					id: uuid(),
+					order: 7,
+					value: "newValue",
+					sex: 0
+				});
+			});
+		})
+
+		function getColumns() {
+			return [
+				{ type: 1, headerField: "序号", labelField: "order" },
+				{ type: 3, headerField: "数据项", labelField: "value" },
+				{type: 4,headerField: "性别",  labelField: "sex", labelData: getSexList()},
+				{type: 2, headerField: '<a id="add-row-tool">+</a>', labelData: [ {label: "--", title: "", eventType: "removeRow"}]}
+			];
+		}
+		function getSexList(){
+			return [{label: "未知", value: 0},
+			{label: "男", value: 1},
+			{label: "女", value: 2}]
+		}
+		function getData(){
+			var arr  = [];
+			for(var i = 0; i<3; i++){
+				arr[i] = {
+					id: i,
+					order: i+1,
+					value: "value" + i,
+					sex: i
+				}
+			}
+			return arr;
+		}
+	</script>
+
+</html>

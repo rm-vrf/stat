@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<div class="container">
+			<p id="text_container">
+			  	文字样式示例
+			</p>
+			<div id="font-style-container">
+				<a class="font font-color"><span id="font_color_input" ></span> </a>
+				<a class="font font-weight" style-attr="font-weight" ></a>
+				<a class="font font-style" style-attr="font-style" ></a>
+				<a class="font font-underline" style-attr="text-decoration" ></a>
+				<select id="font_family_list" class="font-select" style-attr="font-family"></select>
+				<select id="font_size_list" class="font-select" style-attr="font-size"></select>
+			</div>
+		</div>
+	</body>
+	<script type="text/javascript" src="js/rely/jquery-1.9.1.min.js" ></script>
+	<script type="text/javascript" src="js/rely/simple-color/jquery.simple-color.js" ></script>
+	<script>
+		var fontStyle = {};
+		$(document).ready(init);
+		function init(){
+			initHtml();
+			initEventHandler();
+		}
+		function initHtml(){
+			// 初始化字体家族列表
+			var arr = [{label: "微软雅黑", value: "Microsoft Yahei"},
+			{label: "宋体", value: "SimSun"},
+			{label: "Arial", value: "Arial"},
+			{label: "Tahoma", value: "Tahoma"},
+			{label: "Verdana", value: "Verdana"},
+			{label: "serif", value: "serif"},
+			{label: "sans-serif", value: "sans-serif"},
+			{label: "cursive", value: "cursive"}];
+			initSelect($("#font_family_list"), arr);
+			// 初始化字体大小列表
+			var arr1 = [];
+			for(var i = 8; i <=20; i++){
+				arr1.push({label: i, value: i + "px"});
+			}
+			initSelect($("#font_size_list"), arr1);
+			// 初始化字体颜色
+			initFontColorHtml();
+		}
+		function initFontColorHtml(){
+			 $('#font_color_input').simpleColor({
+				boxWidth: 16,
+			    boxHeight: 16,
+			    cellWidth: 16,
+			    cellHeight: 16,
+//			    chooserCSS: { 'border': '1px solid #660033' },
+			    displayCSS: { 'border': '1px solid #ddd' },
+			    displayColorCode: false,
+			    livePreview: true,
+			    onSelect: function(hex, element) {
+				    fontStyle["color"] = "#"+hex;
+					initStyle(fontStyle);
+			    }
+			  });
+		}
+		function initEventHandler(){
+			// 改变字体样式: 加粗/斜体/下划线
+			$(".font").off().click(function(){
+			 	var prop = $(this).attr("style-attr");
+				toggleStyle(fontStyle, prop);
+				initStyle(fontStyle);
+			});
+			// 改变字体家族/ 字体大小
+			$(".font-select").off().change(function(){
+				var prop = $(this).attr("style-attr");
+				fontStyle[prop] = $(this).val();
+				initStyle(fontStyle);
+			});
+		}
+
+		function initStyle(styleObj){
+			$("#text_container").css(styleObj);	
+		} 
+		function toggleStyle(target, attribute){
+			switch(attribute){
+				case "font-weight":
+				 	target[attribute] = !target[attribute]? "bold": "";
+				break;
+				case "text-decoration":
+				 	target[attribute] = !target[attribute]? "underline": "";
+				break;
+				case "font-style":
+					target[attribute] = !target[attribute]? "italic": "";
+				break;
+			}
+		}
+		function initSelect(target, data){
+			var htmlContent = "";
+			for(var i = 0; i< data.length; i++){
+			var item = data[i];
+				htmlContent += '<option value ="'+item.value+'">'+item.label+'</option>';
+			}
+			target.html(htmlContent);
+		}
+	</script>
+</html>

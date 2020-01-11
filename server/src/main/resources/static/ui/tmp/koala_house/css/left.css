@@ -1,0 +1,48 @@
+/*左侧栏*/
+.left .list-header{
+	height:42px;
+	padding: 5px;
+}
+.left .list-content{
+	overflow-y: scroll;
+}
+.left .img-container{
+	display: inline-block;
+	border: 1px solid rgba(0, 191, 255, 0.24);
+	padding: 3px;
+	width: 38px;
+	height: 38px;
+	margin: 5px 5px;
+	cursor: pointer;
+}
+.left .img-container:hover{
+	border: 1px solid deepskyblue;
+	cursor: pointer;
+}
+.left .img-container img{
+	width: 30px;
+	height: 30px;
+}
+.left .group-title{
+	height: 30px;
+    padding: 8px 17px;
+    background: rgba(119, 238, 119, 0.02);
+    cursor: pointer;
+    margin-bottom: 0px;
+    margin-top: 5px;
+}
+#left_content_theme{
+	overflow-y: auto;
+}
+#left_content_user{
+	overflow-y: auto;
+}
+#component_type_panel{
+	height: 60%;
+	border: 1px solid rgba(0, 128, 0, 0.22);
+}
+#layer_components_panel{
+	height: 40%;
+	overflow-y: auto;
+	border: 1px solid rgba(0, 128, 0, 0.22);
+}

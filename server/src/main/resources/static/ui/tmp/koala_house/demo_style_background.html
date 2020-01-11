@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" href="js/rely/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="css/style.css" />
+	</head>
+	<body>
+		<div class="container">
+			<p id="background_demo">
+				背景样式示例
+			</p>
+			<div class="border-items">
+				<div id="background-style-container">
+					<a class="background background-color"><span id="background_color_input" style-attr="background-color"></span> </a>
+				</div>
+			</div>
+			
+		</div>
+	</body>
+	<script type="text/javascript" src="js/rely/jquery-1.9.1.min.js" ></script>
+	<script type="text/javascript" src="js/rely/simple-color/jquery.simple-color.js" ></script>
+	<script>
+		var backgroundStyle = {};
+		$(document).ready(init);
+		function init(){
+			initHtml();
+			initEventHandler();
+		}
+		function initHtml(){
+			// 初始化边框颜色
+			initColorHtml($("#background_color_input"));
+		}
+		function initColorHtml(target, onSelectHandler){
+			 target.simpleColor({
+				boxWidth: 16,
+			    boxHeight: 16,
+			    cellWidth: 16,
+			    cellHeight: 16,
+			    chooserCSS: { 'border': '1px solid #777', 'width': '272px' },
+			    displayCSS: { 'border': '1px solid #ddd' },
+			    displayColorCode: false,
+			    livePreview: true,
+			    onSelect: function(hex, element) {
+			   		changeStyle(target, "#"+hex);
+				}
+			  });
+		}
+		function initEventHandler(){
+
+		}
+		function changeStyle(element, value){
+			var prop = element.attr("style-attr");
+			if(value != undefined){
+				backgroundStyle[prop] = value;
+			}else{
+				backgroundStyle[prop] = element.val();
+			}
+			initStyle();
+		}
+		function initStyle(){
+			$("#background_demo").css(backgroundStyle);	
+		} 
+	</script>
+</html>
