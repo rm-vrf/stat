@@ -6,6 +6,10 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -14,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import cn.batchfile.stat.server.domain.service.Service;
@@ -48,6 +53,16 @@ public class ServiceController {
             return new ResponseEntity<>(service, HttpStatus.OK);
         }
     }
+    
+    @PostMapping("/api/service/{namespace}/_search")
+    public ResponseEntity<Page<Service>> searchService(@PathVariable("namespace") String namespace,
+    		@RequestParam(value = "name", defaultValue = "") String name,
+    		@PageableDefault(value = 10, sort = {"name"}, direction = Sort.Direction.ASC) Pageable pageable) {
+    	
+    	LOG.debug("search service, namespace: {}, name: {}", namespace, name);
+    	Page<Service> page = serviceService.searchServices(namespace, name, pageable);
+    	return new ResponseEntity<>(page, HttpStatus.OK);
+    }
 
     @PostMapping("/api/service/{namespace:.+}")
     public ResponseEntity<Service> postService(@PathVariable("namespace") String namespace,
@@ -59,12 +74,19 @@ public class ServiceController {
     }
 
     @PostMapping("/api/service/{namespace:.+}/_compose")
-    public ResponseEntity<List<String>> postServices(@PathVariable("namespace") String namespace,
-                                                     @RequestBody Service[] services) {
+    public ResponseEntity<List<String>> composeServices(@PathVariable("namespace") String namespace,
+    		@RequestBody Service[] services,
+    		@RequestParam(value = "override", defaultValue = "false") Boolean override) {
 
         LOG.info("post compose, namespace: {}", namespace);
         List<String> list = new ArrayList<>();
         for (Service service : services) {
+        	if (override) {
+        		Service s = serviceService.getService(namespace, service.getName());
+        		if (s != null) {
+        			serviceService.deleteService(namespace, s.getName());
+        		}
+        	}
             Service svc = serviceService.createService(namespace, service);
             list.add(svc.getName());
         }

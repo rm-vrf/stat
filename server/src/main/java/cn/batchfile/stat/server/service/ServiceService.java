@@ -9,6 +9,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,18 +33,40 @@ public class ServiceService {
     
     @Autowired
     private ServiceRepository serviceRepository;
-
+    
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public List<Service> getServices(String namespace) {
-    	LOG.debug("get service list, {}", namespace);
-    	Iterable<ServiceTable> sts = serviceRepository.findMany(namespace);
+    	LOG.debug("get service list, namespace: {}", namespace);
+    	Pageable pageable = PageRequest.of(0, 50);
     	List<Service> list = new ArrayList<Service>();
-    	sts.forEach(st -> {
+    	Page<ServiceTable> page = serviceRepository.findMany(namespace, pageable);
+    	while (!page.isEmpty()) {
+    		//遍历节点
+    		page.getContent().forEach(st -> {
+    			list.add(compose(st));
+    		});
+    		
+			//遍历下一页数据
+    		if (page.hasNext()) {
+    			page = serviceRepository.findMany(namespace, page.nextPageable());
+    		} else {
+    			break;
+    		}
+    	}
+    	return list;
+    }
+
+    @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
+    public Page<Service> searchServices(String namespace, String name, Pageable pageable) {
+    	LOG.debug("search service, namespace: {}, name: {}, page: {}", namespace, name, pageable);
+    	Page<ServiceTable> sts = serviceRepository.findMany(namespace, name, pageable);
+    	List<Service> list = new ArrayList<Service>();
+    	sts.getContent().forEach(st -> {
     		Service service = compose(st);
     		list.add(service);
     	});
-    	LOG.debug("list size: {}", list.size());
-    	return list;
+    	LOG.debug("list size: {}, total count: {}", list.size(), sts.getTotalElements());
+    	return new PageImpl<>(list, pageable, sts.getTotalElements());
     }
     
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
@@ -90,15 +116,18 @@ public class ServiceService {
     @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public List<String> deleteServices(String namespace) {
     	LOG.info("delete all service, {}/*", namespace);
-    	Iterable<ServiceTable> sts = serviceRepository.findMany(namespace);
-    	List<String> serviceNames = new ArrayList<String>();
-    	sts.forEach(st -> {
-    		serviceNames.add(st.getName());
-    	});
-    	serviceRepository.deleteMany(namespace);
-    	LOG.info("deleted many: {}", serviceNames);
+    	List<Service> serviceList = getServices(namespace);
     	
-        return serviceNames;
+    	List<String> list = new ArrayList<String>();
+    	for (Service service : serviceList) {
+    		//TODO 删除容器
+    		list.add(service.getName());
+    	}
+    	
+    	//删除数据
+    	serviceRepository.deleteMany(namespace);
+    	LOG.info("deleted many: {}", list);
+    	return list;
     }
 
     @Transactional(isolation = Isolation.READ_UNCOMMITTED)
@@ -111,6 +140,8 @@ public class ServiceService {
     	} else {
     		serviceRepository.deleteById(st.get().getId());
     		LOG.info("deleted");
+    		
+    		//TODO 对容器发指令
     	}
     	
         return compose(st.get());

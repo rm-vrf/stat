@@ -14,6 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,22 +98,22 @@ public class FileService {
     }
     
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-    public List<FileInstance> listFiles(String namespace, String name) {
-    	LOG.debug("list dir: {}/{}", namespace, name);
+    public Page<FileInstance> listFiles(String namespace, String name, Pageable pageable) {
+    	LOG.debug("list dir: {}/{}, page: {}", namespace, name, pageable);
     	Optional<FileTable> ft = StringUtils.isEmpty(name) ? fileRepository.findOne(namespace) : fileRepository.findOne(namespace, name);
     	if (!ft.isPresent()) {
     		return null;
     	}
     	
     	List<FileInstance> list = new ArrayList<FileInstance>();
-    	Iterable<FileTable> iter = fileRepository.findMany(ft.get().getId());
-    	iter.forEach(i -> {
+    	Page<FileTable> page = fileRepository.findMany(ft.get().getId(), pageable);
+    	page.getContent().forEach(i -> {
     		FileInstance fi = compose(i);
     		list.add(fi);
     	});
     	
-    	LOG.debug("list dir, count: {}", list.size());
-    	return list;
+    	LOG.debug("list dir, total count, page count: {}", page.getTotalElements(), page.getContent().size());
+    	return new PageImpl<>(list, pageable, page.getTotalElements());
     }
 
     @Transactional(isolation = Isolation.READ_UNCOMMITTED)
@@ -226,14 +230,29 @@ public class FileService {
     }
 
     private void deleteChildren(String id) {
-    	Iterable<FileTable> iter = fileRepository.findMany(id);
-    	iter.forEach(i -> {
-    		if (StringUtils.equals(i.getType(), FileTable.TYPE_DIRECTORY)) {
-    			deleteChildren(i.getId());
+    	Pageable pageable = PageRequest.of(0, 50);
+    	Page<FileTable> page = fileRepository.findMany(id, pageable);
+    	
+    	//删除子文件
+    	while (!page.isEmpty()) {
+    		page.getContent().forEach(file -> {
+    			if (StringUtils.equals(file.getType(), FileTable.TYPE_DIRECTORY)) {
+        			deleteChildren(file.getId());
+        		}
+    			LOG.info("delete: {}/{}", file.getNamespace(), file.getName());
+            	fileRepository.deleteById(file.getId());
+    		});
+    		
+    		//翻到下一页
+    		if (page.hasNext()) {
+    			page = fileRepository.findMany(id, page.nextPageable());
+    		} else {
+    			break;
     		}
-        	LOG.info("delete: {}/{}", i.getNamespace(), i.getName());
-        	fileRepository.deleteById(i.getId());
-    	});
+    	}
+    	
+    	//删除自己
     	fileRepository.deleteById(id);
+		LOG.info("delete: {}", id);
     }
 }

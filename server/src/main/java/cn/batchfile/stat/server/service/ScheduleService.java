@@ -45,6 +45,10 @@ public class ScheduleService {
 
 	@PostConstruct
 	public void init() {
+		/** 
+		 * 分离两种状态的定时器，避免离线节点卡住流程，影响数据同步的性能
+		 */
+		
 		//同步在线节点的定时器
 		setupSchedule(new String[] {Node.STATUS_ONLINE, Node.STATUS_CREATED}, 
 				ONLINE_POOL_SIZE, ONLINE_REFRESH_INTERVAL);

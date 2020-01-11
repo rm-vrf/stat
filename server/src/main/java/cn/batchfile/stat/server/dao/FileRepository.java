@@ -2,14 +2,16 @@ package cn.batchfile.stat.server.dao;
 
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import cn.batchfile.stat.server.dto.FileTable;
 
-public interface FileRepository extends CrudRepository<FileTable, String> {
+public interface FileRepository extends JpaRepository<FileTable, String> {
 	
 	@Query("SELECT f FROM File f WHERE f.namespace=:namespace AND f.type='ns'")
 	Optional<FileTable> findOne(@Param("namespace") String namespace);
@@ -17,8 +19,8 @@ public interface FileRepository extends CrudRepository<FileTable, String> {
 	@Query("SELECT f FROM File f WHERE f.namespace=:namespace AND f.name=:name")
 	Optional<FileTable> findOne(@Param("namespace") String namespace, @Param("name") String name);
 	
-	@Query("SELECT f FROM File f WHERE f.type='ns' ORDER BY f.namespace")
-	Iterable<FileTable> findMany();
+	@Query("SELECT f FROM File f WHERE f.type='ns'")
+	Page<FileTable> findMany(Pageable pageable);
 	
 	@Modifying
 	@Query("DELETE FROM File f WHERE f.namespace=:namespace")
@@ -28,6 +30,6 @@ public interface FileRepository extends CrudRepository<FileTable, String> {
 	@Query("DELETE FROM File f WHERE f.namespace=:namespace AND f.name=:name")
 	void deleteOne(@Param("namespace") String namespace, @Param("name") String name);
 	
-	@Query("SELECT f FROM File f WHERE f.parent=:parentId ORDER BY f.name")
-	Iterable<FileTable> findMany(@Param("parentId") String parentId);
+	@Query("SELECT f FROM File f WHERE f.parent=:parentId")
+	Page<FileTable> findMany(@Param("parentId") String parentId, Pageable pageable);
 }

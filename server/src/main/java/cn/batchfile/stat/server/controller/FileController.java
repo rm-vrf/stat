@@ -3,7 +3,6 @@ package cn.batchfile.stat.server.controller;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,6 +12,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,15 +58,16 @@ public class FileController {
     }
 
     @GetMapping(value = {"/api/file/{namespace}/**/_ls", "/api/file/{namespace}/_ls"})
-    public ResponseEntity<List<FileInstance>> ls(HttpServletRequest request,
-    		@PathVariable("namespace") String namespace) {
+    public ResponseEntity<Page<FileInstance>> ls(HttpServletRequest request,
+    		@PathVariable("namespace") String namespace,
+    		@PageableDefault(value = 10, sort = {"name"}, direction = Sort.Direction.ASC) Pageable pageable) {
 
         String begin = "/api/file/" + namespace + "/";
         String end = "/_ls";
         String name = StringUtils.substringBetween(request.getRequestURI(), begin, end);
         LOG.debug("ls {}/{}", namespace, name);
 
-        List<FileInstance> files = fileService.listFiles(namespace, name);
+        Page<FileInstance> files = fileService.listFiles(namespace, name, pageable);
         if (files == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } else {

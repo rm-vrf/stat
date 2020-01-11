@@ -6,10 +6,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +24,24 @@ import cn.batchfile.stat.server.dto.FileTable;
 
 @org.springframework.stereotype.Service
 public class NamespaceService {
+	private static final String DEFAULT_NAMESPACE = "default";
     private static final Logger LOG = LoggerFactory.getLogger(NamespaceService.class);
     
     @Autowired
     private FileRepository fileRepository;
+    
+    @Autowired
+    private ServiceService serviceService;
+    
+    @PostConstruct
+    public void init() {
+    	//如果库是空的，创建default命名空间
+    	Pageable pageable = PageRequest.of(0, 1);
+    	Page<String> page = getNamespaces(pageable);
+    	if (page.getTotalElements() == 0) {
+    		createNamespace(DEFAULT_NAMESPACE);
+    	}
+    }
     
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
     public String getNamespace(String namespace) {
@@ -58,27 +78,30 @@ public class NamespaceService {
     }
 
     @Transactional(isolation = Isolation.READ_UNCOMMITTED, readOnly = true)
-    public List<String> getNamespaces() {
+    public Page<String> getNamespaces(Pageable pageable) {
     	LOG.debug("get all namespace datas");
-    	List<String> nss = new ArrayList<String>();
+    	List<String> list = new ArrayList<String>();
     	
-    	Iterable<FileTable> fts = fileRepository.findMany();
-    	fts.forEach(ft -> {
-    		nss.add(ft.getNamespace());
+    	Page<FileTable> page = fileRepository.findMany(pageable);
+    	page.getContent().forEach(ft -> {
+    		list.add(ft.getNamespace());
     	});
     	
-    	LOG.debug("namespace count: {}", nss.size());
-    	return nss;
+    	LOG.debug("namespace count: total: {}, content: {}",  page.getTotalElements(), page.getContent().size());
+    	return new PageImpl<>(list, pageable, page.getTotalElements());
     }
 
     @Transactional(isolation = Isolation.READ_UNCOMMITTED)
     public String deleteNamespace(String namespace) {
     	LOG.info("delete namespace: {}", namespace);
     	
-    	//TODO 检查是否是空目录，级联删除服务，停止相关的容器
-    	
+    	//删除命名空间
     	String ns = getNamespace(namespace);
     	if (ns != null) {
+        	//级联删除服务，停止相关的容器
+        	List<String> svcs = serviceService.deleteServices(namespace);
+        	LOG.info("delete service: {}", svcs);
+        	
     		fileRepository.deleteMany(namespace);
     		LOG.info("namespace and related object deleted");
     		return ns;
@@ -87,5 +110,4 @@ public class NamespaceService {
     		return null;
     	}
     }
-
 }
