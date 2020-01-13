@@ -52,11 +52,11 @@
                         <td>
                         	<span style="white-space:nowrap">
                         		<a v-bind:lay-href="['/container/' + container.id + '/terminal']" 
-                        			v-bind:lay-text="['控制台 ' + container.id]">
+                        			v-bind:lay-text="['控制台 ' + container.displayId]">
                         			<img src="/static/icons/icons8-console-24.png"/>
                         		</a>
                         		<a v-bind:lay-href="['/container/' + container.id + '/log']"
-                        			v-bind:lay-text="['日志 ' + container.id]">
+                        			v-bind:lay-text="['日志 ' + container.displayId]">
                         			<img src="/static/icons/icons8-log-24.png"/>
                         		</a>
                         	</span>
