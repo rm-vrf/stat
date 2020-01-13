@@ -30,6 +30,7 @@
                         <th><span style="white-space:nowrap">状态</span></th>
                         <th><span style="white-space:nowrap">描述</span></th>
                         <th><span style="white-space:nowrap">端口</span></th>
+                        <th><span style="white-space:nowrap">查看</span></th>
                         <th><span style="white-space:nowrap">操作</span></th>
                     </tr>
                     </thead>
@@ -49,30 +50,29 @@
                         <td>{{ container.description }}</td>
                         <td>{{ container.displayPort }}</td>
                         <td>
-                            <div class="layui-icon layadmin-tabs-control layui-icon-down">
-                                <ul class="layui-nav layadmin-tabs-select" lay-filter="layadmin-pagetabs-nav">
-                                    <li class="layui-nav-item" lay-unselect>
-                                        <a href="javascript:;"></a>
-                                        <dl class="layui-nav-child layui-anim-fadein">
-                                            <dd>
-                                                <a v-bind:href="['/container/' + container.id + '/terminal']"
-                                                   target="_blank">控制台</a>
-                                            </dd>
-                                            <dd>
-                                                <a v-bind:href="['/container/' + container.id + '/log']"
-                                                   target="_blank">日志</a>
-                                            </dd>
-                                            <hr>
-                                            <dd><a v-on:click="startContainer(container.id)" href="javascript:;">启动</a>
-                                            </dd>
-                                            <dd><a v-on:click="stopContainer(container.id)" href="javascript:;">停止</a>
-                                            </dd>
-                                            <dd><a v-on:click="removeContainer(container.id)" href="javascript:;">删除</a>
-                                            </dd>
-                                        </dl>
-                                    </li>
-                                </ul>
-                            </div>
+                        	<span style="white-space:nowrap">
+                        		<a v-bind:lay-href="['/container/' + container.id + '/terminal']" 
+                        			v-bind:lay-text="['控制台 ' + container.id]">
+                        			<img src="/static/icons/icons8-console-24.png"/>
+                        		</a>
+                        		<a v-bind:lay-href="['/container/' + container.id + '/log']"
+                        			v-bind:lay-text="['日志 ' + container.id]">
+                        			<img src="/static/icons/icons8-log-24.png"/>
+                        		</a>
+                        	</span>
+                        </td>
+                        <td>
+                        	<span style="white-space:nowrap">
+                        		<a v-on:click="startContainer(container.id)" href="javascript:;">
+                        			<img src="/static/icons/icons8-start-24.png"/>
+                        		</a>
+                        		<a v-on:click="stopContainer(container.id)" href="javascript:;">
+                        			<img src="/static/icons/icons8-stop-24.png"/>
+                        		</a>
+                        		<a v-on:click="removeContainer(container.id)" href="javascript:;">
+                        			<img src="/static/icons/icons8-delete-24.png"/>
+                        		</a>
+                        	</span>
                         </td>
                     </tr>
                     </tbody>
