@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.TopContainerResponse;
+import com.github.dockerjava.api.exception.NotModifiedException;
 
 import cn.batchfile.stat.server.domain.container.ContainerInstance;
 import cn.batchfile.stat.server.service.ContainerService;
@@ -77,22 +78,40 @@ public class ContainerController {
 	@PostMapping("/api/container/{id}/_start")
 	public ResponseEntity<Void> startContainer(@PathVariable("id") String id) {
 		LOG.debug("start container: {}", id);
-		containerService.startContainer(id);
-		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		try {
+			containerService.startContainer(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		} catch (NotModifiedException e) {
+			return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 	
 	@PostMapping("/api/container/{id}/_stop")
 	public ResponseEntity<Void> stopContainer(@PathVariable("id") String id) {
 		LOG.debug("stop container: {}", id);
-		containerService.stopContainer(id);
-		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		try {
+			containerService.stopContainer(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		} catch (NotModifiedException e) {
+			return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@PostMapping("/api/container/{id}/_remove")
 	public ResponseEntity<Void> removeContainer(@PathVariable("id") String id) {
 		LOG.debug("remove container: {}", id);
-		containerService.removeContainer(id);
-		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		try {
+			containerService.removeContainer(id);
+			return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		} catch (NotModifiedException e) {
+			return new ResponseEntity<>(HttpStatus.NOT_MODIFIED);
+		} catch (Exception e) {
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 }
