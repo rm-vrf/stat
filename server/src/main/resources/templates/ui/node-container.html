@@ -44,7 +44,7 @@
 								<td><span v-bind:class="[ container.stateClass ]">{{
 										container.state }}</span></td>
 								<td>{{ container.description }}</td>
-								<td>{{ container.displayPort }}</td>
+								<td><div v-html="container.displayPort"></div></td>
 								<td><span style="white-space: nowrap"> <a
 										v-bind:lay-href="['/container/' + container.id + '/terminal']"
 										v-bind:lay-text="['控制台 ' + container.displayId]"> <img
@@ -126,7 +126,7 @@ var dataTable = new Vue({
 					if (container.ports != null) {
 						$.each(container.ports, function(j, port) {
 							var desc = '';
-							desc += port.publicPort > '' ? port.publicPort : 'NONE';
+							desc += port.publicPort > '' ? '<a href="//' + container.ip + ':' + port.publicPort + '" target="_blank">' + port.publicPort + '</a>' : 'NONE';
 							desc += ':' + port.privatePort;
 							desc += '/' + port.type;
 							displayPort.push(desc);
